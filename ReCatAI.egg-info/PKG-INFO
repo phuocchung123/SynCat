@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: ReCatAI
+Version: 0.1.0
+Summary: Reaction Category Prediction using Reaction Fingerprint
+Home-page: https://github.com/phuocchung123/reaction_classification
+Author: Phuoc-Chung Van Nguyen
+Author-email: chungnvp197@gmail.com
+Requires-Python: ==3.11
+License-File: LICENSE
+Requires-Dist: rdkit==2023.9.5
+Requires-Dist: scikit-learn==1.4.0
+Requires-Dist: xgboost==2.0.3
+Requires-Dist: catboost==1.2.3
+Requires-Dist: joblib==1.3.2
