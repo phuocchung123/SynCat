@@ -51,10 +51,10 @@ def prepare_data(args):
         reagent_valid=data_valid[args.reagent_column].values
         reagent_test=data_test[args.reagent_column].values
 
-        get_graph_data(rsmi_list_train,reagent_train,y_list_train,filename_train,rmol_max_cnt,pmol_max_cnt,reagent_max_cnt)
-        get_graph_data(rsmi_list_valid,reagent_valid,y_list_valid,filename_valid,rmol_max_cnt,pmol_max_cnt,reagent_max_cnt)
-        get_graph_data(rsmi_list_test,reagent_test,y_list_test,filename_test,rmol_max_cnt,pmol_max_cnt,reagent_max_cnt)
+        get_graph_data(args,rsmi_list_train,y_list_train,filename_train,rmol_max_cnt,pmol_max_cnt,reagent_train,reagent_max_cnt)
+        get_graph_data(args,rsmi_list_valid,y_list_valid,filename_valid,rmol_max_cnt,pmol_max_cnt,reagent_valid,reagent_max_cnt)
+        get_graph_data(args,rsmi_list_test,y_list_test,filename_test,rmol_max_cnt,pmol_max_cnt,reagent_test,reagent_max_cnt)
     else: 
-        get_graph_data(rsmi_list_train,y_list_train,filename_train,rmol_max_cnt,pmol_max_cnt)
-        get_graph_data(rsmi_list_valid,y_list_valid,filename_valid,rmol_max_cnt,pmol_max_cnt)
-        get_graph_data(rsmi_list_test,y_list_test,filename_test,rmol_max_cnt,pmol_max_cnt)
+        get_graph_data(args,rsmi_list_train,y_list_train,filename_train,rmol_max_cnt,pmol_max_cnt)
+        get_graph_data(args,rsmi_list_valid,y_list_valid,filename_valid,rmol_max_cnt,pmol_max_cnt)
+        get_graph_data(args,rsmi_list_test,y_list_test,filename_test,rmol_max_cnt,pmol_max_cnt)

@@ -9,6 +9,7 @@ import warnings
 from finetune import finetune
 from prepare_data import prepare_data
 
+
 rdBase.DisableLog("rdApp.error")
 rdBase.DisableLog("rdApp.warning")
 warnings.filterwarnings('ignore')
@@ -36,6 +37,7 @@ if __name__=='__main__':
     arg_parser.add_argument('--reaction_column', type=str, default='reactions')
     arg_parser.add_argument('--reagent_column', type=str, default='separated_reagent')
     arg_parser.add_argument('--mapped_reaction_column', type=str, default='mapped_reactions')
+    arg_parser.add_argument("--just_map_reaction", type=bool, default=False)
     arg_parser.add_argument("--seed", type=int, default=27407)
     args = arg_parser.parse_args()
 
@@ -44,14 +46,17 @@ if __name__=='__main__':
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.benchmark = False
+    if args.just_map_reaction:
+        from map_reaction import map_reaction
+        map_reaction(args)
+    else:
+        npz_folder=args.Data_folder+args.npz_folder+'/'
+        if not os.path.exists(npz_folder):
+            os.makedirs(npz_folder)
+        for dirpath, dirnames, files in os.walk(npz_folder):
+            if files:
+                print('Already exist files in {}'.format(dirpath))
+            else:
+                prepare_data(args)
 
-    npz_folder=args.Data_folder+args.npz_folder+'/'
-    if not os.path.exists(npz_folder):
-        os.makedirs(npz_folder)
-    for dirpath, dirnames, files in os.walk(npz_folder):
-        if files:
-            print('Already exist files in {}'.format(dirpath))
-        else:
-            prepare_data(args)
-
-    finetune(args)
+        finetune(args)

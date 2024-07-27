@@ -15,7 +15,7 @@ def finetune(args):
     model_path = args.model_path +args.model_name
     monitor_path=args.monitor_folder+args.monitor_name
     epochs= args.epochs
-    device= torch.device('cuda'+str(args.device)) if torch.cuda.is_available() else torch.device('cpu')
+    device= torch.device('cuda:'+str(args.device)) if torch.cuda.is_available() else torch.device('cpu')
     print('device is\t',device)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
@@ -28,7 +28,7 @@ def finetune(args):
         batch_size= int(np.min([batch_size, len(train_set)])),
         shuffle= True,
         collate_fn=collate_reaction_graphs,
-        num_workers=0,
+        num_workers=4,
         drop_last=True
     )
 
@@ -38,7 +38,7 @@ def finetune(args):
         batch_size= int(np.min([batch_size, len(test_set)])),
         shuffle= False,
         collate_fn=collate_reaction_graphs,
-        num_workers=0,
+        num_workers=4,
         drop_last=False
     )
 
@@ -48,7 +48,7 @@ def finetune(args):
         batch_size= int(np.min([batch_size, len(val_set)])),
         shuffle= False,
         collate_fn=collate_reaction_graphs,
-        num_workers=0,
+        num_workers=4,
         drop_last=False
     )
 
