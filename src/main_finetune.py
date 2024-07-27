@@ -28,7 +28,7 @@ if __name__=='__main__':
     arg_parser.add_argument('--test_set', type=str, default='data_test_trial.npz')
     arg_parser.add_argument('--model_path', type=str, default='../Data/model/')
     arg_parser.add_argument('--model_name', type=str, default='model.pt')
-    arg_parser.add_argument('--npz_folder', type=str, default='../Data/npz/')
+    arg_parser.add_argument('--npz_folder', type=str, default='npz')
     arg_parser.add_argument('--reagent_option', type=bool, default=False)
     arg_parser.add_argument('--y_column', type=str, default='class')
     arg_parser.add_argument('--train_test_split', type=bool, default=False)
@@ -45,9 +45,10 @@ if __name__=='__main__':
     torch.manual_seed(args.seed)
     torch.backends.cudnn.benchmark = False
 
-    if not os.path.exists(args.npz_folder):
-        os.makedirs(args.npz_folder)
-    for dirpath, dirnames, files in os.walk(args.npz_folder):
+    npz_folder=args.Data_folder+args.npz_folder+'/'
+    if not os.path.exists(npz_folder):
+        os.makedirs(npz_folder)
+    for dirpath, dirnames, files in os.walk(npz_folder):
         if files:
             print('Already exist files in {}'.format(dirpath))
         else:

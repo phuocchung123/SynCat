@@ -30,19 +30,19 @@ def prepare_data(args):
     rsmi_list_train=data_train[args.reaction_column].values
     y_list_train=data_train[args.y_column].values
     y_list_train=np.eye(y.nunique(), dtype='uint8')[y_list_train]
-    filename_train=args.npz_folder + args.train_set
+    filename_train=args.Data_folder+args.npz_folder+'/' + args.train_set
 
     #get_data_valid
     rsmi_list_valid=data_valid[args.reaction_column].values
     y_list_valid=data_valid[args.y_column].values
     y_list_valid=np.eye(y.nunique(), dtype='uint8')[y_list_valid]
-    filename_valid=args.npz_folder + args.val_set
+    filename_valid=args.Data_folder+args.npz_folder+'/' + args.val_set
 
     #get_data_test
     rsmi_list_test=data_test[args.reaction_column].values
     y_list_test=data_test[args.y_column].values
     y_list_test=np.eye(y.nunique(), dtype='uint8')[y_list_test]
-    filename_test=args.npz_folder + args.test_set
+    filename_test=args.Data_folder+args.npz_folder+'/' + args.test_set
 
     if args.reagent_option:
         reagent=data[args.reagent_column].values

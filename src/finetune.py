@@ -22,7 +22,7 @@ def finetune(args):
         
 
 
-    train_set = GraphDataset(args.npz_folder + args.train_set)
+    train_set = GraphDataset(args.Data_folder+args.npz_folder+'/' + args.train_set)
     train_loader= DataLoader(
         dataset=train_set,
         batch_size= int(np.min([batch_size, len(train_set)])),
@@ -32,7 +32,7 @@ def finetune(args):
         drop_last=True
     )
 
-    test_set = GraphDataset(args.npz_folder + args.test_set)
+    test_set = GraphDataset(args.Data_folder+args.npz_folder+'/' + args.test_set)
     test_loader= DataLoader(
         dataset=test_set,
         batch_size= int(np.min([batch_size, len(test_set)])),
@@ -42,7 +42,7 @@ def finetune(args):
         drop_last=False
     )
 
-    val_set = GraphDataset(args.npz_folder + args.val_set)
+    val_set = GraphDataset(args.Data_folder+args.npz_folder+'/' + args.val_set)
     val_loader= DataLoader(
         dataset=val_set,
         batch_size= int(np.min([batch_size, len(val_set)])),
