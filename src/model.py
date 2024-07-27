@@ -12,9 +12,10 @@ from tqdm import tqdm
 from gin import GIN
 
 class recat(nn.Module):
-    def __init__(self, node_in_feats=155, edge_in_feats=9, num_layer=3, emb_dim=1024, predict_hidden_feats=512, out_dim=4, JK ='sum',drop_ratio=0.1,gnn_type='gin'):
+    def __init__(self, node_in_feats=155, edge_in_feats=9, out_dim=4, num_layer=3, emb_dim=1024, predict_hidden_feats=512, JK ='sum',drop_ratio=0.1,gnn_type='gin'):
         super(recat, self).__init__()
         self.gnn = GIN(node_in_feats, edge_in_feats)
+        print(out_dim)
 
         self.predict = nn.Sequential(
             torch.nn.Linear(emb_dim, predict_hidden_feats),
@@ -27,12 +28,13 @@ class recat(nn.Module):
         )
 
     
-    def forward(self, rmols, pmols):
+    def forward(self, rmols, pmols,rgmols):
         r_graph_feats = torch.sum(torch.stack([self.gnn(rmol) for rmol in rmols]), dim=0)
         p_graph_feats = torch.sum(torch.stack([self.gnn(pmol) for pmol in pmols]), dim=0)
-
+        rg_graph_feats= torch.sum(torch.stack([self.gnn(rgmol) for rgmol in rgmols]),dim=0)
 
         react_graph_feats= torch.sub(r_graph_feats, p_graph_feats)
+        react_graph_feats= react_graph_feats*0.7 + rg_graph_feats*0.3
         out = self.predict(react_graph_feats)
         return out
 def train(args,net, train_loader, val_loader, model_path,device, epochs=20,current_epoch=0,best_val_loss=1e10):
@@ -44,10 +46,14 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
     try:
         rmol_max_cnt = train_loader.dataset.dataset.rmol_max_cnt
         pmol_max_cnt = train_loader.dataset.dataset.pmol_max_cnt
+        if args.reagent_option:
+            rgmol_max_cnt=train_loader.dataset.dataset.rgmol_max_cnt
 
     except:
         rmol_max_cnt = train_loader.dataset.rmol_max_cnt
         pmol_max_cnt = train_loader.dataset.pmol_max_cnt
+        if args.reagent_option:
+            rgmol_max_cnt=train_loader.dataset.rgmol_max_cnt
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5)
@@ -64,12 +70,12 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
         for batchdata in tqdm(train_loader, desc='Training'):
             inputs_rmol= [b.to(device) for b in batchdata[:rmol_max_cnt]]
             inputs_pmol=[b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-
+            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmol,inputs_pmol)
+            pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
             preds.extend(torch.argmax(pred, dim=1).tolist())
             loss=loss_fn(pred,labels)
 
@@ -95,7 +101,7 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
 
         #validation
         net.eval()
-        val_acc, val_mcc, val_loss= inference(net, val_loader,device, loss_fn)
+        val_acc, val_mcc, val_loss= inference(args,net, val_loader,device, loss_fn)
 
         print(
             "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
@@ -123,15 +129,20 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
 
 
 
-def inference(net, test_loader,device,loss_fn=None):
+def inference(args,net, test_loader,device,loss_fn=None):
     batch_size=test_loader.batch_size
 
     try:
         rmol_max_cnt = test_loader.dataset.dataset.rmol_max_cnt
         pmol_max_cnt = test_loader.dataset.dataset.pmol_max_cnt
+        if args.reagent_option:
+            rgmol_max_cnt=test_loader.dataset.dataset.rgmol_max_cnt
+
     except:
         rmol_max_cnt = test_loader.dataset.rmol_max_cnt
         pmol_max_cnt = test_loader.dataset.pmol_max_cnt
+        if args.reagent_option:
+            rgmol_max_cnt=test_loader.dataset.rgmol_max_cnt
 
     net.eval()
     inference_loss_list=[]
@@ -142,12 +153,12 @@ def inference(net, test_loader,device,loss_fn=None):
         for batchdata in tqdm(test_loader, desc='Testing'):
             inputs_rmols = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             inputs_pmols = [b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-
+            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmols, inputs_pmols)
+            pred=net(inputs_rmols, inputs_pmols,inputs_rgmol)
             preds.extend(torch.argmax(pred, dim=1).tolist())
 
             if loss_fn is not None:

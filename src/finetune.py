@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import json
 import torch
 import csv, os
@@ -15,6 +16,8 @@ def finetune(args):
     model_path = args.model_path +args.model_name
     monitor_path=args.monitor_folder+args.monitor_name
     epochs= args.epochs
+    data=pd.read_csv(args.Data_folder+args.data_csv)
+    out_dim=data[args.y_column].nunique()
     device= torch.device('cuda:'+str(args.device)) if torch.cuda.is_available() else torch.device('cpu')
     print('device is\t',device)
     if torch.cuda.is_available():
@@ -66,11 +69,11 @@ def finetune(args):
     node_dim= train_set.rmol_node_attr[0].shape[1]
     edge_dim= train_set.rmol_edge_attr[0].shape[1]
     if not os.path.exists(model_path):
-        net=recat(node_dim, edge_dim).to(device)
+        net=recat(node_dim, edge_dim,out_dim).to(device)
         print("-- TRAINING")
         net = train(args,net, train_loader,val_loader, model_path,device,epochs=epochs)
     else:
-        net=recat(node_dim, edge_dim).to(device)
+        net=recat(node_dim, edge_dim,out_dim).to(device)
         checkpoint=torch.load(model_path)
         net.load_state_dict(checkpoint['model_state_dict'])
         current_epoch=checkpoint['epoch']
@@ -83,10 +86,10 @@ def finetune(args):
     #test
     test_y= test_loader.dataset.y
     test_y=torch.argmax(torch.Tensor(test_y),dim=1).tolist()
-    net=recat(node_dim, edge_dim).to(device)
+    net=recat(node_dim, edge_dim,out_dim).to(device)
     checkpoint=torch.load(model_path)
     net.load_state_dict(checkpoint['model_state_dict'])
-    acc,mcc =inference(net, test_loader,device)
+    acc,mcc =inference(args,net, test_loader,device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
     print(

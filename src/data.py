@@ -3,9 +3,10 @@ import torch
 from torch_geometric.data import Data
 
 class GraphDataset:
-    def __init__(self,save_path):
+    def __init__(self,save_path,reagent_option=False):
         self.save_path = save_path
         self.load()
+        self.rg_option=reagent_option
 
     def load(self):
         rmol_dict= np.load(self.save_path, allow_pickle=True)['rmol']

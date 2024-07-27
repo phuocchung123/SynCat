@@ -6,7 +6,6 @@ import pandas as pd
 import torch
 from rdkit import rdBase
 import warnings
-from finetune import finetune
 from prepare_data import prepare_data
 
 
@@ -50,6 +49,7 @@ if __name__=='__main__':
         from map_reaction import map_reaction
         map_reaction(args)
     else:
+        from finetune import finetune
         npz_folder=args.Data_folder+args.npz_folder+'/'
         if not os.path.exists(npz_folder):
             os.makedirs(npz_folder)
