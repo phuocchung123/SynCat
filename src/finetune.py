@@ -1,4 +1,5 @@
 import numpy as np
+import json
 import torch
 import csv, os
 from torch.utils.data import DataLoader
@@ -11,8 +12,15 @@ from util import collate_reaction_graphs
 
 def finetune(args):
     batch_size = args.batch_size
-    model_path = args.model_path
-    device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model_path = args.model_path +args.model_name
+    monitor_path=args.monitor_folder+args.monitor_name
+    epochs= args.epochs
+    device= torch.device('cuda'+str(args.device)) if torch.cuda.is_available() else torch.device('cpu')
+    print('device is\t',device)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+        
+
 
     train_set = GraphDataset(args.npz_folder + args.train_set)
     train_loader= DataLoader(
@@ -57,19 +65,37 @@ def finetune(args):
     assert len(train_y) == len(train_set)
     node_dim= train_set.rmol_node_attr[0].shape[1]
     edge_dim= train_set.rmol_edge_attr[0].shape[1]
-    net=recat(node_dim, edge_dim).to(device)
-    print("-- TRAINING")
-    net = train(net, train_loader,val_loader, model_path)
+    if not os.path.exists(model_path):
+        net=recat(node_dim, edge_dim).to(device)
+        print("-- TRAINING")
+        net = train(args,net, train_loader,val_loader, model_path,device,epochs=epochs)
+    else:
+        net=recat(node_dim, edge_dim).to(device)
+        checkpoint=torch.load(model_path)
+        net.load_state_dict(checkpoint['model_state_dict'])
+        current_epoch=checkpoint['epoch']
+        epochs=epochs-current_epoch
+        net = train(args,net, train_loader,val_loader, model_path,device,
+                    epochs=epochs, current_epoch=current_epoch,
+                    best_val_loss=checkpoint['val_loss'])
+
 
     #test
     test_y= test_loader.dataset.y
     test_y=torch.argmax(torch.Tensor(test_y),dim=1).tolist()
     net=recat(node_dim, edge_dim).to(device)
-    net.load_state_dict(torch.load(model_path))
-    acc,mcc =inference(net, test_loader)
+    checkpoint=torch.load(model_path)
+    net.load_state_dict(checkpoint['model_state_dict'])
+    acc,mcc =inference(net, test_loader,device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
     print(
         "--- Accuracy: %.3f, Mattews Correlation: %.3f,"
         % (acc, mcc)
     )
+    dict={
+        'Name': 'Test',
+        'test_acc':acc,
+        'test_mcc':mcc,}
+    with open(monitor_path,'a') as f:
+        f.write(json.dumps(dict)+'\n')

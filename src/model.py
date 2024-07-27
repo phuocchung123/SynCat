@@ -1,4 +1,5 @@
 import time
+import json
 import numpy as np
 import torch
 import torch.nn as nn
@@ -34,10 +35,11 @@ class recat(nn.Module):
         react_graph_feats= torch.sub(r_graph_feats, p_graph_feats)
         out = self.predict(react_graph_feats)
         return out
-def train(net, train_loader, val_loader, model_path, n_epochs=20):
+def train(args,net, train_loader, val_loader, model_path,device, epochs=20,current_epoch=0,best_val_loss=1e10):
     train_size = train_loader.dataset.__len__()
     batch_size = train_loader.batch_size
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    monitor_path=args.monitor_folder+args.monitor_name
+    n_epochs = epochs
 
     try:
         rmol_max_cnt = train_loader.dataset.dataset.rmol_max_cnt
@@ -49,7 +51,6 @@ def train(net, train_loader, val_loader, model_path, n_epochs=20):
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5)
-    best_val_loss=1e10
 
     for epoch in range(n_epochs):
         #training
@@ -94,21 +95,35 @@ def train(net, train_loader, val_loader, model_path, n_epochs=20):
 
         #validation
         net.eval()
-        val_acc, val_mcc, val_loss= inference(net, val_loader, loss_fn)
+        val_acc, val_mcc, val_loss= inference(net, val_loader,device, loss_fn)
 
         print(
             "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
             % (epoch, val_loss,val_acc,val_mcc)
         )
         print('\n'+'*'*100)
+
+        dict={
+            'epoch':epoch+current_epoch,
+            'train_loss':np.mean(train_loss_list),
+            'val_loss':val_loss,
+            'train_acc':acc,
+            'val_acc':val_acc,
+
+        }
+        with open(monitor_path,'a') as f:
+            f.write(json.dumps(dict)+'\n')
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(net.state_dict(), model_path)
+            torch.save({
+                        'epoch': epoch + current_epoch,
+                        'model_state_dict': net.state_dict(),
+                        'val_loss': best_val_loss,
+                        },model_path)
 
 
 
-def inference(net, test_loader,loss_fn=None):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+def inference(net, test_loader,device,loss_fn=None):
     batch_size=test_loader.batch_size
 
     try:
