@@ -5,8 +5,8 @@ from torch_geometric.data import Data
 class GraphDataset:
     def __init__(self,save_path,reagent_option=False):
         self.save_path = save_path
-        self.load()
         self.rg_option=reagent_option
+        self.load()
 
     def load(self):
         rmol_dict= np.load(self.save_path, allow_pickle=True)['rmol']
@@ -65,7 +65,7 @@ class GraphDataset:
             for j in range(self.pmol_max_cnt)
         ]
         if self.rg_option:
-            rgmol_dict=np.load(self.graph_save_path,allow_pickle=True)["rgmol"] 
+            rgmol_dict=np.load(self.save_path,allow_pickle=True)["rgmol"] 
             self.rgmol_max_cnt=len(rgmol_dict)
 
             #reagent
