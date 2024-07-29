@@ -166,14 +166,17 @@ def inference(args,net, test_loader,device,loss_fn=None):
 
     with torch.no_grad():
         for batchdata in tqdm(test_loader, desc='Testing'):
-            inputs_rmols = [b.to(device) for b in batchdata[:rmol_max_cnt]]
-            inputs_pmols = [b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+            inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
+            inputs_pmol = [b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
+            if args.reagent_option:
+                inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+                pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            else:
+                pred=net(inputs_rmol,inputs_pmol)
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmols, inputs_pmols,inputs_rgmol)
             preds.extend(torch.argmax(pred, dim=1).tolist())
 
             if loss_fn is not None:
