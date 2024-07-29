@@ -123,7 +123,7 @@ class GraphDataset:
 
             data_p=Data(x=p_node_attr,edge_index=p_edge_index,edge_attr=p_edge_attr)
             data_p_lst.append(data_p)
-
+        label=self.y[idx]
         if self.rg_option:
             data_rg_lst=[]
             for j in range(self.rgmol_max_cnt):
@@ -142,10 +142,13 @@ class GraphDataset:
 
                 data_rg=Data(x=rg_node_attr,edge_index=rg_edge_index,edge_attr=rg_edge_attr)
                 data_rg_lst.append(data_rg)
+            return *data_r_lst,*data_p_lst,*data_rg_lst,label
+        else:
+            return *data_r_lst,*data_p_lst,label
 
-        label=self.y[idx]
+        
 
-        return *data_r_lst,*data_p_lst,*data_rg_lst,label
+        
     
     def __len__(self):
         return self.y.shape[0]
