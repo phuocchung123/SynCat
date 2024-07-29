@@ -81,7 +81,8 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
         for batchdata in tqdm(train_loader, desc='Training'):
             inputs_rmol= [b.to(device) for b in batchdata[:rmol_max_cnt]]
             inputs_pmol=[b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+            if args.reagent_option:
+                inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
