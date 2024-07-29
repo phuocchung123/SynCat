@@ -37,13 +37,15 @@ class recat(nn.Module):
         )
 
     
-    def forward(self, rmols, pmols,rgmols):
+    def forward(self, rmols, pmols,rgmols=None):
         r_graph_feats = torch.sum(torch.stack([self.gnn(rmol) for rmol in rmols]), dim=0)
         p_graph_feats = torch.sum(torch.stack([self.gnn(pmol) for pmol in pmols]), dim=0)
-        rg_graph_feats= torch.sum(torch.stack([self.gnn(rgmol) for rgmol in rgmols]),dim=0)
+        
 
         react_graph_feats= torch.sub(r_graph_feats, p_graph_feats)
-        react_graph_feats= react_graph_feats*0.7 + rg_graph_feats*0.3
+        if rgmols is not None:
+            rg_graph_feats= torch.sum(torch.stack([self.gnn(rgmol) for rgmol in rgmols]),dim=0)
+            react_graph_feats= react_graph_feats*0.7 + rg_graph_feats*0.3
         out = self.predict(react_graph_feats)
         return out
 def train(args,net, train_loader, val_loader, model_path,device, epochs=20,current_epoch=0,best_val_loss=1e10):
