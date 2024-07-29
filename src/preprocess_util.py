@@ -8,7 +8,7 @@ chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(
     os.path.join(RDConfig.RDDataDir, "BaseFeatures.fdef")
 )
 
-charge_list = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5, 0]
+charge_list = [1, 2, 3, 4, 5, 6,-1, -2, -3, -4, -5, -6, 0]
 degree_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0]
 valence_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0]
 hybridization_list = ["SP", "SP2", "SP3", "SP3D", "SP3D2", "S", "UNSPECIFIED"]
@@ -91,9 +91,9 @@ def add_mol(mol_dict, mol):
     )
 
     # formal charge compress (-2 ~ 2)
-    atom_fea2[:, 1:5] = np.max(atom_fea2[:, 1:5], axis=1).reshape(-1, 1)
-    atom_fea2[:, 6:10] = np.max(atom_fea2[:, 6:10], axis=1).reshape(-1, 1)
-    atom_fea2 = np.delete(atom_fea2, [2, 3, 4, 7, 8, 9], axis=1)
+    atom_fea2[:, 1:6] = np.max(atom_fea2[:, 1:6], axis=1).reshape(-1, 1)
+    atom_fea2[:, 7:12] = np.max(atom_fea2[:, 7:12], axis=1).reshape(-1, 1)
+    atom_fea2 = np.delete(atom_fea2, [2, 3, 4, 5, 8, 9, 10, 11], axis=1)
 
     # degree compress (1 ~ 6)
     atom_fea3[:, 5:] = np.max(atom_fea3[:, 5:], axis=1).reshape(-1, 1)
