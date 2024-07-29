@@ -12,10 +12,19 @@ from tqdm import tqdm
 from gin import GIN
 
 class recat(nn.Module):
-    def __init__(self, node_in_feats=155, edge_in_feats=9, out_dim=4, num_layer=3, emb_dim=1024, predict_hidden_feats=512, JK ='sum',drop_ratio=0.1,gnn_type='gin'):
+    def __init__(self, node_in_feats=155, edge_in_feats=9,
+                out_dim=4, num_layer=3, node_hid_feats=300,
+                readout_feats=1024,predict_hidden_feats=512,
+                readout_option=False, drop_ratio=0.1):
         super(recat, self).__init__()
-        self.gnn = GIN(node_in_feats, edge_in_feats)
-        print(out_dim)
+        self.gnn = GIN(node_in_feats, edge_in_feats,depth=num_layer,
+                       node_hid_feats=node_hid_feats,readout_feats=readout_feats,
+                       readout_option=readout_option)
+        if readout_option:
+            emb_dim=readout_feats
+        else:
+            emb_dim=node_hid_feats
+
 
         self.predict = nn.Sequential(
             torch.nn.Linear(emb_dim, predict_hidden_feats),
