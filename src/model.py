@@ -83,11 +83,14 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
             inputs_pmol=[b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
             if args.reagent_option:
                 inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+                pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            else:
+                pred=net(inputs_rmol,inputs_pmol)
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            
             preds.extend(torch.argmax(pred, dim=1).tolist())
             loss=loss_fn(pred,labels)
 
