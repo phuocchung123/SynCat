@@ -14,6 +14,7 @@ class GIN(nn.Module):
         node_hid_feats=300,
         readout_feats=1024,
         dr=0.1,
+        readout_option=False
     ):
         super(GIN, self).__init__()
 
@@ -40,13 +41,13 @@ class GIN(nn.Module):
             ]
         )
 
-        # self.readout = global_add_pool()
 
         self.sparsify = nn.Sequential(
             nn.Linear(node_hid_feats, readout_feats), nn.PReLU()
         )
 
         self.dropout = nn.Dropout(dr)
+        self.readout_option = readout_option
 
     def forward(self, data):
         node_feats_orig = data.x
@@ -66,6 +67,8 @@ class GIN(nn.Module):
             node_feats = self.dropout(node_feats)
 
         readout = global_add_pool(node_feats,batch)
-        readout = self.sparsify(readout)
+
+        if self.readout_option:
+            readout = self.sparsify(readout)
 
         return readout

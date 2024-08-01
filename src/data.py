@@ -5,8 +5,8 @@ from torch_geometric.data import Data
 class GraphDataset:
     def __init__(self,save_path,reagent_option=False):
         self.save_path = save_path
-        self.load()
         self.rg_option=reagent_option
+        self.load()
 
     def load(self):
         rmol_dict= np.load(self.save_path, allow_pickle=True)['rmol']
@@ -64,6 +64,27 @@ class GraphDataset:
             np.concatenate([[0],np.cumsum(self.pmol_n_edge[j])])
             for j in range(self.pmol_max_cnt)
         ]
+        if self.rg_option:
+            rgmol_dict=np.load(self.save_path,allow_pickle=True)["rgmol"] 
+            self.rgmol_max_cnt=len(rgmol_dict)
+
+            #reagent
+            self.rgmol_n_node = [rgmol_dict[j]["n_node"] for j in range(self.rgmol_max_cnt)]   #have just added
+            self.rgmol_n_edge = [rgmol_dict[j]["n_edge"] for j in range(self.rgmol_max_cnt)]   #have just added
+            self.rgmol_node_attr = [rgmol_dict[j]["node_attr"] for j in range(self.rgmol_max_cnt)]   #have just added
+            self.rgmol_edge_attr = [rgmol_dict[j]["edge_attr"] for j in range(self.rgmol_max_cnt)]   #have just added
+            self.rgmol_src = [rgmol_dict[j]["src"] for j in range(self.rgmol_max_cnt)]   #have just added
+            self.rgmol_dst = [rgmol_dict[j]["dst"] for j in range(self.rgmol_max_cnt)]   #have just added
+
+            #add csum reagent
+            self.rgmol_n_csum = [
+                np.concatenate([[0], np.cumsum(self.rgmol_n_node[j])])
+                for j in range(self.rgmol_max_cnt)
+            ]
+            self.rgmol_e_csum = [
+                np.concatenate([[0], np.cumsum(self.rgmol_n_edge[j])])
+                for j in range(self.rgmol_max_cnt)
+            ]
 
     def __getitem__(self,idx):
         data_r_lst=[]
@@ -102,10 +123,32 @@ class GraphDataset:
 
             data_p=Data(x=p_node_attr,edge_index=p_edge_index,edge_attr=p_edge_attr)
             data_p_lst.append(data_p)
-
         label=self.y[idx]
+        if self.rg_option:
+            data_rg_lst=[]
+            for j in range(self.rgmol_max_cnt):
+                rg_src=self.rgmol_src[j][
+                    self.rgmol_e_csum[j][idx] : self.rgmol_e_csum[j][idx+1]
+                ]
+                rg_dst=self.rgmol_dst[j][
+                    self.rgmol_e_csum[j][idx] : self.rgmol_e_csum[j][idx+1]
+                ]
+                rg_edge_index=torch.tensor([rg_src,rg_dst],dtype=torch.long)
+                rg_edge_index=torch.reshape(rg_edge_index,(2,-1))
 
-        return *data_r_lst,*data_p_lst,label
+                rg_edge_attr=torch.from_numpy(self.rgmol_edge_attr[j][self.rgmol_e_csum[j][idx]:self.rgmol_e_csum[j][idx+1]]).float()
+
+                rg_node_attr=torch.from_numpy(self.rgmol_node_attr[j][self.rgmol_n_csum[j][idx]:self.rgmol_n_csum[j][idx+1]]).float()
+
+                data_rg=Data(x=rg_node_attr,edge_index=rg_edge_index,edge_attr=rg_edge_attr)
+                data_rg_lst.append(data_rg)
+            return *data_r_lst,*data_p_lst,*data_rg_lst,label
+        else:
+            return *data_r_lst,*data_p_lst,label
+
+        
+
+        
     
     def __len__(self):
         return self.y.shape[0]

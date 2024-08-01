@@ -12,10 +12,19 @@ from tqdm import tqdm
 from gin import GIN
 
 class recat(nn.Module):
-    def __init__(self, node_in_feats=155, edge_in_feats=9, out_dim=4, num_layer=3, emb_dim=1024, predict_hidden_feats=512, JK ='sum',drop_ratio=0.1,gnn_type='gin'):
+    def __init__(self, node_in_feats=155, edge_in_feats=9,
+                out_dim=4, num_layer=3, node_hid_feats=300,
+                readout_feats=1024,predict_hidden_feats=512,
+                readout_option=False, drop_ratio=0.1):
         super(recat, self).__init__()
-        self.gnn = GIN(node_in_feats, edge_in_feats)
-        print(out_dim)
+        self.gnn = GIN(node_in_feats, edge_in_feats,depth=num_layer,
+                       node_hid_feats=node_hid_feats,readout_feats=readout_feats,
+                       readout_option=readout_option)
+        if readout_option:
+            emb_dim=readout_feats
+        else:
+            emb_dim=node_hid_feats
+
 
         self.predict = nn.Sequential(
             torch.nn.Linear(emb_dim, predict_hidden_feats),
@@ -28,13 +37,15 @@ class recat(nn.Module):
         )
 
     
-    def forward(self, rmols, pmols,rgmols):
+    def forward(self, rmols, pmols,rgmols=None):
         r_graph_feats = torch.sum(torch.stack([self.gnn(rmol) for rmol in rmols]), dim=0)
         p_graph_feats = torch.sum(torch.stack([self.gnn(pmol) for pmol in pmols]), dim=0)
-        rg_graph_feats= torch.sum(torch.stack([self.gnn(rgmol) for rgmol in rgmols]),dim=0)
+        
 
         react_graph_feats= torch.sub(r_graph_feats, p_graph_feats)
-        react_graph_feats= react_graph_feats*0.7 + rg_graph_feats*0.3
+        if rgmols is not None:
+            rg_graph_feats= torch.sum(torch.stack([self.gnn(rgmol) for rgmol in rgmols]),dim=0)
+            react_graph_feats= react_graph_feats*0.7 + rg_graph_feats*0.3
         out = self.predict(react_graph_feats)
         return out
 def train(args,net, train_loader, val_loader, model_path,device, epochs=20,current_epoch=0,best_val_loss=1e10):
@@ -70,12 +81,16 @@ def train(args,net, train_loader, val_loader, model_path,device, epochs=20,curre
         for batchdata in tqdm(train_loader, desc='Training'):
             inputs_rmol= [b.to(device) for b in batchdata[:rmol_max_cnt]]
             inputs_pmol=[b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+            if args.reagent_option:
+                inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+                pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            else:
+                pred=net(inputs_rmol,inputs_pmol)
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            
             preds.extend(torch.argmax(pred, dim=1).tolist())
             loss=loss_fn(pred,labels)
 
@@ -151,14 +166,17 @@ def inference(args,net, test_loader,device,loss_fn=None):
 
     with torch.no_grad():
         for batchdata in tqdm(test_loader, desc='Testing'):
-            inputs_rmols = [b.to(device) for b in batchdata[:rmol_max_cnt]]
-            inputs_pmols = [b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
-            inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+            inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
+            inputs_pmol = [b.to(device) for b in batchdata[rmol_max_cnt: rmol_max_cnt+pmol_max_cnt]]
+            if args.reagent_option:
+                inputs_rgmol=[b.to(device) for b in batchdata[rmol_max_cnt+pmol_max_cnt:rmol_max_cnt+pmol_max_cnt+rgmol_max_cnt]]
+                pred=net(inputs_rmol,inputs_pmol,inputs_rgmol)
+            else:
+                pred=net(inputs_rmol,inputs_pmol)
             labels=batchdata[-1]
             targets.extend(labels.tolist())
             labels=labels.to(device)
 
-            pred=net(inputs_rmols, inputs_pmols,inputs_rgmol)
             preds.extend(torch.argmax(pred, dim=1).tolist())
 
             if loss_fn is not None:
