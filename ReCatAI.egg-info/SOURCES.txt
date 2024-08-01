@@ -1,8 +1,0 @@
-LICENSE
-README.md
-setup.py
-ReCatAI.egg-info/PKG-INFO
-ReCatAI.egg-info/SOURCES.txt
-ReCatAI.egg-info/dependency_links.txt
-ReCatAI.egg-info/requires.txt
-ReCatAI.egg-info/top_level.txt
