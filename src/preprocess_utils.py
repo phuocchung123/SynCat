@@ -1,7 +1,9 @@
 import os
 import numpy as np
+from rdkit.Chem import Mol, Atom, Bond
 from rdkit import RDConfig
 from rdkit.Chem import ChemicalFeatures
+from typing import Tuple, List, Dict
 
 
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(
@@ -18,7 +20,22 @@ ringsize_list = [3, 4, 5, 6, 7, 8]
 bond_list = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC", "SELF_LOOP"]
 
 
-def _DA(mol):
+def _DA(mol: Mol) -> Tuple[List, List]:
+    """
+    Identifies donor and acceptor atoms within a molecule.
+
+    Parameters
+    ----------
+    mol : Mol
+        An RDKit molecule object.
+
+    Returns
+    -------
+    tuple of lists
+        A tuple containing two lists:
+        - The first list contains indices of donor atoms.
+        - The second list contains indices of acceptor atoms.
+    """
     D_list, A_list = [], []
     for feat in chem_feature_factory.GetFeaturesForMol(mol):
         if feat.GetFamily() == "Donor":
@@ -29,7 +46,23 @@ def _DA(mol):
     return D_list, A_list
 
 
-def _chirality(atom):
+def _chirality(atom: Atom) -> List:
+    """
+    Determines the chirality of an atom.
+
+    Parameters
+    ----------
+    atom : Atom
+        An RDKit atom object.
+
+    Returns
+    -------
+    list
+        A list containing boolean values:
+        - First element is True if the atom chirality is 'Tet_CW'.
+        - Second element is True if the atom chirality is 'Tet_CCW'.
+        - Both elements are False if the atom has no defined chirality.
+    """
     if atom.HasProp("Chirality"):
         c_list = [
             (atom.GetProp("Chirality") == "Tet_CW"),
@@ -41,7 +74,23 @@ def _chirality(atom):
     return c_list
 
 
-def _stereochemistry(bond):
+def _stereochemistry(bond: Bond) -> List:
+    """
+    Determines the stereochemistry of a bond.
+
+    Parameters
+    ----------
+    bond : Bond
+        An RDKit bond object.
+
+    Returns
+    -------
+    list
+        A list containing boolean values:
+        - First element is True if the bond stereochemistry is 'Bond_Cis'.
+        - Second element is True if the bond stereochemistry is 'Bond_Trans'.
+        - Both elements are False if the bond has no defined stereochemistry.
+    """
     if bond.HasProp("Stereochemistry"):
         s_list = [
             (bond.GetProp("Stereochemistry") == "Bond_Cis"),
@@ -151,7 +200,20 @@ def add_mol(mol_dict, mol):
     return mol_dict
 
 
-def add_dummy(mol_dict):
+def add_dummy(mol_dict: Dict[str, list]) -> Dict[str, list]:
+    """
+    Adds a dummy node to a molecular dictionary.
+
+    Parameters
+    ----------
+    mol_dict : dict
+        A dictionary with keys for 'n_node', 'n_edge', and 'node_attr', each being a list.
+
+    Returns
+    -------
+    dict
+        The modified dictionary with an added dummy node.
+    """
     n_node = 1
     n_edge = 0
     node_attr = np.zeros((1, 155))
@@ -162,7 +224,22 @@ def add_dummy(mol_dict):
     return mol_dict
 
 
-def dict_list_to_numpy(mol_dict):
+def dict_list_to_numpy(mol_dict: Dict[str, list]) -> Dict[str, np.ndarray]:
+    """
+    Converts lists in a molecular dictionary to NumPy arrays.
+
+    Parameters
+    ----------
+    mol_dict : dict
+        A dictionary where keys are 'n_node', 'n_edge', 'node_attr', 'edge_attr',
+        'src', and 'dst'.
+
+    Returns
+    -------
+    dict
+        The dictionary with values converted to NumPy arrays suitable for
+        machine learning tasks.
+    """
     mol_dict["n_node"] = np.array(mol_dict["n_node"]).astype(int)
     mol_dict["n_edge"] = np.array(mol_dict["n_edge"]).astype(int)
     mol_dict["node_attr"] = np.vstack(mol_dict["node_attr"]).astype(bool)

@@ -1,6 +1,9 @@
 import numpy as np
 from rdkit import Chem
+from utils import setup_logging
 from preprocess_util import add_mol, add_dummy, dict_list_to_numpy
+
+logger = setup_logging()
 
 
 def mol_dict():
@@ -32,16 +35,16 @@ def get_graph_data(
 
     reaction_dict = {"y": [], "rsmi": []}
 
-    print("--- generating graph data for %s" % filename)
+    logger.info("--- generating graph data for %s" % filename)
     if args.reagent_option:
         rgmol_max_cnt = rgmol_max_cnt
         rgmol_dict = [mol_dict() for _ in range(rgmol_max_cnt)]
-        print(
+        logger.info(
             "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d, rgmol_max_cnt: %d"
             % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt, rgmol_max_cnt)
         )
     else:
-        print(
+        logger.info(
             "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
             % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
         )
@@ -147,7 +150,7 @@ def get_graph_data(
 
         # monitoring
         if (i + 1) % 10000 == 0:
-            print("--- %d/%d processed" % (i + 1, len(rsmi_list)))
+            logger.info("--- %d/%d processed" % (i + 1, len(rsmi_list)))
 
     # datatype to numpy
     for j in range(rmol_max_cnt):
