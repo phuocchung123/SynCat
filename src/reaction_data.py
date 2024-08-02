@@ -1,8 +1,6 @@
 import numpy as np
 from rdkit import Chem
-
 from preprocess_util import add_mol, add_dummy, dict_list_to_numpy
-
 
 
 def mol_dict():
@@ -16,29 +14,37 @@ def mol_dict():
     }
 
 
-def get_graph_data(args,rsmi_list, y_list, filename,rmol_max_cnt,pmol_max_cnt, reagent=None,rgmol_max_cnt=None):
+def get_graph_data(
+    args,
+    rsmi_list,
+    y_list,
+    filename,
+    rmol_max_cnt,
+    pmol_max_cnt,
+    reagent=None,
+    rgmol_max_cnt=None,
+):
     rmol_max_cnt = rmol_max_cnt
     pmol_max_cnt = pmol_max_cnt
 
     rmol_dict = [mol_dict() for _ in range(rmol_max_cnt)]
-    pmol_dict = [mol_dict() for _ in range(pmol_max_cnt)]  
+    pmol_dict = [mol_dict() for _ in range(pmol_max_cnt)]
 
     reaction_dict = {"y": [], "rsmi": []}
 
     print("--- generating graph data for %s" % filename)
     if args.reagent_option:
-        rgmol_max_cnt=rgmol_max_cnt
-        rgmol_dict=[mol_dict() for _ in range(rgmol_max_cnt)]   
+        rgmol_max_cnt = rgmol_max_cnt
+        rgmol_dict = [mol_dict() for _ in range(rgmol_max_cnt)]
         print(
             "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d, rgmol_max_cnt: %d"
-            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt,rgmol_max_cnt)
+            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt, rgmol_max_cnt)
         )
     else:
         print(
             "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
             % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
         )
-
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
@@ -105,8 +111,8 @@ def get_graph_data(args,rsmi_list, y_list, filename,rmol_max_cnt,pmol_max_cnt, r
                 pmol_dict[j] = add_mol(pmol_dict[j], pmol)
 
         if args.reagent_option:
-        # processing reagents
-            reagents_smi=reagent[i]
+            # processing reagents
+            reagents_smi = reagent[i]
             reagents_smi_list = reagents_smi.split(".")
             for _ in range(rgmol_max_cnt - len(reagents_smi_list)):
                 reagents_smi_list.append("")
@@ -153,11 +159,15 @@ def get_graph_data(args,rsmi_list, y_list, filename,rmol_max_cnt,pmol_max_cnt, r
         for j in range(rgmol_max_cnt):
             rgmol_dict[j] = dict_list_to_numpy(rgmol_dict[j])
         # save file
-        np.savez_compressed(filename, rmol=rmol_dict, pmol=pmol_dict,rgmol=rgmol_dict ,reaction=reaction_dict)
+        np.savez_compressed(
+            filename,
+            rmol=rmol_dict,
+            pmol=pmol_dict,
+            rgmol=rgmol_dict,
+            reaction=reaction_dict,
+        )
     else:
         # save file
-        np.savez_compressed(filename, rmol=rmol_dict, pmol=pmol_dict ,reaction=reaction_dict)
-
-    
-
-    
+        np.savez_compressed(
+            filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
+        )

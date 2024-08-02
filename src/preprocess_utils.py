@@ -8,14 +8,14 @@ chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(
     os.path.join(RDConfig.RDDataDir, "BaseFeatures.fdef")
 )
 
-charge_list = [1, 2, 3, 4, 5, 6,-1, -2, -3, -4, -5, -6, 0]
+charge_list = [1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 0]
 degree_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0]
 valence_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0]
 hybridization_list = ["SP", "SP2", "SP3", "SP3D", "SP3D2", "S", "UNSPECIFIED"]
 hydrogen_list = [1, 2, 3, 4, 5, 6, 0]
 ringsize_list = [3, 4, 5, 6, 7, 8]
 
-bond_list = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC","SELF_LOOP"]
+bond_list = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC", "SELF_LOOP"]
 
 
 def _DA(mol):

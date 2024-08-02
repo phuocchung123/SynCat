@@ -1,9 +1,8 @@
-import time
-import numpy as np
 import torch
 import torch.nn as nn
 from torch_geometric.nn.conv import GINEConv
 from torch_geometric.nn.pool import global_add_pool
+
 
 class GIN(nn.Module):
     def __init__(
@@ -14,7 +13,7 @@ class GIN(nn.Module):
         node_hid_feats=300,
         readout_feats=1024,
         dr=0.1,
-        readout_option=False
+        readout_option=False,
     ):
         super(GIN, self).__init__()
 
@@ -41,7 +40,6 @@ class GIN(nn.Module):
             ]
         )
 
-
         self.sparsify = nn.Sequential(
             nn.Linear(node_hid_feats, readout_feats), nn.PReLU()
         )
@@ -52,21 +50,21 @@ class GIN(nn.Module):
     def forward(self, data):
         node_feats_orig = data.x
         edge_feats_orig = data.edge_attr
-        batch=data.batch
+        batch = data.batch
 
         node_feats_init = self.project_node_feats(node_feats_orig)
         node_feats = node_feats_init
         edge_feats = self.project_edge_feats(edge_feats_orig)
 
         for i in range(self.depth):
-            node_feats = self.gnn_layers[i](node_feats,data.edge_index, edge_feats)
+            node_feats = self.gnn_layers[i](node_feats, data.edge_index, edge_feats)
 
             if i < self.depth - 1:
                 node_feats = nn.functional.relu(node_feats)
 
             node_feats = self.dropout(node_feats)
 
-        readout = global_add_pool(node_feats,batch)
+        readout = global_add_pool(node_feats, batch)
 
         if self.readout_option:
             readout = self.sparsify(readout)
