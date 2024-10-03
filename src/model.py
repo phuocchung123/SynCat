@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from tqdm import tqdm
-from gin import GIN
+# from gin import GIN
+from KGGraph.KGGModel.graph_model import GNN
 from utils import setup_logging
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
@@ -26,18 +27,15 @@ class recat(nn.Module):
         drop_ratio=0.1,
     ):
         super(recat, self).__init__()
-        self.gnn = GIN(
-            node_in_feats,
-            edge_in_feats,
-            depth=num_layer,
-            node_hid_feats=node_hid_feats,
-            readout_feats=readout_feats,
-            readout_option=readout_option,
+        emb_dim=300
+        self.gnn = GNN(
+            num_layer=3,
+            emb_dim=emb_dim,
         )
-        if readout_option:
-            emb_dim = readout_feats
-        else:
-            emb_dim = node_hid_feats
+        # if readout_option:
+        #     emb_dim = readout_feats
+        # else:
+        #     emb_dim = node_hid_feats
 
         self.predict = nn.Sequential(
             torch.nn.Linear(emb_dim, predict_hidden_feats),

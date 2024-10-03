@@ -1,6 +1,6 @@
 import numpy as np
 from rdkit import Chem
-from preprocess_util import add_mol, add_dummy, dict_list_to_numpy
+from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
 
 
 def mol_dict():
@@ -79,7 +79,7 @@ def get_graph_data(
                         )
 
                 rmol = Chem.RemoveHs(rmol)
-                rmol_dict[j] = add_mol(rmol_dict[j], rmol)
+                rmol_dict[j] = add_mol(rmol_dict[j], rmol,decompose='motif')
 
         # processing products
         products_smi_list = products_smi.split(".")
@@ -108,7 +108,7 @@ def get_graph_data(
                         )
 
                 pmol = Chem.RemoveHs(pmol)
-                pmol_dict[j] = add_mol(pmol_dict[j], pmol)
+                pmol_dict[j] = add_mol(pmol_dict[j], pmol,decompose='motif')
 
         if args.reagent_option:
             # processing reagents
@@ -139,7 +139,7 @@ def get_graph_data(
                             )
 
                     rgmol = Chem.RemoveHs(rgmol)
-                    rgmol_dict[j] = add_mol(rgmol_dict[j], rgmol)
+                    rgmol_dict[j] = add_mol(rgmol_dict[j], rgmol,decompose='motif')
 
         # yield and reaction SMILES
         reaction_dict["y"].append(y)

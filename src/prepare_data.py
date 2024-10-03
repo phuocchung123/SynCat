@@ -33,6 +33,7 @@ def prepare_data(args):
     # get_data_train
     rsmi_list_train = data_train[args.reaction_column].values
     y_list_train = data_train[args.y_column].values
+    print(y.unique())
     y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]
     filename_train = args.Data_folder + args.npz_folder + "/" + args.train_set
 

@@ -16,7 +16,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--monitor_name", type=str, default="monitor.txt")
-    arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
+    arg_parser.add_argument("--Data_folder", type=str, default="./Data/")
     arg_parser.add_argument("--data_csv", type=str, default="trial_class.csv")
     arg_parser.add_argument("--mapped_data_csv", type=str, default="mapped_data.csv")
     arg_parser.add_argument("--train_set", type=str, default="data_train_trial.npz")
