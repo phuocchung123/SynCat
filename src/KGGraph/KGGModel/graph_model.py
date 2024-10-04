@@ -163,6 +163,29 @@ class GNN(torch.nn.Module):
         for layer in range(num_layer):
             self.batch_norms.append(torch.nn.BatchNorm1d(emb_dim))
 
+    def super_node_rep(self, node_rep, batch):
+        """
+        Aggregates node representations to form super node representations.
+
+        This method aggregates the node representations of each graph in the batch to form a super node
+        representation by taking the representation of the last node for each graph in the batch.
+
+        Args:
+            node_rep (Tensor): The node representations of all nodes in the batch.
+            batch (Tensor): The batch vector, which maps each node to its respective graph in the batch.
+
+        Returns:
+            Tensor: The super node representations for each graph in the batch.
+        """
+        super_group = []
+        for i in range(len(batch)):
+            if i != (len(batch) - 1) and batch[i] != batch[i + 1]:
+                super_group.append(node_rep[i, :])
+            elif i == (len(batch) - 1):
+                super_group.append(node_rep[i, :])
+        super_rep = torch.stack(super_group, dim=0)
+        return super_rep
+
     def forward(self, *argv):
         if len(argv) == 3:
             x, edge_index, edge_attr = argv[0], argv[1], argv[2]
@@ -190,12 +213,6 @@ class GNN(torch.nn.Module):
                 )  # relu->elu
 
             h_list.append(h)
-        print(len(h_list))
-        print(h_list[0].shape)
-        print(h_list[1].shape)
-        print(h_list[2].shape)
-        print(h_list[3].shape)
-        print(self.JK)
 
         # Different implementations of Jk-concat
         if self.JK == "concat":
@@ -209,9 +226,10 @@ class GNN(torch.nn.Module):
             node_representation = 0
             for layer in range(len(h_list)):
                 node_representation += h_list[layer]
-        print(node_representation.shape)
+        super_node = self.super_node_rep(node_representation, data.batch)
+        # print(super_node.shape)
 
-        return node_representation
+        return super_node
 
 
 class GraphModel(torch.nn.Module):
