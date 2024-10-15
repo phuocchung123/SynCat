@@ -2,8 +2,8 @@
 *.DS_Store
 *.ipynb
 draft.py
-/Data/*.csv
-/Data/npz/
-/Data/model/
-/Data/
-/src/Data
+Data/*.csv
+Data/npz/
+Data/model/
+Data/*
+src/Data

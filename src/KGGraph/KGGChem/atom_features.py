@@ -7,6 +7,7 @@ from rdkit.Chem import Lipinski
 
 
 root_dir = str(pathlib.Path(__file__).resolve().parents[2])
+print(root_dir)
 sys.path.append(root_dir)
 
 # from mendeleev import element
