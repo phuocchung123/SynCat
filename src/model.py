@@ -28,10 +28,7 @@ class recat(nn.Module):
     ):
         super(recat, self).__init__()
         emb_dim=300
-        self.gnn = GNN(
-            num_layer=3,
-            emb_dim=emb_dim,
-        )
+        self.gnn = GNN()
         # if readout_option:
         #     emb_dim = readout_feats
         # else:
