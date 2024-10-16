@@ -38,16 +38,17 @@ class GINConv(MessagePassing):
         )
 
         # Initialize a list of edge MLPs
-        self.edge_mlps = torch.nn.ModuleList(
-            [
-                torch.nn.Sequential(
-                    torch.nn.Linear(1, 2 * emb_dim),
-                    torch.nn.ReLU(),
-                    torch.nn.Linear(2 * emb_dim, emb_dim),
-                )
-                for _ in range(edge_features)  # number of edge features
-            ]
-        )
+        # self.edge_mlps = torch.nn.ModuleList(
+        #     [
+        #         torch.nn.Sequential(
+        #             torch.nn.Linear(1, 2 * emb_dim),
+        #             torch.nn.ReLU(),
+        #             torch.nn.Linear(2 * emb_dim, emb_dim),
+        #         )
+        #         for _ in range(edge_features)  # number of edge features
+        #     ]
+        # )
+        self.edge_mlps = torch.nn.Sequential(torch.nn.Linear(5, emb_dim))
         self.emb_dim = emb_dim
         self.aggr = aggr
 
@@ -73,11 +74,12 @@ class GINConv(MessagePassing):
         edge_attr = torch.cat((edge_attr, self_loop_attr), dim=0)
 
         # Apply each MLP to its corresponding edge feature slice
-        edge_embeddings = torch.zeros(edge_attr.size(0), self.emb_dim).to(
-            edge_attr.device
-        )
-        for i, mlp in enumerate(self.edge_mlps):
-            edge_embeddings += mlp(edge_attr[:, i].view(-1, 1))
+        # edge_embeddings = torch.zeros(edge_attr.size(0), self.emb_dim).to(
+        #     edge_attr.device
+        # )
+        # for i, mlp in enumerate(self.edge_mlps):
+        #     edge_embeddings += mlp(edge_attr[:, i].view(-1, 1))
+        edge_embeddings = self.edge_mlps(edge_attr)
 
         return self.propagate(edge_index, x=x, edge_attr=edge_embeddings)
 
@@ -142,16 +144,19 @@ class GNN(torch.nn.Module):
             raise ValueError("Number of GNN layers must be greater than 1.")
 
         # Initialize a list of x MLPs
-        self.x_mlps = torch.nn.ModuleList(
-            [
-                torch.nn.Sequential(
-                    torch.nn.Linear(1, 2 * emb_dim),
-                    torch.nn.ReLU(),
-                    torch.nn.Linear(2 * emb_dim, emb_dim),
-                )
-                for _ in range(x_features)  # number of x features
-            ]
-        )
+        # self.x_mlps = torch.nn.ModuleList(
+        #     [
+        #         torch.nn.Sequential(
+        #             torch.nn.Linear(1, 2 * emb_dim),
+        #             torch.nn.ReLU(),
+        #             torch.nn.Linear(2 * emb_dim, emb_dim),
+        #         )
+        #         for _ in range(x_features)  # number of x features
+        #     ]
+        # )
+
+        self.x_mlps = torch.nn.Sequential(
+            torch.nn.Linear(7, emb_dim),)
 
         # List of MLPs
         self.gnns = torch.nn.ModuleList()
@@ -196,9 +201,10 @@ class GNN(torch.nn.Module):
             raise ValueError("unmatched number of arguments.")
 
         # Apply each MLP to its corresponding edge feature slice
-        x_embeddings = torch.zeros(x.size(0), self.emb_dim).to(x.device)
-        for i, mlp in enumerate(self.x_mlps):
-            x_embeddings += mlp(x[:, i].view(-1, 1))
+        # x_embeddings = torch.zeros(x.size(0), self.emb_dim).to(x.device)
+        # for i, mlp in enumerate(self.x_mlps):
+        #     x_embeddings += mlp(x[:, i].view(-1, 1))
+        x_embeddings = self.x_mlps(x)
 
         h_list = [x_embeddings]
 
