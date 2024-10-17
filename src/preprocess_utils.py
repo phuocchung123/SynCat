@@ -66,7 +66,7 @@ def add_mol(mol_dict, mol, decompose):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 125))
+    node_attr = np.zeros((1, 7))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)

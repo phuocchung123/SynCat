@@ -10,7 +10,7 @@ from torch_geometric.nn.pool import global_add_pool
 class GNN(nn.Module):
     def __init__(
         self,
-        node_in_feats=125,
+        node_in_feats=7,
         edge_in_feats=5,
         depth=3,
         node_hid_feats=300,
