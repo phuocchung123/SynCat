@@ -59,15 +59,24 @@ class AtomFeature:
                     f"Error key:{(total_sigma_bonds, num_lone_pairs)} with atom: {get_symbol(atom)} and hybridization: {get_hybridization(atom)} smiles: {get_smiles(mol)}"
                 )
 
+            # atom_feature = (
+            #     [
+            #         allowable_features["possible_atomic_num_list"].index(
+            #             get_atomic_number(atom)
+            #         )
+            #     ]
+            #     + [allowable_features["possible_degree_list"].index(get_degree(atom))]
+            #     + hybri_feat
+            # )
+            atom_type = [0 for _ in range(len(allowable_features["possible_atomic_num_list"]))]
+            atom_type[get_atomic_number(atom)] = 1
             atom_feature = (
-                [
-                    allowable_features["possible_atomic_num_list"].index(
-                        get_atomic_number(atom)
-                    )
-                ]
+                    atom_type
                 + [allowable_features["possible_degree_list"].index(get_degree(atom))]
                 + hybri_feat
             )
+            # print('atom_shape: ', len(atom_feature))
+            # assert 1==2
 
             x_node_list.append(atom_feature)
 
