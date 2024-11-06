@@ -58,36 +58,36 @@ def add_mol(mol_dict, mol):
     n_edge = mol.GetNumBonds() * 2
 
     D_list, A_list = _DA(mol)
-    atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
-    atom_fea2 = np.eye(len(charge_list), dtype=bool)[
+    atom_fea1 = np.eye(118)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
+    atom_fea2 = np.eye(len(charge_list))[
         [charge_list.index(a.GetFormalCharge()) for a in mol.GetAtoms()]
     ][:, :-1]
-    atom_fea3 = np.eye(len(degree_list), dtype=bool)[
+    atom_fea3 = np.eye(len(degree_list))[
         [degree_list.index(a.GetDegree()) for a in mol.GetAtoms()]
     ][:, :-1]
-    atom_fea4 = np.eye(len(hybridization_list), dtype=bool)[
+    atom_fea4 = np.eye(len(hybridization_list))[
         [hybridization_list.index(str(a.GetHybridization())) for a in mol.GetAtoms()]
     ][:, :-2]
-    atom_fea5 = np.eye(len(hydrogen_list), dtype=bool)[
+    atom_fea5 = np.eye(len(hydrogen_list))[
         [
             hydrogen_list.index(a.GetTotalNumHs(includeNeighbors=True))
             for a in mol.GetAtoms()
         ]
     ][:, :-1]
-    atom_fea6 = np.eye(len(valence_list), dtype=bool)[
+    atom_fea6 = np.eye(len(valence_list))[
         [valence_list.index(a.GetTotalValence()) for a in mol.GetAtoms()]
     ][:, :-1]
     atom_fea7 = np.array(
         [[(j in D_list), (j in A_list)] for j in range(mol.GetNumAtoms())],
-        dtype=bool,
+        
     )
-    atom_fea8 = np.array([_chirality(a) for a in mol.GetAtoms()], dtype=bool)
+    atom_fea8 = np.array([_chirality(a) for a in mol.GetAtoms()])
     atom_fea9 = np.array(
         [[a.IsInRingSize(s) for s in ringsize_list] for a in mol.GetAtoms()],
-        dtype=bool,
+        
     )
     atom_fea10 = np.array(
-        [[a.GetIsAromatic(), a.IsInRing()] for a in mol.GetAtoms()], dtype=bool
+        [[a.GetIsAromatic(), a.IsInRing()] for a in mol.GetAtoms()]
     )
 
     # formal charge compress (-2 ~ 2)
@@ -126,13 +126,13 @@ def add_mol(mol_dict, mol):
     mol_dict["node_attr"].append(node_attr)
 
     if n_edge > 0:
-        bond_fea1 = np.eye(len(bond_list), dtype=bool)[
+        bond_fea1 = np.eye(len(bond_list))[
             [bond_list.index(str(b.GetBondType())) for b in mol.GetBonds()]
         ]
-        bond_fea2 = np.array([_stereochemistry(b) for b in mol.GetBonds()], dtype=bool)
+        bond_fea2 = np.array([_stereochemistry(b) for b in mol.GetBonds()])
         bond_fea3 = np.array(
             [[b.IsInRing(), b.GetIsConjugated()] for b in mol.GetBonds()],
-            dtype=bool,
+            
         )
 
         edge_attr = np.hstack([bond_fea1, bond_fea2, bond_fea3])
@@ -154,7 +154,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 155))
+    node_attr = np.zeros((1,155))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
@@ -165,13 +165,13 @@ def add_dummy(mol_dict):
 def dict_list_to_numpy(mol_dict):
     mol_dict["n_node"] = np.array(mol_dict["n_node"]).astype(int)
     mol_dict["n_edge"] = np.array(mol_dict["n_edge"]).astype(int)
-    mol_dict["node_attr"] = np.vstack(mol_dict["node_attr"]).astype(bool)
+    mol_dict["node_attr"] = np.vstack(mol_dict["node_attr"])
     if np.sum(mol_dict["n_edge"]) > 0:
-        mol_dict["edge_attr"] = np.vstack(mol_dict["edge_attr"]).astype(bool)
+        mol_dict["edge_attr"] = np.vstack(mol_dict["edge_attr"])
         mol_dict["src"] = np.hstack(mol_dict["src"]).astype(int)
         mol_dict["dst"] = np.hstack(mol_dict["dst"]).astype(int)
     else:
-        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4)).astype(bool)
+        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4))
         mol_dict["src"] = np.empty(0).astype(int)
         mol_dict["dst"] = np.empty(0).astype(int)
 

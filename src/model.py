@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from tqdm import tqdm
 from gin import GIN
+from attention import EncoderLayer
 from utils import setup_logging
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
@@ -48,23 +49,50 @@ class recat(nn.Module):
             torch.nn.Dropout(drop_ratio),
             torch.nn.Linear(predict_hidden_feats, out_dim),
         )
+        self.attention=EncoderLayer()
 
-    def forward(self, rmols, pmols, rgmols=None):
-        r_graph_feats = torch.sum(
-            torch.stack([self.gnn(rmol) for rmol in rmols]), dim=0
-        )
-        p_graph_feats = torch.sum(
-            torch.stack([self.gnn(pmol) for pmol in pmols]), dim=0
-        )
+    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None):
+        r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
+        p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
 
-        react_graph_feats = torch.sub(r_graph_feats, p_graph_feats)
-        if rgmols is not None:
-            rg_graph_feats = torch.sum(
-                torch.stack([self.gnn(rgmol) for rgmol in rgmols]), dim=0
-            )
-            react_graph_feats = react_graph_feats * 0.7 + rg_graph_feats * 0.3
-        out = self.predict(react_graph_feats)
-        return out
+        reaction_vectors=torch.tensor([])
+        for batch in range(r_graph_feats.shape[1]):
+            #reactant and product vector correspoding each reaction
+            r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]]
+            p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]]
+
+            #attention of product on each reactant
+            att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
+            att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
+            att_reactant=att_reactant.view(-1)
+
+            #attention of reactant on each product
+            att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
+            att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
+            att_procduct=att_procduct.view(-1)
+            # print('att_reactant: ',att_reactant.shape)
+
+            #reactant vector = sum(attention*each reactant vetor)
+            reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1])
+            for idx in range(r_graph_feats_1.shape[0]):
+                # print('idx: ',idx)
+                # print('att_reactant[idx]: ',att_reactant[idx])
+                # print('r_graph_feats_1[idx]: ',r_graph_feats_1[idx].shape)
+                # assert 1==2
+
+                reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+
+            #product vector = sum(attention*each product vector)
+            product_tensor=torch.zeros(1,p_graph_feats_1.shape[1])
+            for idx in range(p_graph_feats_1.shape[0]):
+                product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
+            #each reaction vector
+            reaction_tensor=torch.sub(reactant_tensor,product_tensor)
+            reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
+        # print('reaction_vectors: ',reaction_vectors.shape)
+
+        out = self.predict(reaction_vectors)
+        return out, att_reactant, att_procduct
 
 
 def train(
@@ -86,15 +114,11 @@ def train(
     try:
         rmol_max_cnt = train_loader.dataset.dataset.rmol_max_cnt
         pmol_max_cnt = train_loader.dataset.dataset.pmol_max_cnt
-        if args.reagent_option:
-            rgmol_max_cnt = train_loader.dataset.dataset.rgmol_max_cnt
 
     except Exception as e:
         logger.error(e)
         rmol_max_cnt = train_loader.dataset.rmol_max_cnt
         pmol_max_cnt = train_loader.dataset.pmol_max_cnt
-        if args.reagent_option:
-            rgmol_max_cnt = train_loader.dataset.rgmol_max_cnt
 
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5)
@@ -107,7 +131,7 @@ def train(
         train_loss_list = []
         targets = []
         preds = []
-
+        dem=0
         for batchdata in tqdm(train_loader, desc="Training"):
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
@@ -115,23 +139,17 @@ def train(
                 b.to(device)
                 for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
             ]
-            if args.reagent_option:
-                inputs_rgmol = [
-                    b.to(device)
-                    for b in batchdata[
-                        rmol_max_cnt
-                        + pmol_max_cnt: rmol_max_cnt
-                        + pmol_max_cnt
-                        + rgmol_max_cnt
-                    ]
-                ]
-            # fmt: on
-                pred = net(inputs_rmol, inputs_pmol, inputs_rgmol)
-            else:
-                pred = net(inputs_rmol, inputs_pmol)
-            labels = batchdata[-1]
+            r_dummy=[batchdata[-3]][0]
+            p_dummy=[batchdata[-4]][0]
+            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
+            labels = batchdata[-2]
+            rsmi = batchdata[-1]
+            if dem==0:
+                print(rsmi)
+                dem+=1
             targets.extend(labels.tolist())
             labels = labels.to(device)
+            # print('labels: ',labels.shape)
 
             preds.extend(torch.argmax(pred, dim=1).tolist())
             loss = loss_fn(pred, labels)
@@ -155,7 +173,6 @@ def train(
                 (time.time() - start_time) / 60,
             )
         )
-
         # validation
         net.eval()
         val_acc, val_mcc, val_loss = inference(args, net, val_loader, device, loss_fn)
@@ -216,21 +233,11 @@ def inference(args, net, test_loader, device, loss_fn=None):
                 b.to(device)
                 for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
             ]
-            if args.reagent_option:
-                inputs_rgmol = [
-                    b.to(device)
-                    for b in batchdata[
-                        rmol_max_cnt
-                        + pmol_max_cnt: rmol_max_cnt
-                        + pmol_max_cnt
-                        + rgmol_max_cnt
-                    ]
-                ]
+            r_dummy=[batchdata[-3]][0]
+            p_dummy=[batchdata[-4]][0]
             # fmt: on
-                pred = net(inputs_rmol, inputs_pmol, inputs_rgmol)
-            else:
-                pred = net(inputs_rmol, inputs_pmol)
-            labels = batchdata[-1]
+            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
+            labels = batchdata[-2]
             targets.extend(labels.tolist())
             labels = labels.to(device)
 

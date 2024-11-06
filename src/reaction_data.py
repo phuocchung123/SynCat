@@ -1,12 +1,13 @@
 import numpy as np
 from rdkit import Chem
-from preprocess_util import add_mol, add_dummy, dict_list_to_numpy
+from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
 
 
 def mol_dict():
     return {
         "n_node": [],
         "n_edge": [],
+        "dummy":[],
         "node_attr": [],
         "edge_attr": [],
         "src": [],
@@ -59,7 +60,10 @@ def get_graph_data(
         for j, smi in enumerate(reactants_smi_list):
             if smi == "":
                 rmol_dict[j] = add_dummy(rmol_dict[j])
+                rmol_dict[j]["dummy"].append(False)
+
             else:
+                rmol_dict[j]['dummy'].append(True)
                 rmol = Chem.MolFromSmiles(smi)
                 rs = Chem.FindPotentialStereo(rmol)
                 for element in rs:
@@ -88,7 +92,9 @@ def get_graph_data(
         for j, smi in enumerate(products_smi_list):
             if smi == "":
                 pmol_dict[j] = add_dummy(pmol_dict[j])
+                pmol_dict[j]['dummy'].append(False)
             else:
+                pmol_dict[j]['dummy'].append(True)
                 pmol = Chem.MolFromSmiles(smi)
                 ps = Chem.FindPotentialStereo(pmol)
                 for element in ps:

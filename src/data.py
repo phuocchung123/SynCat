@@ -31,6 +31,8 @@ class GraphDataset:
         self.rmol_src = [rmol_dict[j]["src"] for j in range(self.rmol_max_cnt)]
         self.rmol_dst = [rmol_dict[j]["dst"] for j in range(self.rmol_max_cnt)]
 
+        self.r_dummy = [rmol_dict[j]["dummy"] for j in range(self.rmol_max_cnt)]
+
         # product
         self.pmol_n_node = [pmol_dict[j]["n_node"] for j in range(self.pmol_max_cnt)]
         self.pmol_n_edge = [pmol_dict[j]["n_edge"] for j in range(self.pmol_max_cnt)]
@@ -42,6 +44,9 @@ class GraphDataset:
         ]
         self.pmol_src = [pmol_dict[j]["src"] for j in range(self.pmol_max_cnt)]
         self.pmol_dst = [pmol_dict[j]["dst"] for j in range(self.pmol_max_cnt)]
+
+        self.p_dummy = [pmol_dict[j]["dummy"] for j in range(self.pmol_max_cnt)]
+        # print('p_dummy_shape: ',self.p_dummy[0][0])
 
         self.y = reaction_dict["y"]
         self.rsmi = reaction_dict["rsmi"]
@@ -119,12 +124,15 @@ class GraphDataset:
                     self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
                 ]
             ).float()
-
+            if self.rmol_e_csum[j][idx + 1] - self.rmol_e_csum[j][idx] ==1:
+                r_edge_attr = torch.tensor(r_edge_attr,requires_grad=False)
             r_node_attr = torch.from_numpy(
                 self.rmol_node_attr[j][
                     self.rmol_n_csum[j][idx]: self.rmol_n_csum[j][idx + 1]
                 ]
             ).float()
+            if self.rmol_n_csum[j][idx + 1] - self.rmol_n_csum[j][idx] ==1:
+                r_node_attr = torch.tensor(r_node_attr,requires_grad=False)
             # fmt: on
             data_r = Data(x=r_node_attr, edge_index=r_edge_index, edge_attr=r_edge_attr)
 
@@ -158,6 +166,10 @@ class GraphDataset:
             data_p = Data(x=p_node_attr, edge_index=p_edge_index, edge_attr=p_edge_attr)
             data_p_lst.append(data_p)
         label = self.y[idx]
+        rsmi = self.rsmi[idx]
+        r_dummy = [i[idx] for i in self.r_dummy]
+        p_dummy = [j[idx] for j in self.p_dummy]
+
         if self.rg_option:
             data_rg_lst = []
             for j in range(self.rgmol_max_cnt):
@@ -191,7 +203,7 @@ class GraphDataset:
                 data_rg_lst.append(data_rg)
             return *data_r_lst, *data_p_lst, *data_rg_lst, label
         else:
-            return *data_r_lst, *data_p_lst, label
+            return *data_r_lst, *data_p_lst, r_dummy, p_dummy, label,rsmi
 
     def __len__(self):
         return self.y.shape[0]
