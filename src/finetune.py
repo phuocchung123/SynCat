@@ -131,8 +131,8 @@ def finetune(args):
     dict_att = {
         "Name": "Attention",
         "rsmi": rsmi,
-        "Attention reactant": atts_reactant.tolist(),
-        "Attention product":atts_product.tolist()
+        "Attention reactant": atts_reactant,
+        "Attention product":atts_product
     }
     
     with open(monitor_path, "a") as f:

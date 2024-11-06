@@ -51,13 +51,15 @@ class recat(nn.Module):
         )
         self.attention=EncoderLayer()
 
-    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None,device='cuda:0'):
+    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None,device='cuda:0',atts_reactant=[],atts_product=[]):
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
 
         reaction_vectors=torch.tensor([]).to(device)
-        atts_reactant= torch.tensor([]).to(device)
-        atts_product= torch.tensor([]).to(device)
+        # atts_reactant= torch.tensor([]).to(device)
+        # atts_product= torch.tensor([]).to(device)
+        # atts_reactant= []
+        # atts_product= []
         for batch in range(r_graph_feats.shape[1]):
             #reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
@@ -91,8 +93,8 @@ class recat(nn.Module):
             #each reaction vector
             reaction_tensor=torch.sub(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
-            atts_reactant=torch.cat((atts_reactant,att_reactant),dim=0)
-            atts_product= torch.cat((atts_product,att_procduct),dim=0)
+            atts_reactant.append(att_reactant.tolist())
+            atts_product.append(att_procduct.tolist())#torch.cat((atts_reactant,att_procduct),dim=0)
         # print('reaction_vectors: ',reaction_vectors.shape)
 
         out = self.predict(reaction_vectors)
@@ -241,7 +243,7 @@ def inference(args, net, test_loader, device, loss_fn=None):
             r_dummy=[batchdata[-3]][0]
             p_dummy=[batchdata[-4]][0]
             # fmt: on
-            pred,atts_reactant,atts_product = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
+            pred,atts_reactant,atts_product = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy,device=device)
             labels = batchdata[-2]
             rsmi=batchdata[-1]
             rsmis.append(rsmi)
