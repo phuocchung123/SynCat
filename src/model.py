@@ -51,29 +51,31 @@ class recat(nn.Module):
         )
         self.attention=EncoderLayer()
 
-    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None):
+    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None,device='cuda:0'):
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
 
-        reaction_vectors=torch.tensor([])
+        reaction_vectors=torch.tensor([]).to(device)
+        atts_reactant= torch.tensor([]).to(device)
+        atts_product= torch.tensor([]).to(device)
         for batch in range(r_graph_feats.shape[1]):
             #reactant and product vector correspoding each reaction
-            r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]]
-            p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]]
+            r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
+            p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
 
             #attention of product on each reactant
             att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
             att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
-            att_reactant=att_reactant.view(-1)
+            att_reactant=att_reactant.view(-1).to(device)
 
             #attention of reactant on each product
             att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
             att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
-            att_procduct=att_procduct.view(-1)
+            att_procduct=att_procduct.view(-1).to(device)
             # print('att_reactant: ',att_reactant.shape)
-
+            
             #reactant vector = sum(attention*each reactant vetor)
-            reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1])
+            reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
             for idx in range(r_graph_feats_1.shape[0]):
                 # print('idx: ',idx)
                 # print('att_reactant[idx]: ',att_reactant[idx])
@@ -83,16 +85,18 @@ class recat(nn.Module):
                 reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
 
             #product vector = sum(attention*each product vector)
-            product_tensor=torch.zeros(1,p_graph_feats_1.shape[1])
+            product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
             for idx in range(p_graph_feats_1.shape[0]):
                 product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
             #each reaction vector
             reaction_tensor=torch.sub(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
+            atts_reactant=torch.cat((atts_reactant,att_reactant),dim=0)
+            atts_product= torch.cat((atts_product,att_procduct),dim=0)
         # print('reaction_vectors: ',reaction_vectors.shape)
 
         out = self.predict(reaction_vectors)
-        return out, att_reactant, att_procduct
+        return out, atts_reactant, atts_product
 
 
 def train(
@@ -141,12 +145,12 @@ def train(
             ]
             r_dummy=[batchdata[-3]][0]
             p_dummy=[batchdata[-4]][0]
-            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
+            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy,device=device)
             labels = batchdata[-2]
             rsmi = batchdata[-1]
-            if dem==0:
-                print(rsmi)
-                dem+=1
+            # if dem==0:
+            #     print(rsmi)
+            #     dem+=1
             targets.extend(labels.tolist())
             labels = labels.to(device)
             # print('labels: ',labels.shape)
@@ -175,7 +179,7 @@ def train(
         )
         # validation
         net.eval()
-        val_acc, val_mcc, val_loss = inference(args, net, val_loader, device, loss_fn)
+        val_acc, val_mcc, val_loss,_,_,_ = inference(args, net, val_loader, device, loss_fn)
 
         print(
             "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
@@ -226,6 +230,7 @@ def inference(args, net, test_loader, device, loss_fn=None):
     targets = []
 
     with torch.no_grad():
+        rsmis=[]
         for batchdata in tqdm(test_loader, desc="Testing"):
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
@@ -236,8 +241,11 @@ def inference(args, net, test_loader, device, loss_fn=None):
             r_dummy=[batchdata[-3]][0]
             p_dummy=[batchdata[-4]][0]
             # fmt: on
-            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
+            pred,atts_reactant,atts_product = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy)
             labels = batchdata[-2]
+            rsmi=batchdata[-1]
+            rsmis.append(rsmi)
+            
             targets.extend(labels.tolist())
             labels = labels.to(device)
 
@@ -251,6 +259,6 @@ def inference(args, net, test_loader, device, loss_fn=None):
     mcc = matthews_corrcoef(targets, preds)
 
     if loss_fn is None:
-        return acc, mcc
+        return acc, mcc,atts_reactant,atts_product,rsmis
     else:
-        return acc, mcc, np.mean(inference_loss_list)
+        return acc, mcc, np.mean(inference_loss_list),atts_reactant,atts_product,rsmis
