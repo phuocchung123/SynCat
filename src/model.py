@@ -78,20 +78,27 @@ class recat(nn.Module):
             
             #reactant vector = sum(attention*each reactant vetor)
             reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
+            rg_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
             for idx in range(r_graph_feats_1.shape[0]):
                 # print('idx: ',idx)
                 # print('att_reactant[idx]: ',att_reactant[idx])
                 # print('r_graph_feats_1[idx]: ',r_graph_feats_1[idx].shape)
                 # assert 1==2
-
-                reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+                if att_reactant[idx]>0.3:
+                    reactant_tensor+=r_graph_feats_1[idx]
+                else:
+                    rg_tensor+=r_graph_feats_1[idx]
 
             #product vector = sum(attention*each product vector)
             product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
             for idx in range(p_graph_feats_1.shape[0]):
-                product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
+                if att_procduct[idx]>0.3:
+                    product_tensor+=p_graph_feats_1[idx]
+                else:
+                    rg_tensor+=p_graph_feats_1[idx]
             #each reaction vector
             reaction_tensor=torch.sub(reactant_tensor,product_tensor)
+            reaction_tensor=0.7*reaction_tensor+0.3*rg_tensor
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
             atts_reactant.append(att_reactant.tolist())
             atts_product.append(att_procduct.tolist())#torch.cat((atts_reactant,att_procduct),dim=0)
