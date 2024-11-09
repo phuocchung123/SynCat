@@ -8,7 +8,7 @@ configure_warnings_and_logs(ignore_warnings=True)
 
 
 def prepare_data(args):
-    data = pd.read_csv(args.Data_folder + args.data_csv, index_col=0)
+    data = pd.read_csv(args.Data_folder + args.data_csv)
     if args.reagent_option:
         data = data.fillna("")
     y = data[args.y_column]

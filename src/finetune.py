@@ -137,5 +137,5 @@ def finetune(args):
     
     with open(monitor_path, "a") as f:
         f.write(json.dumps(dict) + "\n")
-    with open('../Data/monitor/attention.json','w') as f:
+    with open('../Data/monitor/attention2.json','w') as f:
         json.dump(dict_att,f)
