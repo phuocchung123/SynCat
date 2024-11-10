@@ -1,6 +1,7 @@
 import numpy as np
 from rdkit import Chem
 from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
+from tqdm import tqdm
 
 
 def mol_dict():
@@ -47,7 +48,7 @@ def get_graph_data(
             % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
         )
 
-    for i in range(len(rsmi_list)):
+    for i in tqdm(range(len(rsmi_list))):
         rsmi = rsmi_list[i].replace("~", "-")
         y = y_list[i]
 
