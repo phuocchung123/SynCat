@@ -12,7 +12,7 @@ configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--batch_size", type=int, default=32)
+    arg_parser.add_argument("--batch_size", type=int, default=8)
     arg_parser.add_argument("--epochs", type=int, default=50)
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--val_set", type=str, default="data_valid.npz")
     arg_parser.add_argument("--test_set", type=str, default="data_test.npz")
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model.pt")
+    arg_parser.add_argument("--model_name", type=str, default="model_tpl.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz_tpl")
     arg_parser.add_argument("--reagent_option", type=bool, default=False)
     arg_parser.add_argument("--y_column", type=str, default="rxn_class")
