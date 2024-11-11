@@ -9,7 +9,7 @@ from tqdm import tqdm
 from gin import GIN
 from attention import EncoderLayer
 from utils import setup_logging
-from sklearn.metrics import accuracy_score, matthews_corrcoef
+from sklearn.metrics import accuracy_score, matthews_corrcoef, precision_score, recall_score
 
 logger = setup_logging()
 
@@ -21,7 +21,7 @@ class recat(nn.Module):
         edge_in_feats=9,
         out_dim=4,
         num_layer=3,
-        node_hid_feats=300,
+        node_hid_feats=1024,
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
@@ -41,15 +41,16 @@ class recat(nn.Module):
         else:
             emb_dim = node_hid_feats
 
-        self.predict = nn.Sequential(
-            torch.nn.Linear(emb_dim, predict_hidden_feats),
-            torch.nn.PReLU(),
-            torch.nn.Dropout(drop_ratio),
-            torch.nn.Linear(predict_hidden_feats, predict_hidden_feats),
-            torch.nn.PReLU(),
-            torch.nn.Dropout(drop_ratio),
-            torch.nn.Linear(predict_hidden_feats, out_dim),
-        )
+        # self.predict = nn.Sequential(
+        #     torch.nn.Linear(emb_dim, predict_hidden_feats),
+        #     torch.nn.PReLU(),
+        #     torch.nn.Dropout(drop_ratio),
+        #     torch.nn.Linear(predict_hidden_feats, predict_hidden_feats),
+        #     torch.nn.PReLU(),
+        #     torch.nn.Dropout(drop_ratio),
+        #     torch.nn.Linear(predict_hidden_feats, out_dim),
+        # )
+        self.predict = torch.nn.Linear(emb_dim, out_dim)
         self.attention=EncoderLayer()
         self.atts_reactant=[]
         self.atts_product=[]
@@ -281,6 +282,15 @@ def inference(args, net, test_loader, device, loss_fn=None):
 
     acc = accuracy_score(targets, preds)
     mcc = matthews_corrcoef(targets, preds)
+    # pre_macro = precision_score(targets, preds,average='macro')
+    # rec_macro = recall_score(targets, preds,average='macro')
+    # pre_micro = precision_score(targets, preds,average='micro')
+    # rec_micro = recall_score(targets, preds,average='micro')
+    # print('precision_macro: ', pre_macro)
+    # print('recall: ', rec_micro)
+    # print('precision_micro: ',pre_micro)
+    # print('recall micro: ', rec_micro)
+    
 
     if loss_fn is None:
         return acc, mcc,atts_reactant,atts_product,rsmis

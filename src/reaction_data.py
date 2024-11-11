@@ -59,13 +59,15 @@ def get_graph_data(
         for _ in range(rmol_max_cnt - len(reactants_smi_list)):
             reactants_smi_list.append("")
         for j, smi in enumerate(reactants_smi_list):
-            if smi == "":
+            if smi == '':
                 rmol_dict[j] = add_dummy(rmol_dict[j])
                 rmol_dict[j]["dummy"].append(False)
-
             else:
-                rmol_dict[j]['dummy'].append(True)
                 rmol = Chem.MolFromSmiles(smi)
+                if rmol.GetNumAtoms() <=2:
+                    rmol_dict[j]["dummy"].append(False)
+                else:
+                    rmol_dict[j]['dummy'].append(True)
                 rs = Chem.FindPotentialStereo(rmol)
                 for element in rs:
                     if (
