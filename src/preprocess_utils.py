@@ -59,6 +59,7 @@ def add_mol(mol_dict, mol):
 
     D_list, A_list = _DA(mol)
     atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
+    # atom_fea1 = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).reshape(-1,1)
     atom_fea2 = np.eye(len(charge_list), dtype=bool)[
         [charge_list.index(a.GetFormalCharge()) for a in mol.GetAtoms()]
     ][:, :-1]
@@ -107,20 +108,27 @@ def add_mol(mol_dict, mol):
     atom_fea6[:, 5:] = np.max(atom_fea6[:, 5:], axis=1).reshape(-1, 1)
     atom_fea6 = np.delete(atom_fea6, [6, 7, 8, 9, 10, 11], axis=1)
 
+    # node_attr = np.hstack(
+    #     [
+    #         atom_fea1,
+    #         atom_fea2,
+    #         atom_fea3,
+    #         atom_fea4,
+    #         atom_fea5,
+    #         atom_fea6,
+    #         atom_fea7,
+    #         atom_fea8,
+    #         atom_fea9,
+    #         atom_fea10,
+    #     ]
+    # )
+    
     node_attr = np.hstack(
         [
             atom_fea1,
-            atom_fea2,
-            atom_fea3,
-            atom_fea4,
-            atom_fea5,
-            atom_fea6,
-            atom_fea7,
-            atom_fea8,
-            atom_fea9,
-            atom_fea10,
         ]
     )
+    
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
@@ -154,7 +162,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 155))
+    node_attr = np.zeros((1, 118))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
