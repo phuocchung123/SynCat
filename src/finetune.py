@@ -88,6 +88,8 @@ def finetune(args):
     assert len(train_y) == len(train_set)
     node_dim = train_set.rmol_node_attr[0].shape[1]
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
+    print('node_dim_shape: ',node_dim)
+    print('edge_dim_shape: ',edge_dim)
     if not os.path.exists(model_path):
         net = recat(node_dim, edge_dim, out_dim).to(device)
         print("-- TRAINING")

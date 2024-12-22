@@ -21,7 +21,7 @@ class recat(nn.Module):
         edge_in_feats=9,
         out_dim=4,
         num_layer=3,
-        node_hid_feats=1024,
+        node_hid_feats=256,
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
@@ -64,34 +64,45 @@ class recat(nn.Module):
         for batch in range(r_graph_feats.shape[1]):
             ### reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
+            # print(r_graph_feats_1.shape)
             new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
             for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
                 new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
             r_graph_feats_1=torch.stack(new_rows_r).to(device)
+            # print(r_graph_feats_1.shape)
 
 
             p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
+            # print(p_graph_feats_1.shape)
             new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
             for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
                 new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
             p_graph_feats_1=torch.stack(new_rows_p).to(device)
-
+            # print(p_graph_feats_1.shape)
 
 
             #attention of product on each reactant
             # p_graph_feats_1 = p_graph_feats_1.view(-1,r_graph_feats_1.shape[1])
             att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
+            # print(att_p_r.shape)
             att_p_r=att_p_r.squeeze(0,1)
+            # print(att_p_r.shape)
             att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
             att_reactant=att_reactant.view(-1).to(device)
+            # print(att_reactant.shape)
             att_reactant_max= torch.max(att_reactant)
 
 
             #attention of reactant on each product
             att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
+            # print(att_r_p.shape)
             att_r_p = att_r_p.squeeze(0,1)
+            # print(att_r_p.shape)
             att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
             att_procduct=att_procduct.view(-1).to(device)
+            # print(att_procduct.shape)
+            # assert 1==2
+
             
             
 

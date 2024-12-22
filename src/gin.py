@@ -19,8 +19,11 @@ class GIN(nn.Module):
 
         self.depth = depth
 
+        # self.project_node_feats = nn.Sequential(
+        #     nn.Linear(node_in_feats, node_hid_feats), nn.ReLU()
+        # )
         self.project_node_feats = nn.Sequential(
-            nn.Linear(node_in_feats, node_hid_feats), nn.ReLU()
+            nn.Linear(node_in_feats, node_hid_feats)
         )
 
         self.project_edge_feats = nn.Sequential(
