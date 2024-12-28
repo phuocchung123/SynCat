@@ -67,28 +67,28 @@ def add_mol(mol_dict, mol):
     atom_fea3 = np.eye(len(degree_list), dtype=bool)[
         [degree_list.index(a.GetDegree()) for a in mol.GetAtoms()]
     ][:, :-1]
-    # atom_fea4 = np.eye(len(hybridization_list), dtype=bool)[
-    #     [hybridization_list.index(str(a.GetHybridization())) for a in mol.GetAtoms()]
-    # ][:, :-2]
+    atom_fea4 = np.eye(len(hybridization_list), dtype=bool)[
+        [hybridization_list.index(str(a.GetHybridization())) for a in mol.GetAtoms()]
+    ][:, :-2]
     
-    atom_fea4=[]
-    for a in mol.GetAtoms():
-        hyb=hybridization_list.index(str(a.GetHybridization()))
-        if hyb ==0:
-            atom_fea4.append([1,1,0])
-        elif hyb ==1:
-            atom_fea4.append([1,2,0])
-        elif hyb == 2:
-            atom_fea4.append([1,3,0])
-        elif hyb==3:
-            atom_fea4.append([1,3,1])
-        elif hyb==4:
-            atom_fea4.append([1,3,2])
-        elif hyb==5:
-            atom_fea4.append([1,0,0])
-        else:
-            atom_fea4.append([0,0,0])
-    atom_fea4=np.array(atom_fea4).reshape(-1,3)
+    # atom_fea4=[]
+    # for a in mol.GetAtoms():
+    #     hyb=hybridization_list.index(str(a.GetHybridization()))
+    #     if hyb ==0:
+    #         atom_fea4.append([1,1,0])
+    #     elif hyb ==1:
+    #         atom_fea4.append([1,2,0])
+    #     elif hyb == 2:
+    #         atom_fea4.append([1,3,0])
+    #     elif hyb==3:
+    #         atom_fea4.append([1,3,1])
+    #     elif hyb==4:
+    #         atom_fea4.append([1,3,2])
+    #     elif hyb==5:
+    #         atom_fea4.append([1,0,0])
+    #     else:
+    #         atom_fea4.append([0,0,0])
+    # atom_fea4=np.array(atom_fea4).reshape(-1,3)
         
     
     atom_fea5 = np.eye(len(hydrogen_list), dtype=bool)[
