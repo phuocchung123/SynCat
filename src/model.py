@@ -34,15 +34,16 @@ class recat(nn.Module):
         # else:
         #     emb_dim = node_hid_feats
 
-        self.predict = nn.Sequential(
-            torch.nn.Linear(emb_dim, predict_hidden_feats),
-            torch.nn.PReLU(),
-            torch.nn.Dropout(drop_ratio),
-            torch.nn.Linear(predict_hidden_feats, predict_hidden_feats),
-            torch.nn.PReLU(),
-            torch.nn.Dropout(drop_ratio),
-            torch.nn.Linear(predict_hidden_feats, out_dim),
-        )
+        # self.predict = nn.Sequential(
+        #     torch.nn.Linear(emb_dim, predict_hidden_feats),
+        #     torch.nn.PReLU(),
+        #     torch.nn.Dropout(drop_ratio),
+        #     torch.nn.Linear(predict_hidden_feats, predict_hidden_feats),
+        #     torch.nn.PReLU(),
+        #     torch.nn.Dropout(drop_ratio),
+        #     torch.nn.Linear(predict_hidden_feats, out_dim),
+        # )
+        self.predict=torch.nn.Linear(emb_dim,predict_hidden_feats)
 
     def forward(self, rmols, pmols, rgmols=None):
         r_graph_feats = torch.sum(
