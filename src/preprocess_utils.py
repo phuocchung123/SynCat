@@ -150,23 +150,23 @@ def add_mol(mol_dict, mol):
     mol_dict["node_attr"].append(node_attr)
 
     if n_edge > 0:
-        # bond_fea1 = np.eye(len(bond_list), dtype=bool)[
-        #     [bond_list.index(str(b.GetBondType())) for b in mol.GetBonds()]
-        # ]
-        bond_fea1=[]
-        for b in mol.GetBonds():
-            idx_bond_list = bond_list.index(str(b.GetBondType()))
-            if idx_bond_list ==0:
-                bond_fea1.append([1,0,0])
-            elif idx_bond_list ==1:
-                bond_fea1.append([1,1,0])
-            elif idx_bond_list ==2:
-                bond_fea1.append([1,2,0])
-            elif idx_bond_list ==3:
-                bond_fea1.append([1,0.5,1])
-            elif idx_bond_list ==4:
-                bond_fea1.append([0,0,0])
-        bond_fea1=np.array(bond_fea1).reshape(-1,3)
+        bond_fea1 = np.eye(len(bond_list), dtype=bool)[
+            [bond_list.index(str(b.GetBondType())) for b in mol.GetBonds()]
+        ]
+        # bond_fea1=[]
+        # for b in mol.GetBonds():
+        #     idx_bond_list = bond_list.index(str(b.GetBondType()))
+        #     if idx_bond_list ==0:
+        #         bond_fea1.append([1,0,0])
+        #     elif idx_bond_list ==1:
+        #         bond_fea1.append([1,1,0])
+        #     elif idx_bond_list ==2:
+        #         bond_fea1.append([1,2,0])
+        #     elif idx_bond_list ==3:
+        #         bond_fea1.append([1,0.5,1])
+        #     elif idx_bond_list ==4:
+        #         bond_fea1.append([0,0,0])
+        # bond_fea1=np.array(bond_fea1).reshape(-1,3)
         
         bond_fea2 = np.array([_stereochemistry(b) for b in mol.GetBonds()], dtype=bool)
         bond_fea3 = np.array(
