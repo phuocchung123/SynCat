@@ -59,8 +59,8 @@ def add_mol(mol_dict, mol):
     n_edge = mol.GetNumBonds() * 2
 
     D_list, A_list = _DA(mol)
-    # atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
-    atom_fea1 = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).reshape(-1,1)
+    atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
+    # atom_fea1 = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).reshape(-1,1)
     atom_fea2 = np.eye(len(charge_list), dtype=bool)[
         [charge_list.index(a.GetFormalCharge()) for a in mol.GetAtoms()]
     ][:, :-1]
@@ -193,7 +193,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 36))
+    node_attr = np.zeros((1, 155))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
