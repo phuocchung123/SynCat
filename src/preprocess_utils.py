@@ -67,28 +67,28 @@ def add_mol(mol_dict, mol):
     atom_fea3 = np.eye(len(degree_list), dtype=bool)[
         [degree_list.index(a.GetDegree()) for a in mol.GetAtoms()]
     ][:, :-1]
-    atom_fea4 = np.eye(len(hybridization_list), dtype=bool)[
-        [hybridization_list.index(str(a.GetHybridization())) for a in mol.GetAtoms()]
-    ][:, :-2]
+    # atom_fea4 = np.eye(len(hybridization_list), dtype=bool)[
+    #     [hybridization_list.index(str(a.GetHybridization())) for a in mol.GetAtoms()]
+    # ][:, :-2]
     
-    # atom_fea4=[]
-    # for a in mol.GetAtoms():
-    #     hyb=hybridization_list.index(str(a.GetHybridization()))
-    #     if hyb ==0:
-    #         atom_fea4.append([1,1,0])
-    #     elif hyb ==1:
-    #         atom_fea4.append([1,2,0])
-    #     elif hyb == 2:
-    #         atom_fea4.append([1,3,0])
-    #     elif hyb==3:
-    #         atom_fea4.append([1,3,1])
-    #     elif hyb==4:
-    #         atom_fea4.append([1,3,2])
-    #     elif hyb==5:
-    #         atom_fea4.append([1,0,0])
-    #     else:
-    #         atom_fea4.append([0,0,0])
-    # atom_fea4=np.array(atom_fea4).reshape(-1,3)
+    atom_fea4=[]
+    for a in mol.GetAtoms():
+        hyb=hybridization_list.index(str(a.GetHybridization()))
+        if hyb ==0:
+            atom_fea4.append([1,1,0])
+        elif hyb ==1:
+            atom_fea4.append([1,2,0])
+        elif hyb == 2:
+            atom_fea4.append([1,3,0])
+        elif hyb==3:
+            atom_fea4.append([1,3,1])
+        elif hyb==4:
+            atom_fea4.append([1,3,2])
+        elif hyb==5:
+            atom_fea4.append([1,0,0])
+        else:
+            atom_fea4.append([0,0,0])
+    atom_fea4=np.array(atom_fea4).reshape(-1,3)
         
     
     atom_fea5 = np.eye(len(hydrogen_list), dtype=bool)[
@@ -134,14 +134,14 @@ def add_mol(mol_dict, mol):
         [
             atom_fea1,
             atom_fea4,
-            atom_fea2,
-            atom_fea3,
-            atom_fea5,
-            atom_fea6,
-            atom_fea7,
-            atom_fea8,
-            atom_fea9,
-            atom_fea10
+            # atom_fea2,
+            # atom_fea3,
+            # atom_fea5,
+            # atom_fea6,
+            # atom_fea7,
+            # atom_fea8,
+            # atom_fea9,
+            # atom_fea10
             
         ]
     )
@@ -193,7 +193,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 155))
+    node_attr = np.zeros((1, 121))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
