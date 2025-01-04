@@ -64,95 +64,112 @@ class recat(nn.Module):
         self.atts_product=[]
 
     def forward(self, rmols, pmols,rmols_new,pmols_new, r_dummy=None, p_dummy=None,device='cuda:0'):
-        r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
-        p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
-        # print(len(rmols_new))
-        # print('r_graph_feats.shape: ',r_graph_feats.shape)
-        r_graph_feats_new=torch.stack([self.gnn_new(rmol_new) for rmol_new in rmols_new])
-        p_graph_feats_new = torch.stack([self.gnn_new(pmol_new) for pmol_new in pmols_new])
-        # print('r_graph_feats_new.shape: ',r_graph_feats_new.shape)
+        # r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
+        # p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
+        # # print(len(rmols_new))
+        # # print('r_graph_feats.shape: ',r_graph_feats.shape)
+        # r_graph_feats_new=torch.stack([self.gnn_new(rmol_new) for rmol_new in rmols_new])
+        # p_graph_feats_new = torch.stack([self.gnn_new(pmol_new) for pmol_new in pmols_new])
+        # # print('r_graph_feats_new.shape: ',r_graph_feats_new.shape)
 
-        reaction_vectors=torch.tensor([]).to(device)
+        # reaction_vectors=torch.tensor([]).to(device)
 
-        for batch in range(r_graph_feats.shape[1]):
-            ### reactant and product vector correspoding each reaction
-            r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
-            r_graph_feats_1_new=r_graph_feats_new[:,batch,:][r_dummy[batch]].to(device)
-            # print(r_graph_feats_1.shape)
-            new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
-            new_rows_r_new=[r_graph_feats_1_new[i] for i in range(r_graph_feats_1_new.size(0))]
-            for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
-                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j])
-                new_rows_r_new.append(r_graph_feats_1_new[i] + r_graph_feats_1_new[j])
-            r_graph_feats_1=torch.stack(new_rows_r).to(device)
-            r_graph_feats_1_new=torch.stack(new_rows_r_new).to(device)
-            # print('r_graph_feats_1.shape: ',r_graph_feats_1.shape)
-            # print('r_graph_feats_1_new.shape: ',r_graph_feats_1_new.shape)
-
-
-            p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
-            p_graph_feats_1_new=p_graph_feats_new[:,batch,:][p_dummy[batch]].to(device)
-            # print(p_graph_feats_1.shape)
-            new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
-            new_rows_p_new=[p_graph_feats_1_new[i] for i in range(p_graph_feats_1_new.size(0))]
-            for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
-                new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
-                new_rows_p_new.append(p_graph_feats_1_new[i] + p_graph_feats_1_new[j]) 
-            p_graph_feats_1=torch.stack(new_rows_p).to(device)
-            p_graph_feats_1_new=torch.stack(new_rows_p_new).to(device)
-            # print(p_graph_feats_1_new.shape)
+        # for batch in range(r_graph_feats.shape[1]):
+        #     ### reactant and product vector correspoding each reaction
+        #     r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
+        #     r_graph_feats_1_new=r_graph_feats_new[:,batch,:][r_dummy[batch]].to(device)
+        #     # print(r_graph_feats_1.shape)
+        #     new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
+        #     new_rows_r_new=[r_graph_feats_1_new[i] for i in range(r_graph_feats_1_new.size(0))]
+        #     for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
+        #         new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j])
+        #         new_rows_r_new.append(r_graph_feats_1_new[i] + r_graph_feats_1_new[j])
+        #     r_graph_feats_1=torch.stack(new_rows_r).to(device)
+        #     r_graph_feats_1_new=torch.stack(new_rows_r_new).to(device)
+        #     # print('r_graph_feats_1.shape: ',r_graph_feats_1.shape)
+        #     # print('r_graph_feats_1_new.shape: ',r_graph_feats_1_new.shape)
 
 
-            #attention of product on each reactant
-            # p_graph_feats_1 = p_graph_feats_1.view(-1,r_graph_feats_1.shape[1])
-            att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
-            # print(att_p_r.shape)
-            att_p_r=att_p_r.squeeze(0,1)
-            # print(att_p_r.shape)
-            att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
-            att_reactant=att_reactant.view(-1).to(device)
-            # print(att_reactant.shape)
-            att_reactant_max= torch.max(att_reactant)
+        #     p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
+        #     p_graph_feats_1_new=p_graph_feats_new[:,batch,:][p_dummy[batch]].to(device)
+        #     # print(p_graph_feats_1.shape)
+        #     new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
+        #     new_rows_p_new=[p_graph_feats_1_new[i] for i in range(p_graph_feats_1_new.size(0))]
+        #     for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
+        #         new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
+        #         new_rows_p_new.append(p_graph_feats_1_new[i] + p_graph_feats_1_new[j]) 
+        #     p_graph_feats_1=torch.stack(new_rows_p).to(device)
+        #     p_graph_feats_1_new=torch.stack(new_rows_p_new).to(device)
+        #     # print(p_graph_feats_1_new.shape)
 
 
-            #attention of reactant on each product
-            att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
-            # print(att_r_p.shape)
-            att_r_p = att_r_p.squeeze(0,1)
-            # print(att_r_p.shape)
-            att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
-            att_procduct=att_procduct.view(-1).to(device)
-            # print(att_procduct.shape)
-            # assert 1==2
+        #     #attention of product on each reactant
+        #     # p_graph_feats_1 = p_graph_feats_1.view(-1,r_graph_feats_1.shape[1])
+        #     att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
+        #     # print(att_p_r.shape)
+        #     att_p_r=att_p_r.squeeze(0,1)
+        #     # print(att_p_r.shape)
+        #     att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
+        #     att_reactant=att_reactant.view(-1).to(device)
+        #     # print(att_reactant.shape)
+        #     att_reactant_max= torch.max(att_reactant)
 
-            
-            
+
+        #     #attention of reactant on each product
+        #     att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
+        #     # print(att_r_p.shape)
+        #     att_r_p = att_r_p.squeeze(0,1)
+        #     # print(att_r_p.shape)
+        #     att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
+        #     att_procduct=att_procduct.view(-1).to(device)
+        #     # print(att_procduct.shape)
+        #     # assert 1==2
 
             
-            ##reactant vector = sum(attention*each reactant vetor)
-            reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
-            reactant_tensor_new=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
-            for idx in range(r_graph_feats_1.shape[0]):
-                reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
-                reactant_tensor_new+=att_reactant[idx]*r_graph_feats_1_new[idx]
-
-            ##product vector = sum(attention*each product vector)
-            product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
-            product_tensor_new=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
-            for idx in range(p_graph_feats_1.shape[0]):
-                product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
-                product_tensor_new+=att_procduct[idx]*p_graph_feats_1_new[idx]
             
-            reactant_tensor=reactant_tensor+reactant_tensor_new
-            product_tensor=product_tensor+product_tensor_new
-            ## each reaction vector
-            reaction_tensor=torch.sub(reactant_tensor,product_tensor)
-            reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
-            self.atts_reactant.append(att_reactant.tolist())
-            self.atts_product.append(att_procduct.tolist())
 
+            
+        #     ##reactant vector = sum(attention*each reactant vetor)
+        #     reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
+        #     reactant_tensor_new=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
+        #     for idx in range(r_graph_feats_1.shape[0]):
+        #         reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+        #         reactant_tensor_new+=att_reactant[idx]*r_graph_feats_1_new[idx]
 
-        out = self.predict(reaction_vectors)
+        #     ##product vector = sum(attention*each product vector)
+        #     product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
+        #     product_tensor_new=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
+        #     for idx in range(p_graph_feats_1.shape[0]):
+        #         product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
+        #         product_tensor_new+=att_procduct[idx]*p_graph_feats_1_new[idx]
+            
+        #     reactant_tensor=reactant_tensor+reactant_tensor_new
+        #     product_tensor=product_tensor+product_tensor_new
+        #     ## each reaction vector
+        #     reaction_tensor=torch.sub(reactant_tensor,product_tensor)
+        #     reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
+        #     self.atts_reactant.append(att_reactant.tolist())
+        #     self.atts_product.append(att_procduct.tolist())
+
+        # out = self.predict(reaction_vectors)
+        r_graph_feats = torch.sum(
+            torch.stack([self.gnn(rmol) for rmol in rmols]), dim=0
+        )
+        p_graph_feats = torch.sum(
+            torch.stack([self.gnn(pmol) for pmol in pmols]), dim=0
+        )
+        # r_graph_feats_new = torch.sum(
+        #     torch.stack([self.gnn_new(rmol) for rmol in rmols_new]), dim=0
+        # )
+        # p_graph_feats_new = torch.sum(
+        #     torch.stack([self.gnn_new(pmol) for pmol in pmols_new]), dim=0
+        # )
+        # r_graph_feats = r_graph_feats+r_graph_feats_new
+        # p_graph_feats = p_graph_feats + p_graph_feats_new
+
+        react_graph_feats = torch.sub(r_graph_feats, p_graph_feats)
+
+        out = self.predict(react_graph_feats)
         return out, self.atts_reactant, self.atts_product
 
 
