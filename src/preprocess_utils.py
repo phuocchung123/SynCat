@@ -3,6 +3,7 @@ import os
 import numpy as np
 from rdkit import RDConfig
 from rdkit.Chem import ChemicalFeatures
+from edge_graph import create_new_graph
 
 
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(
@@ -186,6 +187,7 @@ def add_mol(mol_dict, mol):
         mol_dict["edge_attr"].append(edge_attr)
         mol_dict["src"].append(src)
         mol_dict["dst"].append(dst)
+
 
     return mol_dict
 

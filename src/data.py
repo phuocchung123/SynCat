@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import Data
+from edge_graph import create_new_graph
 
 
 class GraphDataset:
@@ -106,6 +107,7 @@ class GraphDataset:
 
     def __getitem__(self, idx):
         data_r_lst = []
+        data_r_lst_new=[]
         for j in range(self.rmol_max_cnt):
             # fmt: off
             r_src = self.rmol_src[j][
@@ -138,7 +140,12 @@ class GraphDataset:
 
             data_r_lst.append(data_r)
 
+            new_r_edge_index,new_r_node_attr=create_new_graph(r_edge_index,r_edge_attr)
+            data_r_new=Data(x=new_r_node_attr,edge_index=new_r_edge_index)
+            data_r_lst_new.append(data_r_new)
+
         data_p_lst = []
+        data_p_lst_new=[]
         for j in range(self.pmol_max_cnt):
             # fmt: off
             p_src = self.pmol_src[j][
@@ -165,6 +172,11 @@ class GraphDataset:
             # fmt: on
             data_p = Data(x=p_node_attr, edge_index=p_edge_index, edge_attr=p_edge_attr)
             data_p_lst.append(data_p)
+
+
+            new_p_edge_index,new_p_node_attr=create_new_graph(p_edge_index,p_edge_attr)
+            data_p_new=Data(x=new_p_node_attr,edge_index=new_p_edge_index)
+            data_p_lst_new.append(data_p_new)
         label = self.y[idx]
         rsmi = self.rsmi[idx]
         r_dummy = [i[idx] for i in self.r_dummy]
@@ -201,9 +213,9 @@ class GraphDataset:
                     x=rg_node_attr, edge_index=rg_edge_index, edge_attr=rg_edge_attr
                 )
                 data_rg_lst.append(data_rg)
-            return *data_r_lst, *data_p_lst, *data_rg_lst, label
+            return *data_r_lst, *data_p_lst,*data_r_lst_new,*data_p_lst_new, *data_rg_lst, label
         else:
-            return *data_r_lst, *data_p_lst, r_dummy, p_dummy, label,rsmi
+            return *data_r_lst, *data_p_lst,*data_r_lst_new,*data_p_lst_new, r_dummy, p_dummy, label,rsmi
 
     def __len__(self):
         return self.y.shape[0]

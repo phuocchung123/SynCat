@@ -36,6 +36,14 @@ class recat(nn.Module):
             readout_feats=readout_feats,
             readout_option=readout_option,
         )
+        self.gnn_new = GIN(
+            edge_in_feats,
+            edge_in_feats,
+            depth=num_layer,
+            node_hid_feats=node_hid_feats,
+            readout_feats=readout_feats,
+            readout_option=readout_option,
+        )
         if readout_option:
             emb_dim = readout_feats
         else:
@@ -55,30 +63,44 @@ class recat(nn.Module):
         self.atts_reactant=[]
         self.atts_product=[]
 
-    def forward(self, rmols, pmols, r_dummy=None, p_dummy=None,device='cuda:0'):
+    def forward(self, rmols, pmols,rmols_new,pmols_new, r_dummy=None, p_dummy=None,device='cuda:0'):
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
+        # print(len(rmols_new))
+        # print('r_graph_feats.shape: ',r_graph_feats.shape)
+        r_graph_feats_new=torch.stack([self.gnn_new(rmol_new) for rmol_new in rmols_new])
+        p_graph_feats_new = torch.stack([self.gnn_new(pmol_new) for pmol_new in pmols_new])
+        # print('r_graph_feats_new.shape: ',r_graph_feats_new.shape)
 
         reaction_vectors=torch.tensor([]).to(device)
 
         for batch in range(r_graph_feats.shape[1]):
             ### reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
+            r_graph_feats_1_new=r_graph_feats_new[:,batch,:][r_dummy[batch]].to(device)
             # print(r_graph_feats_1.shape)
             new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
+            new_rows_r_new=[r_graph_feats_1_new[i] for i in range(r_graph_feats_1_new.size(0))]
             for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
-                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
+                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j])
+                new_rows_r_new.append(r_graph_feats_1_new[i] + r_graph_feats_1_new[j])
             r_graph_feats_1=torch.stack(new_rows_r).to(device)
-            # print(r_graph_feats_1.shape)
+            r_graph_feats_1_new=torch.stack(new_rows_r_new).to(device)
+            # print('r_graph_feats_1.shape: ',r_graph_feats_1.shape)
+            # print('r_graph_feats_1_new.shape: ',r_graph_feats_1_new.shape)
 
 
             p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
+            p_graph_feats_1_new=p_graph_feats_new[:,batch,:][p_dummy[batch]].to(device)
             # print(p_graph_feats_1.shape)
             new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
+            new_rows_p_new=[p_graph_feats_1_new[i] for i in range(p_graph_feats_1_new.size(0))]
             for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
                 new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
+                new_rows_p_new.append(p_graph_feats_1_new[i] + p_graph_feats_1_new[j]) 
             p_graph_feats_1=torch.stack(new_rows_p).to(device)
-            # print(p_graph_feats_1.shape)
+            p_graph_feats_1_new=torch.stack(new_rows_p_new).to(device)
+            # print(p_graph_feats_1_new.shape)
 
 
             #attention of product on each reactant
@@ -109,15 +131,20 @@ class recat(nn.Module):
             
             ##reactant vector = sum(attention*each reactant vetor)
             reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
+            reactant_tensor_new=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
             for idx in range(r_graph_feats_1.shape[0]):
                 reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+                reactant_tensor_new+=att_reactant[idx]*r_graph_feats_1_new[idx]
 
             ##product vector = sum(attention*each product vector)
             product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
+            product_tensor_new=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
             for idx in range(p_graph_feats_1.shape[0]):
                 product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
+                product_tensor_new+=att_procduct[idx]*p_graph_feats_1_new[idx]
             
-                
+            reactant_tensor=reactant_tensor+reactant_tensor_new
+            product_tensor=product_tensor+product_tensor_new
             ## each reaction vector
             reaction_tensor=torch.sub(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
@@ -168,11 +195,24 @@ def train(
         dem=0
         # check=0
         for batchdata in tqdm(train_loader, desc="Training"):
+            # print('batchdata: ',len(batchdata))
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
+            # print('len(inputs_rmol): ',len(inputs_rmol))
             inputs_pmol = [
                 b.to(device)
                 for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
+            ]
+            inputs_rmol_new = [
+                b.to(device)
+                for b in batchdata[rmol_max_cnt + pmol_max_cnt:rmol_max_cnt + pmol_max_cnt+rmol_max_cnt]
+            ]
+            # print('len(inputs_rmol_new): ',len(inputs_rmol_new))
+
+
+            inputs_pmol_new = [
+                b.to(device)
+                for b in batchdata[rmol_max_cnt + pmol_max_cnt+rmol_max_cnt:rmol_max_cnt + pmol_max_cnt+rmol_max_cnt+pmol_max_cnt]
             ]
             rsmi = batchdata[-1]
             # if dem==0:
@@ -180,7 +220,7 @@ def train(
             #     dem+=1
             r_dummy=[batchdata[-3]][0]
             p_dummy=[batchdata[-4]][0]
-            pred,_,_ = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy,device=device)
+            pred,_,_ = net(inputs_rmol, inputs_pmol,inputs_rmol_new, inputs_pmol_new,r_dummy=r_dummy,p_dummy=p_dummy,device=device)
             labels = batchdata[-2]
             
 
@@ -272,10 +312,21 @@ def inference(args, net, test_loader, device, loss_fn=None):
                 b.to(device)
                 for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
             ]
+            inputs_rmol_new = [
+                b.to(device)
+                for b in batchdata[rmol_max_cnt + pmol_max_cnt:rmol_max_cnt + pmol_max_cnt+rmol_max_cnt]
+            ]
+            # print('len(inputs_rmol_new): ',len(inputs_rmol_new))
+
+
+            inputs_pmol_new = [
+                b.to(device)
+                for b in batchdata[rmol_max_cnt + pmol_max_cnt+rmol_max_cnt:rmol_max_cnt + pmol_max_cnt+rmol_max_cnt+pmol_max_cnt]
+            ]
             r_dummy=[batchdata[-3]][0]
             p_dummy=[batchdata[-4]][0]
             # fmt: on
-            pred,atts_reactant,atts_product = net(inputs_rmol, inputs_pmol, r_dummy=r_dummy,p_dummy=p_dummy,device=device)
+            pred,atts_reactant,atts_product = net(inputs_rmol, inputs_pmol,inputs_rmol_new,inputs_pmol_new ,r_dummy=r_dummy,p_dummy=p_dummy,device=device)
             labels = batchdata[-2]
             rsmi=batchdata[-1]
             rsmis.append(rsmi)

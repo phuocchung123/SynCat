@@ -43,6 +43,7 @@ class GIN(nn.Module):
             ]
         )
 
+
         self.sparsify = nn.Sequential(
             nn.Linear(node_hid_feats, readout_feats), nn.PReLU()
         )
@@ -60,7 +61,12 @@ class GIN(nn.Module):
         # edge_feats = self.project_edge_feats(edge_feats_orig)
 
         for i in range(self.depth):
-            node_feats = self.gnn_layers[i](node_feats, data.edge_index)
+            try:
+                node_feats = self.gnn_layers[i](node_feats, data.edge_index)
+            except:
+                print(data.edge_index.shape)
+                print(node_feats)
+                assert 1==2
 
             if i < self.depth - 1:
                 node_feats = nn.functional.relu(node_feats)
