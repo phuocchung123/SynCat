@@ -8,7 +8,7 @@ from rdkit.Chem import ChemicalFeatures
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(
     os.path.join(RDConfig.RDDataDir, "BaseFeatures.fdef")
 )
-
+atom_list=[i for i in range(1,31)]+[34,35,44,46,47,50,53,55,56,76,78]
 charge_list = [1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 0]
 degree_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0]
 valence_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0]
@@ -59,8 +59,16 @@ def add_mol(mol_dict, mol):
     n_edge = mol.GetNumBonds() * 2
 
     D_list, A_list = _DA(mol)
-    atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
-    # atom_fea1 = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).reshape(-1,1)
+    # atom_fea1 = np.eye(118, dtype=bool)[[a.GetAtomicNum() for a in mol.GetAtoms()]]
+    # atom_lst=[]
+    # for a in mol.GetAtoms():
+    #     atomic_num=a.GetAtomicNum()
+    #     if atomic_num in atom_list:
+    #         atom_lst.append(atom_list.index(atomic_num))
+    #     else:
+    #         atom_lst.append(len(atom_list))
+    # atom_fea1 = np.eye(len(atom_list)+1, dtype=bool)[atom_lst]
+    atom_fea1 = np.array([a.GetAtomicNum() for a in mol.GetAtoms()]).reshape(-1,1)
     atom_fea2 = np.eye(len(charge_list), dtype=bool)[
         [charge_list.index(a.GetFormalCharge()) for a in mol.GetAtoms()]
     ][:, :-1]
@@ -173,11 +181,11 @@ def add_mol(mol_dict, mol):
             [[b.IsInRing(), b.GetIsConjugated()] for b in mol.GetBonds()],
             dtype=bool,
         )
-        bond_atbegin_fea = np.eye(118, dtype=bool)[[b.GetBeginAtom().GetAtomicNum() for b in mol.GetBonds()]]
-        bond_atend_fea = np.eye(118, dtype=bool)[[b.GetEndAtom().GetAtomicNum() for b in mol.GetBonds()]] 
-        bond_fea4= bond_atbegin_fea + bond_atend_fea
+        # bond_atbegin_fea = np.eye(118, dtype=bool)[[b.GetBeginAtom().GetAtomicNum() for b in mol.GetBonds()]]
+        # bond_atend_fea = np.eye(118, dtype=bool)[[b.GetEndAtom().GetAtomicNum() for b in mol.GetBonds()]] 
+        # bond_fea4= bond_atbegin_fea + bond_atend_fea
 
-        edge_attr = np.hstack([bond_fea4,bond_fea1, bond_fea2, bond_fea3])
+        edge_attr = np.hstack([bond_fea1, bond_fea2, bond_fea3])
         edge_attr = np.vstack([edge_attr, edge_attr])
         bond_loc = np.array(
             [[b.GetBeginAtomIdx(), b.GetEndAtomIdx()] for b in mol.GetBonds()],
@@ -196,7 +204,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 155))
+    node_attr = np.zeros((1, 38))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
@@ -213,7 +221,7 @@ def dict_list_to_numpy(mol_dict):
         mol_dict["src"] = np.hstack(mol_dict["src"]).astype(int)
         mol_dict["dst"] = np.hstack(mol_dict["dst"]).astype(int)
     else:
-        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4+118)).astype(bool)
+        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4)).astype(bool)
         # mol_dict["edge_attr"] = np.empty((0, 3+4))
         mol_dict["src"] = np.empty(0).astype(int)
         mol_dict["dst"] = np.empty(0).astype(int)
