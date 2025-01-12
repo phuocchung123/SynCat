@@ -143,8 +143,8 @@ class recat(nn.Module):
                 product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
                 product_tensor_new+=att_procduct[idx]*p_graph_feats_1_new[idx]
             
-            reactant_tensor=reactant_tensor+reactant_tensor_new
-            product_tensor=product_tensor+product_tensor_new
+            reactant_tensor=reactant_tensor_new
+            product_tensor=product_tensor_new
             ## each reaction vector
             reaction_tensor=torch.sub(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
