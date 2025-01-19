@@ -25,7 +25,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--test_set", type=str, default="data_test.npz")
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
     arg_parser.add_argument("--model_name", type=str, default="model.pt")
-    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_schneider_bondatom")
+    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_schneider")
     arg_parser.add_argument("--reagent_option", type=bool, default=False)
     arg_parser.add_argument("--y_column", type=str, default="y")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)

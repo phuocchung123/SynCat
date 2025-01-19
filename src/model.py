@@ -67,7 +67,8 @@ class recat(nn.Module):
             # print(r_graph_feats_1.shape)
             new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
             for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
-                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
+                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j])
+            # print(len(new_rows_r)) 
             r_graph_feats_1=torch.stack(new_rows_r).to(device)
             # print(r_graph_feats_1.shape)
 

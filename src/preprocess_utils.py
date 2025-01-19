@@ -173,11 +173,11 @@ def add_mol(mol_dict, mol):
             [[b.IsInRing(), b.GetIsConjugated()] for b in mol.GetBonds()],
             dtype=bool,
         )
-        bond_atbegin_fea = np.eye(118, dtype=bool)[[b.GetBeginAtom().GetAtomicNum() for b in mol.GetBonds()]]
-        bond_atend_fea = np.eye(118, dtype=bool)[[b.GetEndAtom().GetAtomicNum() for b in mol.GetBonds()]] 
-        bond_fea4= bond_atbegin_fea + bond_atend_fea
+        # bond_atbegin_fea = np.eye(118, dtype=bool)[[b.GetBeginAtom().GetAtomicNum() for b in mol.GetBonds()]]
+        # bond_atend_fea = np.eye(118, dtype=bool)[[b.GetEndAtom().GetAtomicNum() for b in mol.GetBonds()]] 
+        # bond_fea4= bond_atbegin_fea + bond_atend_fea
 
-        edge_attr = np.hstack([bond_fea4,bond_fea1, bond_fea2, bond_fea3])
+        edge_attr = np.hstack([bond_fea1, bond_fea2, bond_fea3])
         edge_attr = np.vstack([edge_attr, edge_attr])
         bond_loc = np.array(
             [[b.GetBeginAtomIdx(), b.GetEndAtomIdx()] for b in mol.GetBonds()],
@@ -213,7 +213,7 @@ def dict_list_to_numpy(mol_dict):
         mol_dict["src"] = np.hstack(mol_dict["src"]).astype(int)
         mol_dict["dst"] = np.hstack(mol_dict["dst"]).astype(int)
     else:
-        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4+118)).astype(bool)
+        mol_dict["edge_attr"] = np.empty((0, len(bond_list) + 4)).astype(bool)
         # mol_dict["edge_attr"] = np.empty((0, 3+4))
         mol_dict["src"] = np.empty(0).astype(int)
         mol_dict["dst"] = np.empty(0).astype(int)
