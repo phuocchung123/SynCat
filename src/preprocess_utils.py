@@ -108,26 +108,26 @@ def add_mol(mol_dict, mol):
     atom_fea6[:, 5:] = np.max(atom_fea6[:, 5:], axis=1).reshape(-1, 1)
     atom_fea6 = np.delete(atom_fea6, [6, 7, 8, 9, 10, 11], axis=1)
 
-    # node_attr = np.hstack(
-    #     [
-    #         atom_fea1,
-    #         atom_fea2,
-    #         atom_fea3,
-    #         atom_fea4,
-    #         atom_fea5,
-    #         atom_fea6,
-    #         atom_fea7,
-    #         atom_fea8,
-    #         atom_fea9,
-    #         atom_fea10,
-    #     ]
-    # )
-    
     node_attr = np.hstack(
         [
             atom_fea1,
+            atom_fea2,
+            atom_fea3,
+            atom_fea4,
+            atom_fea5,
+            atom_fea6,
+            atom_fea7,
+            atom_fea8,
+            atom_fea9,
+            atom_fea10,
         ]
     )
+    
+    # node_attr = np.hstack(
+    #     [
+    #         atom_fea1,
+    #     ]
+    # )
     
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
@@ -162,7 +162,7 @@ def add_mol(mol_dict, mol):
 def add_dummy(mol_dict):
     n_node = 1
     n_edge = 0
-    node_attr = np.zeros((1, 118))
+    node_attr = np.zeros((1, 155))
     mol_dict["n_node"].append(n_node)
     mol_dict["n_edge"].append(n_edge)
     mol_dict["node_attr"].append(node_attr)
