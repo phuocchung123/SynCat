@@ -55,7 +55,7 @@ class MultiHeadAttention(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, hidden_size=256, dropout_rate=0.1, attention_dropout_rate=0.1, num_heads=1):
+    def __init__(self, hidden_size=300, dropout_rate=0.1, attention_dropout_rate=0.1, num_heads=1):
         super(EncoderLayer, self).__init__()
 
         self.self_attention_norm = nn.LayerNorm(hidden_size)

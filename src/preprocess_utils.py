@@ -133,9 +133,9 @@ def add_mol(mol_dict, mol):
     node_attr = np.hstack(
         [
             atom_fea1,
-            atom_fea4,
             atom_fea2,
             atom_fea3,
+            atom_fea4,
             atom_fea5,
             atom_fea6,
             atom_fea7,
