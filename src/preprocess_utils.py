@@ -15,7 +15,7 @@ hybridization_list = ["SP", "SP2", "SP3", "SP3D", "SP3D2", "S", "UNSPECIFIED"]
 hydrogen_list = [1, 2, 3, 4, 5, 6, 0]
 ringsize_list = [3, 4, 5, 6, 7, 8]
 
-bond_list = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC", "SELF_LOOP"]
+bond_list = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC", "SELF_LOOP","DATIVE"]
 
 
 def _DA(mol):

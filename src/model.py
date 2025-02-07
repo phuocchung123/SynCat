@@ -19,7 +19,7 @@ class recat(nn.Module):
         edge_in_feats=9,
         out_dim=4,
         num_layer=3,
-        node_hid_feats=256,
+        node_hid_feats=384,
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
