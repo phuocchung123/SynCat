@@ -245,6 +245,6 @@ def inference(args, net, test_loader, device, loss_fn=None):
     mcc = matthews_corrcoef(targets, preds)
 
     if loss_fn is None:
-        return acc, mcc
+        return acc, mcc, preds
     else:
         return acc, mcc, np.mean(inference_loss_list)

@@ -118,7 +118,7 @@ def finetune(args):
     net = recat(node_dim, edge_dim, out_dim).to(device)
     checkpoint = torch.load(model_path)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc = inference(args, net, test_loader, device)
+    acc, mcc, preds = inference(args, net, test_loader, device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
     print("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
@@ -129,3 +129,4 @@ def finetune(args):
     }
     with open(monitor_path, "a") as f:
         f.write(json.dumps(dict) + "\n")
+    np.savez('../Data/monitor/type.npz',topo=preds)
