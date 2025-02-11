@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch_geometric.nn.conv import GINEConv
+from torch_geometric.nn.conv import GINConv
 from torch_geometric.nn.pool import global_add_pool
 
 
@@ -23,13 +23,13 @@ class GIN(nn.Module):
             nn.Linear(node_in_feats, node_hid_feats), nn.ReLU()
         )
 
-        self.project_edge_feats = nn.Sequential(
-            nn.Linear(edge_in_feats, node_hid_feats)
-        )
+        # self.project_edge_feats = nn.Sequential(
+        #     nn.Linear(edge_in_feats, node_hid_feats)
+        # )
 
         self.gnn_layers = nn.ModuleList(
             [
-                GINEConv(
+                GINConv(
                     nn=torch.nn.Sequential(
                         nn.Linear(node_hid_feats, node_hid_feats),
                         nn.ReLU(),
@@ -54,10 +54,10 @@ class GIN(nn.Module):
 
         node_feats_init = self.project_node_feats(node_feats_orig)
         node_feats = node_feats_init
-        edge_feats = self.project_edge_feats(edge_feats_orig)
+        # edge_feats = self.project_edge_feats(edge_feats_orig)
 
         for i in range(self.depth):
-            node_feats = self.gnn_layers[i](node_feats, data.edge_index, edge_feats)
+            node_feats = self.gnn_layers[i](node_feats, data.edge_index)
 
             if i < self.depth - 1:
                 node_feats = nn.functional.relu(node_feats)
