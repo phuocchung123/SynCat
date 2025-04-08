@@ -64,17 +64,17 @@ class recat(nn.Module):
         for batch in range(r_graph_feats.shape[1]):
             ### reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
-            new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
-            for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
-                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
-            r_graph_feats_1=torch.stack(new_rows_r).to(device)
+            # new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
+            # for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
+            #     new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
+            # r_graph_feats_1=torch.stack(new_rows_r).to(device)
 
 
             p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
-            new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
-            for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
-                new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
-            p_graph_feats_1=torch.stack(new_rows_p).to(device)
+            # new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
+            # for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
+            #     new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
+            # p_graph_feats_1=torch.stack(new_rows_p).to(device)
 
 
 
