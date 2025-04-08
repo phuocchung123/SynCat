@@ -60,7 +60,7 @@ class recat(nn.Module):
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
 
         reaction_vectors=torch.tensor([]).to(device)
-
+        
         for batch in range(r_graph_feats.shape[1]):
             ### reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
@@ -92,10 +92,7 @@ class recat(nn.Module):
             att_r_p = att_r_p.squeeze(0,1)
             att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
             att_procduct=att_procduct.view(-1).to(device)
-            
-            
 
-            
             ##reactant vector = sum(attention*each reactant vetor)
             reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
             for idx in range(r_graph_feats_1.shape[0]):
@@ -112,6 +109,7 @@ class recat(nn.Module):
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
+
 
 
         out = self.predict(reaction_vectors)
