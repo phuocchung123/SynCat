@@ -50,7 +50,7 @@ class recat(nn.Module):
         #     torch.nn.Dropout(drop_ratio),
         #     torch.nn.Linear(predict_hidden_feats, out_dim),
         # )
-        self.predict= torch.nn.Linear(emb_dim*2,out_dim)
+        self.predict= torch.nn.Linear(emb_dim,out_dim)
         self.attention=EncoderLayer()
         self.atts_reactant=[]
         self.atts_product=[]
@@ -84,6 +84,12 @@ class recat(nn.Module):
             att_p_r=att_p_r.squeeze(0,1)
             att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
             att_reactant=att_reactant.view(-1).to(device)
+            # print(f'att_reactant: {att_reactant}')
+            att_reactant_sort=att_reactant.sort(descending=True)
+            # print(f'att_reactant: {att_reactant}')
+            # print(f'att_reactant_sort: {att_reactant_sort}')
+
+            # assert 1==2
             att_reactant_max= torch.max(att_reactant)
 
 
@@ -95,8 +101,12 @@ class recat(nn.Module):
 
             ##reactant vector = sum(attention*each reactant vetor)
             reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
-            for idx in range(r_graph_feats_1.shape[0]):
-                reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+            if r_graph_feats_1.shape[0] <4:
+                for idx in range(r_graph_feats_1.shape[0]):
+                    reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+            else:
+                for idx in att_reactant_sort.indices[:3]:
+                    reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
 
             ##product vector = sum(attention*each product vector)
             product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
@@ -105,8 +115,9 @@ class recat(nn.Module):
             
                 
             ## each reaction vector
-            reaction_tensor1=torch.sub(product_tensor,reactant_tensor)
-            reaction_tensor=torch.cat((reaction_tensor1, product_tensor), dim=1)
+            reaction_tensor=torch.sub(product_tensor,reactant_tensor)
+            # reaction_tensor=torch.cat((reactant_tensor,reaction_tensor1, product_tensor), dim=1)
+            # reaction_tensor=torch.cat((reaction_tensor1, product_tensor), dim=1)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
