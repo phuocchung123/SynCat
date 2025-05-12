@@ -5,15 +5,14 @@ import numpy as np
 import pandas as pd
 from data import GraphDataset
 from torch.utils.data import DataLoader
-from model import recat, train, inference
+from model import recat, inference
 from utils import collate_reaction_graphs
 
 
 def finetune(args):
     batch_size = args.batch_size
     model_path = args.model_path + args.model_name
-    monitor_path = args.monitor_folder + args.monitor_name
-    epochs = args.epochs
+    epochs = 0
     data = pd.read_csv(args.Data_folder + args.data_csv)
     out_dim = data[args.y_column].nunique()
     device = (
@@ -25,118 +24,54 @@ def finetune(args):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    train_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.train_set,
-        reagent_option=args.reagent_option,
+    inference_set = GraphDataset(
+        args.Data_folder + args.npz_inference + "/inference.npz"
     )
-    train_loader = DataLoader(
-        dataset=train_set,
-        batch_size=int(np.min([batch_size, len(train_set)])),
-        shuffle=False,
-        collate_fn=collate_reaction_graphs,
-        num_workers=2,
-        drop_last=True,
-    )
-
-    test_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.test_set,
-        reagent_option=args.reagent_option,
-    )
-    test_loader = DataLoader(
-        dataset=test_set,
-        batch_size=int(np.min([batch_size, len(test_set)])),
+    inference_loader = DataLoader(
+        dataset=inference_set,
+        batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_reaction_graphs,
         num_workers=2,
         drop_last=False,
     )
 
-    val_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.val_set,
-        reagent_option=args.reagent_option,
-    )
-    val_loader = DataLoader(
-        dataset=val_set,
-        batch_size=int(np.min([batch_size, len(val_set)])),
-        shuffle=False,
-        collate_fn=collate_reaction_graphs,
-        num_workers=2,
-        drop_last=False,
-    )
 
     print("-- CONFIGURATIONS")
     print(
-        "--- train/valid/test: %d/%d/%d" % (len(train_set), len(val_set), len(test_set))
+        "--- data: %d" % (len(inference_set))
     )
     print(
-        "--- max no. reactants_train, valid, test respectively:",
-        train_set.rmol_max_cnt,
-        val_set.rmol_max_cnt,
-        test_set.rmol_max_cnt,
+        "--- max no. reactants_inference:",
+        inference_set.rmol_max_cnt,
     )
     print(
-        "--- max no. products_train, valid, test respectively:",
-        train_set.pmol_max_cnt,
-        val_set.pmol_max_cnt,
-        test_set.pmol_max_cnt,
+        "--- max no. products_inference:",
+        inference_set.pmol_max_cnt,
     )
     print("--- model_path:", model_path)
 
-    # training
-    train_y = train_loader.dataset.y
-
-    assert len(train_y) == len(train_set)
-    node_dim = train_set.rmol_node_attr[0].shape[1]
-    edge_dim = train_set.rmol_edge_attr[0].shape[1]
-    if not os.path.exists(model_path):
-        net = recat(node_dim, edge_dim, out_dim).to(device)
-        print("-- TRAINING")
-        net = train(
-            args, net, train_loader, val_loader, model_path, device, epochs=epochs
-        )
-    else:
-        net = recat(node_dim, edge_dim, out_dim).to(device)
-        checkpoint = torch.load(model_path)
-        net.load_state_dict(checkpoint["model_state_dict"])
-        current_epoch = checkpoint["epoch"]
-        epochs = epochs - current_epoch
-        net = train(
-            args,
-            net,
-            train_loader,
-            val_loader,
-            model_path,
-            device,
-            epochs=epochs,
-            current_epoch=current_epoch,
-            best_val_loss=checkpoint["val_loss"],
-        )
+    node_dim = inference_set.rmol_node_attr[0].shape[1]
+    edge_dim = inference_set.rmol_edge_attr[0].shape[1]
 
     # test
-    test_y = test_loader.dataset.y
+    test_y = inference_loader.dataset.y
     test_y = torch.argmax(torch.Tensor(test_y), dim=1).tolist()
     net = recat(node_dim, edge_dim, out_dim).to(device)
     checkpoint = torch.load(model_path,map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc, atts_reactant, atts_product, rsmi, targets, preds= inference(args, net, test_loader, device)
+    _, _, atts_reactant, atts_product, rsmi, _, _, emb= inference(args, net, inference_loader, device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
-    print("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
-    dict = {
-        "Name": "Test",
-        "test_acc": acc,
-        "test_mcc": mcc,
-    }
     
     dict_att = {
         "Name": "Attention",
         "rsmi": rsmi,
         "Attention reactant": atts_reactant,
-        "Attention product":atts_product
+        "Attention product":atts_product,
+        "emb": emb
     }
     
-    with open(monitor_path, "a") as f:
-        f.write(json.dumps(dict) + "\n")
-    with open('../Data/monitor/attention2.json','w') as f:
+
+    with open('../Data/monitor/attention_inference.json','w') as f:
         json.dump(dict_att,f)
-    np.savez_compressed('../Data/monitor/target_pred.npz',targets=targets, preds= preds)
