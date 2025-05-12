@@ -60,7 +60,7 @@ def finetune(args):
     net = recat(node_dim, edge_dim, out_dim).to(device)
     checkpoint = torch.load(model_path,map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    _, _, atts_reactant, atts_product, rsmi, _, _, emb= inference(args, net, inference_loader, device)
+    _, _, atts_reactant, atts_product, rsmi, _, preds, emb= inference(args, net, inference_loader, device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
     
@@ -69,6 +69,7 @@ def finetune(args):
         "rsmi": rsmi,
         "Attention reactant": atts_reactant,
         "Attention product":atts_product,
+        "preds":preds,
         "emb": emb
     }
     
