@@ -20,8 +20,8 @@ class recat(nn.Module):
         node_in_feats=155,
         edge_in_feats=9,
         out_dim=4,
-        num_layer=3,
-        node_hid_feats=384,
+        num_layer=2,
+        node_hid_feats=256,
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
@@ -108,7 +108,7 @@ class recat(nn.Module):
             
                 
             ## each reaction vector
-            reaction_tensor=torch.sub(product_tensor,reactant_tensor)
+            reaction_tensor=torch.sub(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
