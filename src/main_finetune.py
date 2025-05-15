@@ -19,7 +19,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument("--data_csv", type=str, default="latest_data/schneider50k.csv")
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_sch_ba.pt")
+    arg_parser.add_argument("--model_name", type=str, default="981_model.pt")
     arg_parser.add_argument("--data_inference", type=str, default="data/inference.npy")
     arg_parser.add_argument("--npz_inference", type=str, default="npz/npz_inference")
     arg_parser.add_argument("--y_column", type=str, default="y")
