@@ -58,7 +58,7 @@ def finetune(args):
     test_y = inference_loader.dataset.y
     test_y = torch.argmax(torch.Tensor(test_y), dim=1).tolist()
     net = recat(node_dim, edge_dim, out_dim).to(device)
-    checkpoint = torch.load(model_path,map_location=device)
+    checkpoint = torch.load(model_path,map_location=device,weights_only=False)
     net.load_state_dict(checkpoint["model_state_dict"])
     _, _, atts_reactant, atts_product, rsmi, _, preds, emb= inference(args, net, inference_loader, device)
     print("-- RESULT")

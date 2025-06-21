@@ -12,7 +12,7 @@ configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--batch_size", type=int, default=128)
+    arg_parser.add_argument("--batch_size", type=int, default=1)
     arg_parser.add_argument("--device", type=int, default=1)
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--monitor_name", type=str, default="monitor.txt")
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--data_csv", type=str, default="latest_data/schneider50k.csv")
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
     arg_parser.add_argument("--model_name", type=str, default="981_model.pt")
-    arg_parser.add_argument("--data_inference", type=str, default="data/inference.npy")
+    arg_parser.add_argument("--data_inference", type=str, default="inference.npy")
     arg_parser.add_argument("--npz_inference", type=str, default="npz/npz_inference")
     arg_parser.add_argument("--y_column", type=str, default="y")
     arg_parser.add_argument("--reaction_column", type=str, default="rxn")
