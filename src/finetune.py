@@ -96,7 +96,7 @@ def finetune(args):
         )
     else:
         net = recat(node_dim, edge_dim, out_dim).to(device)
-        checkpoint = torch.load(model_path)
+        checkpoint = torch.load(model_path,map_location=device,weights_only=False)
         net.load_state_dict(checkpoint["model_state_dict"])
         current_epoch = checkpoint["epoch"]
         epochs = epochs - current_epoch
@@ -114,18 +114,19 @@ def finetune(args):
 
     # test
     test_y = test_loader.dataset.y
-    test_y = torch.argmax(torch.Tensor(test_y), dim=1).tolist()
+    # test_y = torch.argmax(torch.Tensor(test_y), dim=1).tolist()
     net = recat(node_dim, edge_dim, out_dim).to(device)
-    checkpoint = torch.load(model_path,map_location=device)
+    checkpoint = torch.load(model_path,map_location=device,weights_only=False)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc, atts_reactant, atts_product, rsmi, targets, preds= inference(args, net, test_loader, device)
+    r2, rmse, mae, atts_reactant, atts_product, rsmi, targets, preds= inference(args, net, test_loader, device)
     print("-- RESULT")
     print("--- test size: %d" % (len(test_y)))
-    print("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
+    print("--- R2: %.3f, RMSE: %.3f, MAE: %.3f" % (r2, rmse, mae))
     dict = {
         "Name": "Test",
-        "test_acc": acc,
-        "test_mcc": mcc,
+        "test_r2": np.round(r2, decimals=3),
+        "test_rmse": np.round(rmse,decimals=3),
+        "test_mae": np.round(mae,decimals=3),
     }
     
     dict_att = {

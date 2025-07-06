@@ -22,7 +22,6 @@ def prepare_data(args):
     data_train, data_valid = train_test_split(
         data_pretrain,
         test_size=0.1,
-        stratify=data_pretrain[args.y_column],
         random_state=42,
     )
 
@@ -31,21 +30,22 @@ def prepare_data(args):
     pmol_max_cnt = np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_list])
 
     # get_data_train
+    data_train=data_pretrain
     rsmi_list_train = data_train[args.reaction_column].values
     y_list_train = data_train[args.y_column].values
-    y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]
+    # y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]
     filename_train = args.Data_folder + args.npz_folder + "/" + args.train_set
 
     # get_data_valid
     rsmi_list_valid = data_valid[args.reaction_column].values
     y_list_valid = data_valid[args.y_column].values
-    y_list_valid = np.eye(y.nunique(), dtype="uint8")[y_list_valid]
+    # y_list_valid = np.eye(y.nunique(), dtype="uint8")[y_list_valid]
     filename_valid = args.Data_folder + args.npz_folder + "/" + args.val_set
 
     # get_data_test
     rsmi_list_test = data_test[args.reaction_column].values
     y_list_test = data_test[args.y_column].values
-    y_list_test = np.eye(y.nunique(), dtype="uint8")[y_list_test]
+    # y_list_test = np.eye(y.nunique(), dtype="uint8")[y_list_test]
     filename_test = args.Data_folder + args.npz_folder + "/" + args.test_set
 
     if args.reagent_option:

@@ -122,7 +122,8 @@ def collate_reaction_graphs(batch: List[Tuple[Any, ...]]) -> Tuple[Batch, torch.
     p_dummy=[batchdata[-4]][0]
     # print('dummy: ',r_dummy[0])
     # assert 1==2
-    labels = torch.stack([torch.argmax(y) for y in torch.Tensor(batchdata[-2])], axis=0)
+    # labels = torch.stack([y for y in torch.Tensor(batchdata[-2])], axis=0)
+    labels=torch.FloatTensor(batchdata[-2])
     rsmi = [batchdata[-1]]
 
     return *datas, r_dummy, p_dummy,labels, rsmi
