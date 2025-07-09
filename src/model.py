@@ -21,7 +21,7 @@ class recat(nn.Module):
         edge_in_feats=9,
         out_dim=4,
         num_layer=3,
-        node_hid_feats=300,
+        node_hid_feats=256,
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
@@ -42,7 +42,7 @@ class recat(nn.Module):
             emb_dim = node_hid_feats
 
         self.predict = nn.Sequential(
-            nn.Linear(readout_feats, predict_hidden_feats),
+            nn.Linear(emb_dim, predict_hidden_feats),
             nn.PReLU(),
             nn.Dropout(drop_ratio),
             nn.Linear(predict_hidden_feats, predict_hidden_feats),
@@ -65,61 +65,61 @@ class recat(nn.Module):
         for batch in range(r_graph_feats.shape[1]):
             ### reactant and product vector correspoding each reaction
             r_graph_feats_1=r_graph_feats[:,batch,:][r_dummy[batch]].to(device)
-            # new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
-            # for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
-            #     new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
-            # r_graph_feats_1=torch.stack(new_rows_r).to(device)
+            new_rows_r=[r_graph_feats_1[i] for i in range(r_graph_feats_1.size(0))]
+            for i, j in itertools.combinations(range(r_graph_feats_1.size(0)), 2):
+                new_rows_r.append(r_graph_feats_1[i] + r_graph_feats_1[j]) 
+            r_graph_feats_1=torch.stack(new_rows_r).to(device)
 
 
             p_graph_feats_1=p_graph_feats[:,batch,:][p_dummy[batch]].to(device)
-            # new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
-            # for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
-            #     new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
-            # p_graph_feats_1=torch.stack(new_rows_p).to(device)
+            new_rows_p=[p_graph_feats_1[i] for i in range(p_graph_feats_1.size(0))]
+            for i, j in itertools.combinations(range(p_graph_feats_1.size(0)), 2):
+                new_rows_p.append(p_graph_feats_1[i] + p_graph_feats_1[j]) 
+            p_graph_feats_1=torch.stack(new_rows_p).to(device)
 
 
 
             #attention of product on each reactant
-            # p_graph_feats_1 = p_graph_feats_1.view(-1,r_graph_feats_1.shape[1])
-            # att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
-            # att_p_r=att_p_r.squeeze(0,1)
-            # att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
-            # att_reactant=att_reactant.view(-1).to(device)
+            p_graph_feats_1 = p_graph_feats_1.view(-1,r_graph_feats_1.shape[1])
+            att_p_r=self.attention(p_graph_feats_1,r_graph_feats_1)
+            att_p_r=att_p_r.squeeze(0,1)
+            att_reactant = torch.sum(att_p_r,dim=0)/att_p_r.shape[0]
+            att_reactant=att_reactant.view(-1).to(device)
             # att_reactant_max= torch.max(att_reactant)
 
 
             #attention of reactant on each product
-            # att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
-            # att_r_p = att_r_p.squeeze(0,1)
-            # att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
-            # att_procduct=att_procduct.view(-1).to(device)
+            att_r_p = self.attention(r_graph_feats_1, p_graph_feats_1)
+            att_r_p = att_r_p.squeeze(0,1)
+            att_procduct=torch.sum(att_r_p,dim=0)/att_r_p.shape[0]
+            att_procduct=att_procduct.view(-1).to(device)
             
             
 
             
             ##reactant vector = sum(attention*each reactant vetor)
-            # reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
-            # for idx in range(r_graph_feats_1.shape[0]):
-            #     reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
+            reactant_tensor=torch.zeros(1,r_graph_feats_1.shape[1]).to(device)
+            for idx in range(r_graph_feats_1.shape[0]):
+                reactant_tensor+=att_reactant[idx]*r_graph_feats_1[idx]
 
             ##product vector = sum(attention*each product vector)
-            # product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
-            # for idx in range(p_graph_feats_1.shape[0]):
-            #     product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
+            product_tensor=torch.zeros(1,p_graph_feats_1.shape[1]).to(device)
+            for idx in range(p_graph_feats_1.shape[0]):
+                product_tensor+=att_procduct[idx]*p_graph_feats_1[idx]
             
-            reactant_tensor=torch.sum(r_graph_feats_1,dim=0).reshape(1,-1)
+            # reactant_tensor=torch.sum(r_graph_feats_1,dim=0).reshape(1,-1)
             # print(reactant_tensor.shape)
-            product_tensor=torch.sum(p_graph_feats_1,dim=0).reshape(1,-1)
+            # product_tensor=torch.sum(p_graph_feats_1,dim=0).reshape(1,-1)
             # print(product_tensor.shape)
             # assert 1==2
             ## each reaction vector
-            reaction_tensor=torch.sub(reactant_tensor,product_tensor)
+            reaction_tensor=torch.add(reactant_tensor,product_tensor)
             reaction_vectors=torch.cat((reaction_vectors,reaction_tensor),dim=0)
-            # self.atts_reactant.append(att_reactant.tolist())
-            # self.atts_product.append(att_procduct.tolist())
+            self.atts_reactant.append(att_reactant.tolist())
+            self.atts_product.append(att_procduct.tolist())
 
-        reaction_vector1 = self.lin(reaction_vectors)
-        out = self.predict(reaction_vector1)
+        # reaction_vector1 = self.lin(reaction_vectors)
+        out = self.predict(reaction_vectors)
         
         return out, self.atts_reactant, self.atts_product
 
@@ -150,7 +150,7 @@ def train(
         pmol_max_cnt = train_loader.dataset.pmol_max_cnt
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5)
+    optimizer = Adam(net.parameters(), lr=1e-3, weight_decay=1e-5)
 
 
     for epoch in range(n_epochs):
@@ -188,7 +188,8 @@ def train(
             preds.extend(pred.tolist())
             # print(pred.shape)
             # print(labels.shape)
-            loss = loss_fn(pred, labels.view(-1,1))
+            loss = loss_fn(pred.view(-1), labels)
+            
             # loss = (1 - 0.1) * loss.mean() + 0.1 * (
             #     loss * torch.exp(-logvar) + logvar
             # ).mean()
@@ -217,34 +218,34 @@ def train(
         )
         # validation
         net.eval()
-        # val_r2, val_rmse, val_mae, val_loss,_,_,_ = inference(args, net, val_loader, device, loss_fn)
+        val_r2, val_rmse, val_mae, val_loss,_,_,_ = inference(args, net, val_loader, device, loss_fn)
 
-        # print(
-        #     "--- validation at epoch %d, val_loss %.3f, val_r2 %.3f, val_rmse %.3f, val_mae %.3f ---"
-        #     % (epoch, val_loss, val_r2, val_rmse, val_mae)
-        # )
+        print(
+            "--- validation at epoch %d, val_loss %.3f, val_r2 %.3f, val_rmse %.3f, val_mae %.3f ---"
+            % (epoch, val_loss, val_r2, val_rmse, val_mae)
+        )
         print("\n" + "*" * 100)
 
         dict = {
             "epoch": epoch + current_epoch,
             "train_loss": np.round(np.mean(train_loss_list),decimals=3),
-            # "val_loss": np.round(val_loss,decimals=3),
+            "val_loss": np.round(val_loss,decimals=3),
             "train_r2": np.round(r2,decimals=3),
-            # "val_r2": np.round(val_r2,decimals=3),
+            "val_r2": np.round(val_r2,decimals=3),
             "train_rmse": np.round(rmse,decimals=3),
-            # "val_rmse": np.round(val_rmse,decimals=3),
+            "val_rmse": np.round(val_rmse,decimals=3),
             "train_mae": np.round(mae,decimals=3),
-            # "val_mae": np.round(val_mae,decimals=3),
+            "val_mae": np.round(val_mae,decimals=3),
         }
         with open(monitor_path, "a") as f:
             f.write(json.dumps(dict) + "\n")
-        if loss < best_val_loss:
-            best_val_loss = loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
             torch.save(
                 {
                     "epoch": epoch + current_epoch,
                     "model_state_dict": net.state_dict(),
-                    "val_loss": best_val_loss,
+                    "val_loss": val_loss,
                 },
                 model_path,
             )
@@ -297,7 +298,7 @@ def inference(args, net, test_loader, device, loss_fn=None):
             preds.extend(pred.tolist())
 
             if loss_fn is not None:
-                inference_loss = loss_fn(pred, labels.view(-1,1))
+                inference_loss = loss_fn(pred.view(-1), labels)
                 inference_loss_list.append(inference_loss.item())
 
     r2 = r2_score(targets, preds)

@@ -30,7 +30,7 @@ def prepare_data(args):
     pmol_max_cnt = np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_list])
 
     # get_data_train
-    data_train=data_pretrain
+    # data_train=data_pretrain
     rsmi_list_train = data_train[args.reaction_column].values
     y_list_train = data_train[args.y_column].values
     # y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]

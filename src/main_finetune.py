@@ -24,7 +24,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--val_set", type=str, default="data_valid.npz")
     arg_parser.add_argument("--test_set", type=str, default="data_test.npz")
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_rg1.pt")
+    arg_parser.add_argument("--model_name", type=str, default="model_rg6.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz_rg/npz_data1")
     arg_parser.add_argument("--reagent_option", type=bool, default=False)
     arg_parser.add_argument("--y_column", type=str, default="y")
