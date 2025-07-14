@@ -1,8 +1,8 @@
 # SynCat
 
-ReCatAI is a cutting-edge repository dedicated to harnessing the power of artificial intelligence to categorize chemical reactions, particularly within the realm of organic chemistry. This project aims to bridge the gap between traditional chemical analysis and modern computational methodologies, offering a novel approach to understanding and organizing chemical reactions.
+**SynCat** is a novel graph-based framework for classifying chemical reactions by leveraging molecule-level cross-attention for precise reagent detection and role assignment. To overcome the limitations of existing methods, it ensures permutation invariance through a pairwise summation of participant embeddings, which balances mechanistic specificity with an order-independent representation. This approach has demonstrated superior performance over established fingerprints like **DRFP** and **RXNFP**, achieving a mean classification accuracy of 0.988 and enhanced scalability on benchmark datasets.
 
-![screenshot](./Image/fig_repo.webp)
+![screenshot](./Image/syncat.png)
 
 
 ## Step-by-Step Installation Guide
