@@ -4,8 +4,9 @@ import random
 import numpy as np
 import torch
 from prepare_data import prepare_data
-from utils import configure_warnings_and_logs
+from utils import configure_warnings_and_logs, setup_logging
 
+logger = setup_logging()
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
             os.makedirs(npz_folder)
         for dirpath, dirnames, files in os.walk(npz_folder):
             if files:
-                print("Already exist files in {}".format(dirpath))
+                logger.info("Already exist files in {}".format(dirpath))
             else:
                 prepare_data(args)
 

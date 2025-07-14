@@ -145,7 +145,7 @@ def train(
 
         acc = accuracy_score(targets, preds)
         mcc = matthews_corrcoef(targets, preds)
-        print(
+        logger.info(
             "--- training epoch %d, loss %.3f, acc %.3f, mcc %.3f, time elapsed(min) %.2f---"
             % (
                 epoch,
@@ -160,11 +160,11 @@ def train(
         net.eval()
         val_acc, val_mcc, val_loss = inference(args, net, val_loader, device, loss_fn)
 
-        print(
+        logger.info(
             "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
             % (epoch, val_loss, val_acc, val_mcc)
         )
-        print("\n" + "*" * 100)
+        logger.info("\n" + "*" * 100)
 
         dict = {
             "epoch": epoch + current_epoch,

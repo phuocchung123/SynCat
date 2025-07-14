@@ -6,7 +6,9 @@ import pandas as pd
 from data import GraphDataset
 from torch.utils.data import DataLoader
 from model import recat, train, inference
-from utils import collate_reaction_graphs
+from utils import collate_reaction_graphs, setup_logging
+
+logger = setup_logging()
 
 
 def finetune(args):
@@ -21,7 +23,7 @@ def finetune(args):
         if torch.cuda.is_available()
         else torch.device("cpu")
     )
-    print("device is\t", device)
+    logger.info("device is\t", device)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
@@ -64,23 +66,23 @@ def finetune(args):
         drop_last=False,
     )
 
-    print("-- CONFIGURATIONS")
-    print(
+    logger.info("-- CONFIGURATIONS")
+    logger.info(
         "--- train/valid/test: %d/%d/%d" % (len(train_set), len(val_set), len(test_set))
     )
-    print(
+    logger.info(
         "--- max no. reactants_train, valid, test respectively:",
         train_set.rmol_max_cnt,
         val_set.rmol_max_cnt,
         test_set.rmol_max_cnt,
     )
-    print(
+    logger.info(
         "--- max no. products_train, valid, test respectively:",
         train_set.pmol_max_cnt,
         val_set.pmol_max_cnt,
         test_set.pmol_max_cnt,
     )
-    print("--- model_path:", model_path)
+    logger.info("--- model_path:", model_path)
 
     # training
     train_y = train_loader.dataset.y
@@ -90,7 +92,7 @@ def finetune(args):
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
     if not os.path.exists(model_path):
         net = recat(node_dim, edge_dim, out_dim).to(device)
-        print("-- TRAINING")
+        logger.info("-- TRAINING")
         net = train(
             args, net, train_loader, val_loader, model_path, device, epochs=epochs
         )
@@ -119,9 +121,9 @@ def finetune(args):
     checkpoint = torch.load(model_path)
     net.load_state_dict(checkpoint["model_state_dict"])
     acc, mcc = inference(args, net, test_loader, device)
-    print("-- RESULT")
-    print("--- test size: %d" % (len(test_y)))
-    print("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
+    logger.info("-- RESULT")
+    logger.info("--- test size: %d" % (len(test_y)))
+    logger.info("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
     dict = {
         "Name": "Test",
         "test_acc": acc,

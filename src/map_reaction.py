@@ -4,14 +4,14 @@ from tqdm import tqdm
 from rxnmapper import RXNMapper
 from utils import configure_warnings_and_logs, setup_logging
 
-logger = setup_logging
+logger = setup_logging()
 configure_warnings_and_logs(ignore_warnings=True)
 
 
 def map_reaction(args):
     mapper = RXNMapper()
     data = pd.read_csv(args.Data_folder + args.data_csv, index_col=0)
-    print(data.shape)
+    logger.info("Data shape:", data.shape)
     rsmi = data[args.reaction_column].values
     for i in tqdm(rsmi):
         try:
@@ -46,7 +46,7 @@ def map_reaction(args):
             new_react
         )
         data.loc[data[args.reaction_column] == i, args.reagent_column] = reagent
-    print(data.shape)
+    logger.info("Data shape:", data.shape)
     data = data.dropna(subset=[args.mapped_reaction_column, args.reagent_column])
-    print(data.shape)
+    logger.info("Data shape:", data.shape)
     data.to_csv(args.Data_folder + args.mapped_data_csv)
