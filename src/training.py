@@ -24,6 +24,7 @@ def train(
     current_epoch=0,
     best_val_loss=1e10,
 ):
+    logger = setup_logging(log_filename=args.monitor_folder+'monitor_log')
     monitor_path = args.monitor_folder + args.monitor_name
 
     rmol_max_cnt = train_loader.dataset.rmol_max_cnt

@@ -8,9 +8,7 @@ configure_warnings_and_logs(ignore_warnings=True)
 
 
 def prepare_data(args):
-    data = pd.read_csv(args.Data_folder + args.data_csv, index_col=0)
-    if args.reagent_option:
-        data = data.fillna("")
+    data = pd.read_csv(args.Data_folder + args.data_csv,compression='gzip', index_col=0)
     y = data[args.y_column]
     if args.train_test_split:
         data_pretrain = data[data[args.split_column] == "train"]
@@ -34,74 +32,42 @@ def prepare_data(args):
     rsmi_list_train = data_train[args.reaction_column].values
     y_list_train = data_train[args.y_column].values
     y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]
-    filename_train = args.Data_folder + args.npz_folder + "/" + args.train_set
+    filename_train = args.Data_folder + args.npz_folder +"/"+ "train.npz"
 
     # get_data_valid
     rsmi_list_valid = data_valid[args.reaction_column].values
     y_list_valid = data_valid[args.y_column].values
     y_list_valid = np.eye(y.nunique(), dtype="uint8")[y_list_valid]
-    filename_valid = args.Data_folder + args.npz_folder + "/" + args.val_set
+    filename_valid = args.Data_folder + args.npz_folder +"/"+"valid.npz" 
 
     # get_data_test
     rsmi_list_test = data_test[args.reaction_column].values
     y_list_test = data_test[args.y_column].values
     y_list_test = np.eye(y.nunique(), dtype="uint8")[y_list_test]
-    filename_test = args.Data_folder + args.npz_folder + "/" + args.test_set
+    filename_test = args.Data_folder + args.npz_folder + "/"+"test.npz"
 
-    if args.reagent_option:
-        reagent = data[args.reagent_column].values
-        reagent_max_cnt = np.max([smi.count(".") + 1 for smi in reagent])
-        reagent_train = data_train[args.reagent_column].values
-        reagent_valid = data_valid[args.reagent_column].values
-        reagent_test = data_test[args.reagent_column].values
 
-        get_graph_data(
-            args,
-            rsmi_list_train,
-            y_list_train,
-            filename_train,
-            rmol_max_cnt,
-            pmol_max_cnt,
-            reagent_train,
-            reagent_max_cnt,
-        )
-        get_graph_data(
-            args,
-            rsmi_list_valid,
-            y_list_valid,
-            filename_valid,
-            rmol_max_cnt,
-            pmol_max_cnt,
-            reagent_valid,
-            reagent_max_cnt,
-        )
-        get_graph_data(
-            args,
-            rsmi_list_test,
-            y_list_test,
-            filename_test,
-            rmol_max_cnt,
-            pmol_max_cnt,
-            reagent_test,
-            reagent_max_cnt,
-        )
-    else:
-        get_graph_data(
-            args,
-            rsmi_list_train,
-            y_list_train,
-            filename_train,
-            rmol_max_cnt,
-            pmol_max_cnt,
-        )
-        get_graph_data(
-            args,
-            rsmi_list_valid,
-            y_list_valid,
-            filename_valid,
-            rmol_max_cnt,
-            pmol_max_cnt,
-        )
-        get_graph_data(
-            args, rsmi_list_test, y_list_test, filename_test, rmol_max_cnt, pmol_max_cnt
-        )
+    get_graph_data(
+        args,
+        rsmi_list_train,
+        y_list_train,
+        filename_train,
+        rmol_max_cnt,
+        pmol_max_cnt,
+    )
+    get_graph_data(
+        args,
+        rsmi_list_valid,
+        y_list_valid,
+        filename_valid,
+        rmol_max_cnt,
+        pmol_max_cnt,
+    )
+    get_graph_data(
+        args,
+        rsmi_list_test,
+        y_list_test,
+        filename_test,
+        rmol_max_cnt,
+        pmol_max_cnt
+    )

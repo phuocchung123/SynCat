@@ -5,17 +5,17 @@ import numpy as np
 import pandas as pd
 from data import GraphDataset
 from torch.utils.data import DataLoader
-from model import model, train, inference
+from model import model
+from training import train
+from validation import validation
 from utils import collate_reaction_graphs, setup_logging
 
-logger = setup_logging()
+# logger = setup_logging()
 
 
 def finetune(args):
-    epochs = args.epochs
-    batch_size = args.batch_size
+    logger = setup_logging(log_filename=args.monitor_folder+'monitor_log')
     model_path = args.model_path + args.model_name
-    monitor_path = args.monitor_folder + args.monitor_name
     data = pd.read_csv(args.Data_folder + args.data_csv, compression='gzip')
     out_dim = data[args.y_column].nunique()
     device = (
@@ -28,11 +28,11 @@ def finetune(args):
         torch.cuda.manual_seed_all(args.seed)
 
     train_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.train_set
+        args.Data_folder + args.npz_folder + "/" + 'train.npz'
     )
     train_loader = DataLoader(
         dataset=train_set,
-        batch_size=int(np.min([batch_size, len(train_set)])),
+        batch_size=int(np.min([args.batch_size, len(train_set)])),
         shuffle=True,
         collate_fn=collate_reaction_graphs,
         num_workers=4,
@@ -40,11 +40,11 @@ def finetune(args):
     )
 
     test_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.test_set
+        args.Data_folder + args.npz_folder + "/" + 'test.npz'
     )
     test_loader = DataLoader(
         dataset=test_set,
-        batch_size=int(np.min([batch_size, len(test_set)])),
+        batch_size=int(np.min([args.batch_size, len(test_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
         num_workers=4,
@@ -52,11 +52,11 @@ def finetune(args):
     )
 
     val_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.val_set
+        args.Data_folder + args.npz_folder + "/" + 'valid.npz'
     )
     val_loader = DataLoader(
         dataset=val_set,
-        batch_size=int(np.min([batch_size, len(val_set)])),
+        batch_size=int(np.min([args.batch_size, len(val_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
         num_workers=4,
@@ -86,18 +86,9 @@ def finetune(args):
 
     node_dim = train_set.rmol_node_attr[0].shape[1]
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
-    if not os.path.exists(model_path):
-        net = model(node_dim, edge_dim, out_dim).to(device)
+    net = model(node_dim, edge_dim, out_dim,args.layer,args.emb_dim,args.dropout).to(device)
+    if not os.path.exists(model_path): 
         logger.info("-- TRAINING")
-        net = train(
-            args, net, train_loader, val_loader, model_path, device, epochs=epochs
-        )
-    else:
-        net = recat(node_dim, edge_dim, out_dim).to(device)
-        checkpoint = torch.load(model_path)
-        net.load_state_dict(checkpoint["model_state_dict"])
-        current_epoch = checkpoint["epoch"]
-        epochs = epochs - current_epoch
         net = train(
             args,
             net,
@@ -105,25 +96,46 @@ def finetune(args):
             val_loader,
             model_path,
             device,
-            epochs=epochs,
+            args.epochs,
+            args.lr,
+            args.weight_decay
+        )
+    else:
+        checkpoint = torch.load(model_path,weights_only=False,map_location=device)
+        net.load_state_dict(checkpoint["model_state_dict"])
+        current_epoch = checkpoint["epoch"]
+        epochs = args.epochs - current_epoch
+        net = train(
+            args,
+            net,
+            train_loader,
+            val_loader,
+            model_path,
+            device,
+            args.epochs,
+            args.lr,
+            args.weight_decay,
             current_epoch=current_epoch,
             best_val_loss=checkpoint["val_loss"],
         )
 
     # test
     test_y = test_loader.dataset.y
-    test_y = torch.argmax(torch.Tensor(test_y), dim=1).tolist()
-    net = recat(node_dim, edge_dim, out_dim).to(device)
-    checkpoint = torch.load(model_path)
+    net = model(node_dim, edge_dim, out_dim, args.layer,args.emb_dim,args.dropout).to(device)
+    checkpoint = torch.load(model_path,weights_only=False,map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc = inference(args, net, test_loader, device)
+    acc, mcc, att_r, att_p, rsmis, _, _, emb = validation(args, net, test_loader, device)
     logger.info("-- RESULT")
     logger.info("--- test size: %d" % (len(test_y)))
     logger.info("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
-    dict = {
-        "Name": "Test",
-        "test_acc": acc,
-        "test_mcc": mcc,
+    
+    dict_att = {
+        "Name": "Attention",
+        "rsmis": rsmis,
+        "att_r": att_r,
+        "att_p":att_p,
+        "emb":emb
     }
-    with open(monitor_path, "a") as f:
-        f.write(json.dumps(dict) + "\n")
+    with open(args.monitor_folder+'attention.json','w') as f:
+        json.dump(dict_att,f)
+
