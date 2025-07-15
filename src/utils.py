@@ -116,7 +116,10 @@ def collate_reaction_graphs(batch: List[Tuple[Any, ...]]) -> Tuple[Batch, torch.
         representing categorical labels.
     """
     batchdata = list(map(list, zip(*batch)))
-    datas = [Batch.from_data_list(d) for d in batchdata[:-1]]
-    labels = torch.stack([torch.argmax(y) for y in torch.Tensor(batchdata[-1])], axis=0)
+    datas = [Batch.from_data_list(d) for d in batchdata[:-4]]
+    r_dummy=[batchdata[-3]][0]
+    p_dummy=[batchdata[-4]][0]
+    labels = torch.stack([torch.argmax(y) for y in torch.Tensor(batchdata[-2])], axis=0)
+    rsmi = [batchdata[-1]]
 
-    return *datas, labels
+    return *datas, r_dummy, p_dummy,labels, rsmi
