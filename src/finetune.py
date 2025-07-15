@@ -5,18 +5,18 @@ import numpy as np
 import pandas as pd
 from data import GraphDataset
 from torch.utils.data import DataLoader
-from model import recat, train, inference
+from model import model, train, inference
 from utils import collate_reaction_graphs, setup_logging
 
 logger = setup_logging()
 
 
 def finetune(args):
+    epochs = args.epochs
     batch_size = args.batch_size
     model_path = args.model_path + args.model_name
     monitor_path = args.monitor_folder + args.monitor_name
-    epochs = args.epochs
-    data = pd.read_csv(args.Data_folder + args.data_csv)
+    data = pd.read_csv(args.Data_folder + args.data_csv, compression='gzip')
     out_dim = data[args.y_column].nunique()
     device = (
         torch.device("cuda:" + str(args.device))
@@ -28,8 +28,7 @@ def finetune(args):
         torch.cuda.manual_seed_all(args.seed)
 
     train_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.train_set,
-        reagent_option=args.reagent_option,
+        args.Data_folder + args.npz_folder + "/" + args.train_set
     )
     train_loader = DataLoader(
         dataset=train_set,
@@ -41,8 +40,7 @@ def finetune(args):
     )
 
     test_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.test_set,
-        reagent_option=args.reagent_option,
+        args.Data_folder + args.npz_folder + "/" + args.test_set
     )
     test_loader = DataLoader(
         dataset=test_set,
@@ -54,8 +52,7 @@ def finetune(args):
     )
 
     val_set = GraphDataset(
-        args.Data_folder + args.npz_folder + "/" + args.val_set,
-        reagent_option=args.reagent_option,
+        args.Data_folder + args.npz_folder + "/" + args.val_set
     )
     val_loader = DataLoader(
         dataset=val_set,
@@ -87,11 +84,10 @@ def finetune(args):
     # training
     train_y = train_loader.dataset.y
 
-    assert len(train_y) == len(train_set)
     node_dim = train_set.rmol_node_attr[0].shape[1]
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
     if not os.path.exists(model_path):
-        net = recat(node_dim, edge_dim, out_dim).to(device)
+        net = model(node_dim, edge_dim, out_dim).to(device)
         logger.info("-- TRAINING")
         net = train(
             args, net, train_loader, val_loader, model_path, device, epochs=epochs
