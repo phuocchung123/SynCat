@@ -1,7 +1,6 @@
 *.pyc
 *.DS_Store
 /Data/*.csv
-/Data/npz/
-/Data/model/
+/Data/npz/npz_tpl/
 dev/*
 draft.ipynb
