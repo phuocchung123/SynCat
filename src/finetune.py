@@ -10,11 +10,10 @@ from training import train
 from validation import validation
 from utils import collate_reaction_graphs, setup_logging
 
-# logger = setup_logging()
 
 
 def finetune(args):
-    logger = setup_logging(log_filename=args.monitor_folder+'monitor_log')
+    logger = setup_logging(log_filename=args.monitor_folder+'monitor.log')
     model_path = args.model_path + args.model_name
     data = pd.read_csv(args.Data_folder + args.data_csv, compression='gzip')
     out_dim = data[args.y_column].nunique()
@@ -33,7 +32,7 @@ def finetune(args):
     train_loader = DataLoader(
         dataset=train_set,
         batch_size=int(np.min([args.batch_size, len(train_set)])),
-        shuffle=True,
+        shuffle=False,
         collate_fn=collate_reaction_graphs,
         num_workers=4,
         drop_last=True,

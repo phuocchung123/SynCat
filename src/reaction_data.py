@@ -3,7 +3,6 @@ from rdkit import Chem
 from utils import setup_logging
 from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
 
-# logger = setup_logging()
 
 
 def mol_dict():
@@ -26,7 +25,7 @@ def get_graph_data(
     rmol_max_cnt,
     pmol_max_cnt,
 ):
-    logger = setup_logging(log_filename=args.monitor_folder+'monitor_log')
+    logger = setup_logging(log_filename=args.monitor_folder+'monitor.log')
     rmol_max_cnt = rmol_max_cnt
     pmol_max_cnt = pmol_max_cnt
 

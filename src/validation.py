@@ -27,8 +27,8 @@ def validation(args, net, test_loader, device,loss_fn=None):
                 b.to(device)
                 for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
             ]
-            r_dummy=[batchdata[-3][0]]
-            p_dummy=[batchdata[-4][0]]
+            r_dummy=batchdata[-4]
+            p_dummy=batchdata[-3]
 
             pred,att_r, att_p, emb = net(inputs_rmol, inputs_pmol,r_dummy,p_dummy,device)
             label = batchdata[-2]

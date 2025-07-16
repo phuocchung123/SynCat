@@ -2,7 +2,7 @@ import itertools
 import torch
 import torch.nn as nn
 from gin import GIN
-from attention import EncoderLayer
+from attention import SingleHeadAttention
 
 
 class model(nn.Module):
@@ -25,7 +25,7 @@ class model(nn.Module):
         )
 
         self.predict= torch.nn.Linear(emb_dim,out_dim)
-        self.attention=EncoderLayer()
+        self.attention=SingleHeadAttention(emb_dim)
         self.atts_reactant=[]
         self.atts_product=[]
 
@@ -55,13 +55,11 @@ class model(nn.Module):
 
             #attention of reactants
             att_r=self.attention(p_graph_feats_1,r_graph_feats_1)
-            att_r=att_r.squeeze(0,1)
             att_reactant = torch.sum(att_r,dim=0)/att_r.shape[0]
             att_reactant=att_reactant.reshape(-1).to(device)
 
             #attention of products
             att_p = self.attention(r_graph_feats_1, p_graph_feats_1)
-            att_p = att_p.squeeze(0,1)
             att_procduct=torch.sum(att_p,dim=0)/att_p.shape[0]
             att_procduct=att_procduct.reshape(-1).to(device)
             
@@ -80,7 +78,6 @@ class model(nn.Module):
             reaction_vectors=torch.cat((reaction_vectors,reaction_center),dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
-        react_graph_feats = torch.sub(r_graph_feats, p_graph_feats)
-        out = self.predict(react_graph_feats)
+        out = self.predict(reaction_vectors)
         return out, self.atts_reactant, self.atts_product, reaction_vectors.tolist()
 
