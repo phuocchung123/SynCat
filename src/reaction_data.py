@@ -4,12 +4,19 @@ from utils import setup_logging
 from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
 
 
+def mol_dict() -> dict:
+    """
+    Initializes a dictionary structure for storing molecule features.
 
-def mol_dict():
+    Returns
+    -------
+    dict
+        A dictionary for molecular graph information.
+    """
     return {
         "n_node": [],
         "n_edge": [],
-        'dummy': [],
+        "dummy": [],
         "node_attr": [],
         "edge_attr": [],
         "src": [],
@@ -24,8 +31,31 @@ def get_graph_data(
     filename,
     rmol_max_cnt,
     pmol_max_cnt,
-):
-    logger = setup_logging(log_filename=args.monitor_folder+'monitor.log')
+) -> None:
+    """
+    Processes reaction SMILES and target values, encodes reactant and product information,
+    and saves as compressed numpy data files.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Argument namespace containing configuration parameters.
+    rsmi_list : list
+        List of reaction SMILES strings.
+    y_list : list or np.ndarray
+        List or array of target values (labels) for each reaction.
+    filename : str
+        Output filename for saving processed data.
+    rmol_max_cnt : int
+        Maximum number of reactant molecules per reaction.
+    pmol_max_cnt : int
+        Maximum number of product molecules per reaction.
+
+    Returns
+    -------
+    None
+    """
+    logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     rmol_max_cnt = rmol_max_cnt
     pmol_max_cnt = pmol_max_cnt
 
@@ -55,7 +85,7 @@ def get_graph_data(
                 rmol_dict[j] = add_dummy(rmol_dict[j])
                 rmol_dict[j]["dummy"].append(False)
             else:
-                rmol_dict[j]['dummy'].append(True)
+                rmol_dict[j]["dummy"].append(True)
                 rmol = Chem.MolFromSmiles(smi)
                 rs = Chem.FindPotentialStereo(rmol)
                 for element in rs:
@@ -84,9 +114,9 @@ def get_graph_data(
         for j, smi in enumerate(products_smi_list):
             if smi == "":
                 pmol_dict[j] = add_dummy(pmol_dict[j])
-                pmol_dict[j]['dummy'].append(False)
+                pmol_dict[j]["dummy"].append(False)
             else:
-                pmol_dict[j]['dummy'].append(True)
+                pmol_dict[j]["dummy"].append(True)
                 pmol = Chem.MolFromSmiles(smi)
                 ps = Chem.FindPotentialStereo(pmol)
                 for element in ps:

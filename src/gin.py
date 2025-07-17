@@ -5,14 +5,34 @@ from torch_geometric.nn.pool import global_add_pool
 
 
 class GIN(nn.Module):
+    """
+    Graph Isomorphism Network with edge features.
+    """
+
     def __init__(
         self,
-        node_in_feats,
-        edge_in_feats,
-        depth,
-        node_hid_feats,
-        dr,
-    ):
+        node_in_feats: int,
+        edge_in_feats: int,
+        depth: int,
+        node_hid_feats: int,
+        dr: float,
+    ) -> None:
+        """
+        Initialize GIN model.
+
+        Parameters
+        ----------
+        node_in_feats : int
+            Input feature dimension for nodes.
+        edge_in_feats : int
+            Input feature dimension for edges.
+        depth : int
+            Number of GIN layers.
+        node_hid_feats : int
+            Hidden feature dimension for nodes.
+        dr : float
+            Dropout rate.
+        """
         super(GIN, self).__init__()
 
         self.depth = depth
@@ -38,10 +58,22 @@ class GIN(nn.Module):
             ]
         )
 
-
         self.dropout = nn.Dropout(dr)
 
-    def forward(self, data):
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for GIN model.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Batch of graph data objects with x, edge_attr, edge_index, and batch attributes.
+
+        Returns
+        -------
+        torch.Tensor
+            Readout vector after global pooling, shape [batch_size, node_hid_feats].
+        """
         node_feats_orig = data.x
         edge_feats_orig = data.edge_attr
         batch = data.batch

@@ -7,8 +7,22 @@ from sklearn.model_selection import train_test_split
 configure_warnings_and_logs(ignore_warnings=True)
 
 
-def prepare_data(args):
-    data = pd.read_csv(args.Data_folder + args.data_csv,compression='gzip', index_col=0)
+def prepare_data(args) -> None:
+    """
+    Prepare and split chemical reaction data, then save reaction information to npz files.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Argument namespace containing dataset and configuration parameters.
+
+    Returns
+    -------
+    None
+    """
+    data = pd.read_csv(
+        args.Data_folder + args.data_csv, compression="gzip", index_col=0
+    )
     y = data[args.y_column]
     if args.train_test_split:
         data_pretrain = data[data[args.split_column] == "train"]
@@ -31,21 +45,17 @@ def prepare_data(args):
     # get_data_train
     rsmi_list_train = data_train[args.reaction_column].values
     y_list_train = data_train[args.y_column].values
-    y_list_train = np.eye(y.nunique(), dtype="uint8")[y_list_train]
-    filename_train = args.Data_folder + args.npz_folder +"/"+ "train.npz"
+    filename_train = args.Data_folder + args.npz_folder + "/" + "train.npz"
 
     # get_data_valid
     rsmi_list_valid = data_valid[args.reaction_column].values
     y_list_valid = data_valid[args.y_column].values
-    y_list_valid = np.eye(y.nunique(), dtype="uint8")[y_list_valid]
-    filename_valid = args.Data_folder + args.npz_folder +"/"+"valid.npz" 
+    filename_valid = args.Data_folder + args.npz_folder + "/" + "valid.npz"
 
     # get_data_test
     rsmi_list_test = data_test[args.reaction_column].values
     y_list_test = data_test[args.y_column].values
-    y_list_test = np.eye(y.nunique(), dtype="uint8")[y_list_test]
-    filename_test = args.Data_folder + args.npz_folder + "/"+"test.npz"
-
+    filename_test = args.Data_folder + args.npz_folder + "/" + "test.npz"
 
     get_graph_data(
         args,
@@ -64,10 +74,5 @@ def prepare_data(args):
         pmol_max_cnt,
     )
     get_graph_data(
-        args,
-        rsmi_list_test,
-        y_list_test,
-        filename_test,
-        rmol_max_cnt,
-        pmol_max_cnt
+        args, rsmi_list_test, y_list_test, filename_test, rmol_max_cnt, pmol_max_cnt
     )

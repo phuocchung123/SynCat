@@ -15,15 +15,17 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--batch_size", type=int, default=128)
     arg_parser.add_argument("--epochs", type=int, default=0)
-    arg_parser.add_argument("--device", type=int, default=0)
+    arg_parser.add_argument("--device", type=int, default=1)
     arg_parser.add_argument("--layer", type=int, default=2)
     arg_parser.add_argument("--emb_dim", type=int, default=256)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=5e-4)
-    arg_parser.add_argument("--weight_decay", type=float, default=1e-4)    
+    arg_parser.add_argument("--weight_decay", type=float, default=1e-4)
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
-    arg_parser.add_argument("--data_csv", type=str, default="raw/schneider50k_unbalanced.csv.gz")
+    arg_parser.add_argument(
+        "--data_csv", type=str, default="raw/schneider50k_unbalanced.csv.gz"
+    )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
     arg_parser.add_argument("--model_name", type=str, default="model_schneider.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_sch")
@@ -34,15 +36,14 @@ if __name__ == "__main__":
     arg_parser.add_argument("--reaction_column", type=str, default="rxn")
     arg_parser.add_argument("--seed", type=int, default=42)
     args = arg_parser.parse_args()
-    
-    logger = setup_logging(log_filename=args.monitor_folder+'monitor.log')
+
+    logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
 
     os.environ["PYTHONHASHSEED"] = str(args.seed)
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.benchmark = False
-    
 
     npz_folder = args.Data_folder + args.npz_folder + "/"
     if not os.path.exists(npz_folder):

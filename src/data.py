@@ -1,14 +1,30 @@
 import torch
 import numpy as np
 from torch_geometric.data import Data
+from typing import Any, Tuple
 
 
 class GraphDataset:
-    def __init__(self, save_path):
+    """
+    Dataset for chemical reaction graph classification.
+    """
+
+    def __init__(self, save_path: str) -> None:
+        """
+        Initialize GraphDataset and load data.
+
+        Parameters
+        ----------
+        save_path : str
+            Path to the saved .npz data file.
+        """
         self.save_path = save_path
         self.load()
 
-    def load(self):
+    def load(self) -> None:
+        """
+        Load and process reactant, product, and reaction data from file.
+        """
         rmol_dict = np.load(self.save_path, allow_pickle=True)["rmol"]
         pmol_dict = np.load(self.save_path, allow_pickle=True)["pmol"]
         reaction_dict = np.load(self.save_path, allow_pickle=True)["reaction"].item()
@@ -65,7 +81,21 @@ class GraphDataset:
             for j in range(self.pmol_max_cnt)
         ]
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[Any, ...]:
+        """
+        Get graph data for a specific reaction sample.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the reaction sample.
+
+        Returns
+        -------
+        tuple
+            Tuple containing reactant Data objects, product Data objects,
+            reactant dummies, product dummies, label, and rsmi string.
+        """
         data_r_lst = []
         for j in range(self.rmol_max_cnt):
             r_src = self.rmol_src[j][
@@ -77,7 +107,6 @@ class GraphDataset:
 
             r_edge_index = torch.tensor([r_src, r_dst], dtype=torch.long)
             r_edge_index = torch.reshape(r_edge_index, (2, -1))
-
 
             r_edge_attr = torch.from_numpy(
                 self.rmol_edge_attr[j][
@@ -104,10 +133,10 @@ class GraphDataset:
             p_dst = self.pmol_dst[j][
                 self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
             ]
-            
+
             p_edge_index = torch.tensor([p_src, p_dst], dtype=torch.long)
             p_edge_index = torch.reshape(p_edge_index, (2, -1))
-            
+
             p_edge_attr = torch.from_numpy(
                 self.pmol_edge_attr[j][
                     self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
@@ -119,16 +148,24 @@ class GraphDataset:
                     self.pmol_n_csum[j][idx]: self.pmol_n_csum[j][idx + 1]
                 ]
             ).float()
-            
+
             data_p = Data(x=p_node_attr, edge_index=p_edge_index, edge_attr=p_edge_attr)
             data_p_lst.append(data_p)
-            
+
         label = self.y[idx]
         rsmi = self.rsmi[idx]
         r_dummy = [i[idx] for i in self.r_dummy]
         p_dummy = [j[idx] for j in self.p_dummy]
-        
-        return *data_r_lst, *data_p_lst, r_dummy, p_dummy, label,rsmi
 
-    def __len__(self):
+        return *data_r_lst, *data_p_lst, r_dummy, p_dummy, label, rsmi
+
+    def __len__(self) -> int:
+        """
+        Get the number of samples in the dataset.
+
+        Returns
+        -------
+        int
+            Number of reaction samples.
+        """
         return self.y.shape[0]
