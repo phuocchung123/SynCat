@@ -1,0 +1,27 @@
+2025-07-17 10:05:10,359 - INFO - Already exist files in ../Data/npz/npz_sch1/
+2025-07-17 10:05:11,720 - INFO - -- CONFIGURATIONS
+2025-07-17 10:05:11,720 - INFO - --- train/valid/test: 9000/1000/40000
+2025-07-17 10:06:06,516 - INFO - -- RESULT
+2025-07-17 10:06:06,517 - INFO - --- test size: 40000
+2025-07-17 10:06:06,517 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-17 10:34:04,953 - INFO - --- generating graph data for ../Data/npz/npz_sch/train.npz
+2025-07-17 10:34:04,953 - INFO - --- n_reactions: 9000, reactant_max_cnt: 23, product_max_cnt: 6
+2025-07-17 10:34:59,065 - INFO - --- generating graph data for ../Data/npz/npz_sch/valid.npz
+2025-07-17 10:34:59,065 - INFO - --- n_reactions: 1000, reactant_max_cnt: 23, product_max_cnt: 6
+2025-07-17 10:35:05,005 - INFO - --- generating graph data for ../Data/npz/npz_sch/test.npz
+2025-07-17 10:35:05,005 - INFO - --- n_reactions: 40000, reactant_max_cnt: 23, product_max_cnt: 6
+2025-07-17 10:36:03,754 - INFO - --- 10000/40000 processed
+2025-07-17 10:37:03,700 - INFO - --- 20000/40000 processed
+2025-07-17 10:38:02,971 - INFO - --- 30000/40000 processed
+2025-07-17 10:38:57,511 - INFO - --- 40000/40000 processed
+2025-07-17 10:39:04,927 - INFO - -- CONFIGURATIONS
+2025-07-17 10:39:04,927 - INFO - --- train/valid/test: 9000/1000/40000
+2025-07-17 10:40:02,066 - INFO - -- RESULT
+2025-07-17 10:40:02,066 - INFO - --- test size: 40000
+2025-07-17 10:40:02,066 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-17 12:22:56,171 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-07-17 12:22:57,451 - INFO - -- CONFIGURATIONS
+2025-07-17 12:22:57,452 - INFO - --- train/valid/test: 9000/1000/40000
+2025-07-17 12:23:27,306 - INFO - -- RESULT
+2025-07-17 12:23:27,306 - INFO - --- test size: 40000
+2025-07-17 12:23:27,306 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,

@@ -103,6 +103,21 @@ def _stereochemistry(bond: Bond) -> List:
 
 
 def add_mol(mol_dict, mol):
+    """
+    Extracts atomic and bond features from an RDKit molecule and appends them to the molecular dictionary.
+
+    Parameters
+    ----------
+    mol_dict : dict
+        A dictionary to store features with keys like 'n_node', 'n_edge', 'node_attr', etc.
+    mol : Mol
+        An RDKit molecule object.
+
+    Returns
+    -------
+    dict
+        The updated dictionary containing atom and bond features for the molecule.
+    """
     n_node = mol.GetNumAtoms()
     n_edge = mol.GetNumBonds() * 2
 

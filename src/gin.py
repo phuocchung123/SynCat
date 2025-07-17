@@ -5,16 +5,34 @@ from torch_geometric.nn.pool import global_add_pool
 
 
 class GIN(nn.Module):
+    """
+    Graph Isomorphism Network with edge features.
+    """
+
     def __init__(
         self,
-        node_in_feats,
-        edge_in_feats,
-        depth=3,
-        node_hid_feats=300,
-        readout_feats=1024,
-        dr=0.1,
-        readout_option=False,
-    ):
+        node_in_feats: int,
+        edge_in_feats: int,
+        depth: int,
+        node_hid_feats: int,
+        dr: float,
+    ) -> None:
+        """
+        Initialize GIN model.
+
+        Parameters
+        ----------
+        node_in_feats : int
+            Input feature dimension for nodes.
+        edge_in_feats : int
+            Input feature dimension for edges.
+        depth : int
+            Number of GIN layers.
+        node_hid_feats : int
+            Hidden feature dimension for nodes.
+        dr : float
+            Dropout rate.
+        """
         super(GIN, self).__init__()
 
         self.depth = depth
@@ -40,14 +58,22 @@ class GIN(nn.Module):
             ]
         )
 
-        self.sparsify = nn.Sequential(
-            nn.Linear(node_hid_feats, readout_feats), nn.PReLU()
-        )
-
         self.dropout = nn.Dropout(dr)
-        self.readout_option = readout_option
 
-    def forward(self, data):
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for GIN model.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Batch of graph data objects with x, edge_attr, edge_index, and batch attributes.
+
+        Returns
+        -------
+        torch.Tensor
+            Readout vector after global pooling, shape [batch_size, node_hid_feats].
+        """
         node_feats_orig = data.x
         edge_feats_orig = data.edge_attr
         batch = data.batch
@@ -65,8 +91,5 @@ class GIN(nn.Module):
             node_feats = self.dropout(node_feats)
 
         readout = global_add_pool(node_feats, batch)
-
-        if self.readout_option:
-            readout = self.sparsify(readout)
 
         return readout
