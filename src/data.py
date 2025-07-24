@@ -9,7 +9,7 @@ class GraphDataset:
     Dataset for chemical reaction graph classification.
     """
 
-    def __init__(self, save_path: str) -> None:
+    def __init__(self, save_path: str = None, rmol = None, pmol= None, reaction= None) -> None:
         """
         Initialize GraphDataset and load data.
 
@@ -18,16 +18,26 @@ class GraphDataset:
         save_path : str
             Path to the saved .npz data file.
         """
-        self.save_path = save_path
-        self.load()
+        if save_path:
+            rmol_dict = np.load(save_path, allow_pickle=True)["rmol"]
+            pmol_dict = np.load(save_path, allow_pickle=True)["pmol"]
+            reaction_dict = np.load(save_path, allow_pickle=True)["reaction"].item()
+        elif rmol is not None and pmol is not None and reaction is not None:
+            rmol_dict = rmol
+            pmol_dict = pmol
+            reaction_dict = reaction.item()
+        else: 
+            raise ValueError("Either save_path or rmol, pmol, reaction must be provided.")
+            
+        self.load(rmol_dict, pmol_dict, reaction_dict)
 
-    def load(self) -> None:
+    def load(self, rmol_dict, pmol_dict, reaction_dict) -> None:
         """
         Load and process reactant, product, and reaction data from file.
         """
-        rmol_dict = np.load(self.save_path, allow_pickle=True)["rmol"]
-        pmol_dict = np.load(self.save_path, allow_pickle=True)["pmol"]
-        reaction_dict = np.load(self.save_path, allow_pickle=True)["reaction"].item()
+        rmol_dict = rmol_dict
+        pmol_dict = pmol_dict
+        reaction_dict = reaction_dict
 
         self.rmol_max_cnt = len(rmol_dict)
         self.pmol_max_cnt = len(pmol_dict)

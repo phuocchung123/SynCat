@@ -74,5 +74,10 @@ def prepare_data(args) -> None:
         pmol_max_cnt,
     )
     get_graph_data(
-        args, rsmi_list_test, y_list_test, filename_test, rmol_max_cnt, pmol_max_cnt
+        args,
+        rsmi_list_test, 
+        y_list_test, 
+        filename_test, 
+        rmol_max_cnt, 
+        pmol_max_cnt
     )

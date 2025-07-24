@@ -27,10 +27,10 @@ def mol_dict() -> dict:
 def get_graph_data(
     args,
     rsmi_list,
-    y_list,
     filename,
     rmol_max_cnt,
     pmol_max_cnt,
+    y_list=None,
 ) -> None:
     """
     Processes reaction SMILES and target values, encodes reactant and product information,
@@ -42,8 +42,9 @@ def get_graph_data(
         Argument namespace containing configuration parameters.
     rsmi_list : list
         List of reaction SMILES strings.
-    y_list : list or np.ndarray
+    y_list : list or np.ndarray or None
         List or array of target values (labels) for each reaction.
+        y_list is None when prediction is performed
     filename : str
         Output filename for saving processed data.
     rmol_max_cnt : int
@@ -72,7 +73,10 @@ def get_graph_data(
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
-        y = y_list[i]
+        if y_list:
+            y = y_list[i]
+        else:
+            y = 0 # pseudo y for prediction 
 
         [reactants_smi, products_smi] = rsmi.split(">>")
 
@@ -153,6 +157,9 @@ def get_graph_data(
         pmol_dict[j] = dict_list_to_numpy(pmol_dict[j])
     reaction_dict["y"] = np.array(reaction_dict["y"])
     # save file
-    np.savez_compressed(
-        filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
-    )
+    if y_list:
+        np.savez_compressed(
+            filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
+        )
+    else:
+        return rmol_dict, pmol_dict, reaction_dict
