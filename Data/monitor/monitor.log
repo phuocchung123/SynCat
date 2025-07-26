@@ -29,3 +29,10 @@
 2025-07-26 21:50:58,405 - INFO - --- n_reactions: 360543, reactant_max_cnt: 58, product_max_cnt: 1
 2025-07-26 21:52:32,596 - INFO - --- generating graph data for ../Data/npz/npz_tpl/train.npz
 2025-07-26 21:52:32,596 - INFO - --- n_reactions: 360543, reactant_max_cnt: 58, product_max_cnt: 1
+2025-07-26 22:15:52,313 - INFO - Already exist files in ../Data/npz/npz_tpl/
+2025-07-26 22:16:42,220 - INFO - -- CONFIGURATIONS
+2025-07-26 22:16:42,223 - INFO - --- train/valid/test: 360543/40061/44511
+2025-07-26 22:36:08,355 - INFO - Already exist files in ../Data/npz/npz_tpl/
+2025-07-26 22:37:16,263 - INFO - -- CONFIGURATIONS
+2025-07-26 22:37:16,267 - INFO - --- train/valid/test: 360543/40061/44511
+2025-07-26 22:38:46,573 - INFO - Already exist files in ../Data/npz/npz_tpl/
