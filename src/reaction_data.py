@@ -73,7 +73,7 @@ def get_graph_data(
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
-        if y_list:
+        if y_list is not None:
             y = y_list[i]
         else:
             y = 0 # pseudo y for prediction 

@@ -21,7 +21,7 @@ def prepare_data(args) -> None:
     None
     """
     data = pd.read_csv(
-        args.Data_folder + args.data_csv, compression="gzip", index_col=0
+        args.Data_folder + args.data_csv, compression="gzip"
     )
     y = data[args.y_column]
     if args.train_test_split:
@@ -60,24 +60,24 @@ def prepare_data(args) -> None:
     get_graph_data(
         args,
         rsmi_list_train,
-        y_list_train,
         filename_train,
         rmol_max_cnt,
         pmol_max_cnt,
+        y_list_train,
     )
     get_graph_data(
         args,
         rsmi_list_valid,
-        y_list_valid,
         filename_valid,
         rmol_max_cnt,
         pmol_max_cnt,
+        y_list_valid,
     )
     get_graph_data(
         args,
         rsmi_list_test, 
-        y_list_test, 
         filename_test, 
         rmol_max_cnt, 
-        pmol_max_cnt
+        pmol_max_cnt,
+        y_list_test, 
     )
