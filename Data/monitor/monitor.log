@@ -25,3 +25,7 @@
 2025-07-17 12:23:27,306 - INFO - -- RESULT
 2025-07-17 12:23:27,306 - INFO - --- test size: 40000
 2025-07-17 12:23:27,306 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-26 21:50:58,405 - INFO - --- generating graph data for ../Data/npz/npz_tpl/train.npz
+2025-07-26 21:50:58,405 - INFO - --- n_reactions: 360543, reactant_max_cnt: 58, product_max_cnt: 1
+2025-07-26 21:52:32,596 - INFO - --- generating graph data for ../Data/npz/npz_tpl/train.npz
+2025-07-26 21:52:32,596 - INFO - --- n_reactions: 360543, reactant_max_cnt: 58, product_max_cnt: 1
