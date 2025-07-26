@@ -25,3 +25,15 @@
 2025-07-17 12:23:27,306 - INFO - -- RESULT
 2025-07-17 12:23:27,306 - INFO - --- test size: 40000
 2025-07-17 12:23:27,306 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-26 21:57:15,859 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-07-26 21:57:17,821 - INFO - -- CONFIGURATIONS
+2025-07-26 21:57:17,822 - INFO - --- train/valid/test: 9000/1000/40000
+2025-07-26 22:00:30,560 - INFO - -- RESULT
+2025-07-26 22:00:30,560 - INFO - --- test size: 40000
+2025-07-26 22:00:30,561 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-26 22:04:06,776 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-07-26 22:04:08,403 - INFO - -- CONFIGURATIONS
+2025-07-26 22:04:08,403 - INFO - --- train/valid/test: 9000/1000/40000
+2025-07-26 22:07:52,304 - INFO - -- RESULT
+2025-07-26 22:07:52,304 - INFO - --- test size: 40000
+2025-07-26 22:07:52,304 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,

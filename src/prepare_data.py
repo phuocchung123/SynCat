@@ -21,7 +21,7 @@ def prepare_data(args) -> None:
     None
     """
     data = pd.read_csv(
-        args.Data_folder + args.data_csv, compression="gzip", index_col=0
+        args.Data_folder + args.data_csv, compression="gzip"
     )
     y = data[args.y_column]
     if args.train_test_split:

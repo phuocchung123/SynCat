@@ -29,7 +29,6 @@ if __name__ == "__main__":
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
     arg_parser.add_argument("--model_name", type=str, default="model_schneider.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_sch")
-    arg_parser.add_argument("--reagent_option", type=bool, default=False)
     arg_parser.add_argument("--y_column", type=str, default="y")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)
     arg_parser.add_argument("--split_column", type=str, default="split")
