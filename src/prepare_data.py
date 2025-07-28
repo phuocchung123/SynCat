@@ -58,26 +58,26 @@ def prepare_data(args) -> None:
     filename_test = args.Data_folder + args.npz_folder + "/" + "test.npz"
 
     get_graph_data(
-        args,
         rsmi_list_train,
-        filename_train,
         rmol_max_cnt,
         pmol_max_cnt,
+        args,
+        filename_train,
         y_list_train,
     )
     get_graph_data(
-        args,
         rsmi_list_valid,
-        filename_valid,
         rmol_max_cnt,
         pmol_max_cnt,
+        args,
+        filename_valid,
         y_list_valid,
     )
     get_graph_data(
-        args,
         rsmi_list_test, 
-        filename_test, 
         rmol_max_cnt, 
         pmol_max_cnt,
+        args,
+        filename_test, 
         y_list_test, 
     )

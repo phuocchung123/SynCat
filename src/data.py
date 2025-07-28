@@ -25,7 +25,7 @@ class GraphDataset:
         elif rmol is not None and pmol is not None and reaction is not None:
             rmol_dict = rmol
             pmol_dict = pmol
-            reaction_dict = reaction.item()
+            reaction_dict = reaction
         else: 
             raise ValueError("Either save_path or rmol, pmol, reaction must be provided.")
             

@@ -25,11 +25,11 @@ def mol_dict() -> dict:
 
 
 def get_graph_data(
-    args,
     rsmi_list,
-    filename,
     rmol_max_cnt,
     pmol_max_cnt,
+    args=None,
+    filename=None,
     y_list=None,
 ) -> None:
     """
@@ -56,7 +56,8 @@ def get_graph_data(
     -------
     None
     """
-    logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
+    if args is not None:
+        logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     rmol_max_cnt = rmol_max_cnt
     pmol_max_cnt = pmol_max_cnt
 
@@ -64,12 +65,18 @@ def get_graph_data(
     pmol_dict = [mol_dict() for _ in range(pmol_max_cnt)]
 
     reaction_dict = {"y": [], "rsmi": []}
-
-    logger.info("--- generating graph data for %s" % filename)
-    logger.info(
-        "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
-        % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
-    )
+    if args is not None:
+        logger.info("--- generating graph data for %s" % filename)
+        logger.info(
+            "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
+            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
+        )
+    else:
+        print("--- generating graph data for %s" % filename)
+        print(
+            "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
+            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
+        )
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
@@ -148,7 +155,10 @@ def get_graph_data(
 
         # monitoring
         if (i + 1) % 10000 == 0:
-            logger.info("--- %d/%d processed" % (i + 1, len(rsmi_list)))
+            if args is not None:
+                logger.info("--- %d/%d processed" % (i + 1, len(rsmi_list)))
+            else:
+                print("--- %d/%d processed" % (i + 1, len(rsmi_list)))
 
     # datatype to numpy
     for j in range(rmol_max_cnt):
