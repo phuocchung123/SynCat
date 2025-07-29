@@ -115,7 +115,7 @@ class GraphDataset:
                 self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
             ]
 
-            r_edge_index = torch.tensor([r_src, r_dst], dtype=torch.long)
+            r_edge_index = torch.tensor(np.array([r_src, r_dst]), dtype=torch.long)
             r_edge_index = torch.reshape(r_edge_index, (2, -1))
 
             r_edge_attr = torch.from_numpy(
@@ -144,7 +144,7 @@ class GraphDataset:
                 self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
             ]
 
-            p_edge_index = torch.tensor([p_src, p_dst], dtype=torch.long)
+            p_edge_index = torch.tensor(np.array([p_src, p_dst]), dtype=torch.long)
             p_edge_index = torch.reshape(p_edge_index, (2, -1))
 
             p_edge_attr = torch.from_numpy(
