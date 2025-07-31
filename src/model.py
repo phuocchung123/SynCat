@@ -129,4 +129,4 @@ class model(nn.Module):
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
         out = self.predict(reaction_vectors)
-        return out, self.atts_reactant, self.atts_product, reaction_vectors.tolist()
+        return out, self.atts_reactant, self.atts_product, reaction_vectors
