@@ -37,3 +37,6 @@
 2025-07-26 22:07:52,304 - INFO - -- RESULT
 2025-07-26 22:07:52,304 - INFO - --- test size: 40000
 2025-07-26 22:07:52,304 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-07-31 08:46:39,147 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-07-31 08:46:46,005 - INFO - -- CONFIGURATIONS
+2025-07-31 08:46:46,005 - INFO - --- train/valid/test: 9000/1000/40000
