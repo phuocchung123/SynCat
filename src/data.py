@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import Data
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict
 
 
 class GraphDataset:
@@ -9,7 +9,11 @@ class GraphDataset:
     Dataset for chemical reaction graph classification.
     """
 
-    def __init__(self, save_path: str = None, rmol = None, pmol= None, reaction= None) -> None:
+    def __init__(self, 
+                save_path: str = None,
+                rmol: Dict = None,
+                pmol: Dict= None,
+                reaction: Dict= None) -> None:
         """
         Initialize GraphDataset and load data.
 

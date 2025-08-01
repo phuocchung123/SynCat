@@ -36,3 +36,34 @@
 2025-07-26 22:37:16,263 - INFO - -- CONFIGURATIONS
 2025-07-26 22:37:16,267 - INFO - --- train/valid/test: 360543/40061/44511
 2025-07-26 22:38:46,573 - INFO - Already exist files in ../Data/npz/npz_tpl/
+2025-08-01 09:57:04,458 - INFO - Already exist files in ../Data/npz/npz_tpl/
+2025-08-01 09:58:04,728 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-08-01 09:58:06,354 - INFO - -- CONFIGURATIONS
+2025-08-01 09:58:06,354 - INFO - --- train/valid/test: 9000/1000/40000
+2025-08-01 10:01:12,758 - INFO - -- RESULT
+2025-08-01 10:01:12,758 - INFO - --- test size: 40000
+2025-08-01 10:01:12,758 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-08-01 10:02:34,638 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-08-01 10:02:36,318 - INFO - -- CONFIGURATIONS
+2025-08-01 10:02:36,318 - INFO - --- train/valid/test: 9000/1000/40000
+2025-08-01 10:05:44,589 - INFO - -- RESULT
+2025-08-01 10:05:44,589 - INFO - --- test size: 40000
+2025-08-01 10:05:44,589 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-08-01 10:09:37,817 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-08-01 10:09:39,384 - INFO - -- CONFIGURATIONS
+2025-08-01 10:09:39,384 - INFO - --- train/valid/test: 9000/1000/40000
+2025-08-01 10:12:24,915 - INFO - -- RESULT
+2025-08-01 10:12:24,915 - INFO - --- test size: 40000
+2025-08-01 10:12:24,915 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-08-01 15:11:37,888 - INFO - Already exist files in ../Data/npz/npz_sch/
+2025-08-01 15:11:40,556 - INFO - -- CONFIGURATIONS
+2025-08-01 15:11:40,562 - INFO - --- train/valid/test: 9000/1000/40000
+2025-08-01 15:14:45,519 - INFO - -- RESULT
+2025-08-01 15:14:45,519 - INFO - --- test size: 40000
+2025-08-01 15:14:45,519 - INFO - --- Accuracy: 0.981, Mattews Correlation: 0.981,
+2025-08-01 15:21:20,841 - INFO - Already exist files in ../Data/npz/npz_tpl/
+2025-08-01 15:23:40,977 - INFO - -- CONFIGURATIONS
+2025-08-01 15:23:40,977 - INFO - --- train/valid/test: 360543/40061/44511
+2025-08-01 15:49:56,220 - INFO - --- generating graph data for ../Data/npz/npz_tpl/train.npz
+2025-08-01 15:49:56,220 - INFO - --- n_reactions: 360543, reactant_max_cnt: 58, product_max_cnt: 1
+2025-08-01 15:57:30,449 - INFO - --- 10000/360543 processed

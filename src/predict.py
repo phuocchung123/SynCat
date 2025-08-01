@@ -6,9 +6,32 @@ from reaction_data import get_graph_data
 from data import GraphDataset
 from utils import collate_reaction_graphs
 from model import model
+from typing import List, Tuple, Any
 
 
-def predict(rsmi_lst, model_path: str = '../Data/model/' ,model_name: str = 'model_tpl', device: int = 0 ):
+def predict(rsmi_lst: List[str], 
+            model_path: str = '../Data/model/',
+            model_name: str = 'model_tpl', 
+            device: int = 0
+            )->List[Tuple[torch.Tensor, List, List, List]]:
+    """
+    Load SynCat model and run inference on a list of reaction SMILES strings.
+
+    Each element in `rsmi_lst` is expected to be of the form "reactant_smiles>>product_smiles".
+    The model choices currently supported are 'model_schneider' and 'model_tpl', which
+    determine output dimensionality and architecture hyperparameters.
+
+    Parameters:
+        rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".
+        model_path: Directory prefix where the model checkpoint `.pt` file is stored.
+        model_name: Name of the model to load; must be either 'model_schneider' or 'model_tpl'.
+        device: GPU index to use if CUDA is available; falls back to CPU otherwise.
+
+    Returns:
+        A list of predictions, one per batch. Each prediction is expected to be a tuple
+        (pred, att_r, att_p, emb) as returned by the model during inference
+
+    """
     
     if model_name =='model_schneider':
         out_dim = 50
@@ -19,7 +42,7 @@ def predict(rsmi_lst, model_path: str = '../Data/model/' ,model_name: str = 'mod
         layer = 3
         emb_dim = 384 
     else:
-        raise ValueError(f"Now only 'model_schneider' and 'model_tpl' are supported.")
+        raise ValueError(f"This model does not exist. Please check the model's name or its appearance again.")
     
     
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_lst])
