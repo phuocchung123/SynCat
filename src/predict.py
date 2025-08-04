@@ -6,7 +6,7 @@ from reaction_data import get_graph_data
 from data import GraphDataset
 from utils import collate_reaction_graphs
 from model import model
-from typing import List, Tuple, Any
+from typing import List, Tuple
 
 
 def predict(
@@ -44,7 +44,7 @@ def predict(
         emb_dim = 384
     else:
         raise ValueError(
-            f"This model does not exist. Please check the model's name or its appearance again."
+            "This model does not exist. Please check the model's name or its appearance again."
         )
 
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_lst])
@@ -85,7 +85,7 @@ def predict(
             rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             pmol = [
                 b.to(device)
-                for b in batchdata[rmol_max_cnt : rmol_max_cnt + pmol_max_cnt]
+                for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
             ]
             r_dummy = batchdata[-4]
             p_dummy = batchdata[-3]
