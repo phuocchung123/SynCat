@@ -20,9 +20,7 @@ def prepare_data(args) -> None:
     -------
     None
     """
-    data = pd.read_csv(
-        args.Data_folder + args.data_csv, compression="gzip"
-    )
+    data = pd.read_csv(args.Data_folder + args.data_csv, compression="gzip")
     y = data[args.y_column]
     if args.train_test_split:
         data_pretrain = data[data[args.split_column] == "train"]
@@ -58,21 +56,26 @@ def prepare_data(args) -> None:
     filename_test = args.Data_folder + args.npz_folder + "/" + "test.npz"
 
     get_graph_data(
-        args,
         rsmi_list_train,
-        y_list_train,
-        filename_train,
         rmol_max_cnt,
         pmol_max_cnt,
-    )
-    get_graph_data(
         args,
-        rsmi_list_valid,
-        y_list_valid,
-        filename_valid,
-        rmol_max_cnt,
-        pmol_max_cnt,
+        filename_train,
+        y_list_train,
     )
     get_graph_data(
-        args, rsmi_list_test, y_list_test, filename_test, rmol_max_cnt, pmol_max_cnt
+        rsmi_list_valid,
+        rmol_max_cnt,
+        pmol_max_cnt,
+        args,
+        filename_valid,
+        y_list_valid,
+    )
+    get_graph_data(
+        rsmi_list_test,
+        rmol_max_cnt,
+        pmol_max_cnt,
+        args,
+        filename_test,
+        y_list_test,
     )

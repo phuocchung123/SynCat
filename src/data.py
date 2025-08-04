@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch_geometric.data import Data
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict
 
 
 class GraphDataset:
@@ -9,7 +9,13 @@ class GraphDataset:
     Dataset for chemical reaction graph classification.
     """
 
-    def __init__(self, save_path: str) -> None:
+    def __init__(
+        self,
+        save_path: str = None,
+        rmol: Dict = None,
+        pmol: Dict = None,
+        reaction: Dict = None,
+    ) -> None:
         """
         Initialize GraphDataset and load data.
 
@@ -18,16 +24,28 @@ class GraphDataset:
         save_path : str
             Path to the saved .npz data file.
         """
-        self.save_path = save_path
-        self.load()
+        if save_path:
+            rmol_dict = np.load(save_path, allow_pickle=True)["rmol"]
+            pmol_dict = np.load(save_path, allow_pickle=True)["pmol"]
+            reaction_dict = np.load(save_path, allow_pickle=True)["reaction"].item()
+        elif rmol is not None and pmol is not None and reaction is not None:
+            rmol_dict = rmol
+            pmol_dict = pmol
+            reaction_dict = reaction
+        else:
+            raise ValueError(
+                "Either save_path or rmol, pmol, reaction must be provided."
+            )
 
-    def load(self) -> None:
+        self.load(rmol_dict, pmol_dict, reaction_dict)
+
+    def load(self, rmol_dict, pmol_dict, reaction_dict) -> None:
         """
         Load and process reactant, product, and reaction data from file.
         """
-        rmol_dict = np.load(self.save_path, allow_pickle=True)["rmol"]
-        pmol_dict = np.load(self.save_path, allow_pickle=True)["pmol"]
-        reaction_dict = np.load(self.save_path, allow_pickle=True)["reaction"].item()
+        rmol_dict = rmol_dict
+        pmol_dict = pmol_dict
+        reaction_dict = reaction_dict
 
         self.rmol_max_cnt = len(rmol_dict)
         self.pmol_max_cnt = len(pmol_dict)
@@ -99,24 +117,24 @@ class GraphDataset:
         data_r_lst = []
         for j in range(self.rmol_max_cnt):
             r_src = self.rmol_src[j][
-                self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
             ]
             r_dst = self.rmol_dst[j][
-                self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
             ]
 
-            r_edge_index = torch.tensor([r_src, r_dst], dtype=torch.long)
+            r_edge_index = torch.tensor(np.array([r_src, r_dst]), dtype=torch.long)
             r_edge_index = torch.reshape(r_edge_index, (2, -1))
 
             r_edge_attr = torch.from_numpy(
                 self.rmol_edge_attr[j][
-                    self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                    self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
                 ]
             ).float()
 
             r_node_attr = torch.from_numpy(
                 self.rmol_node_attr[j][
-                    self.rmol_n_csum[j][idx]: self.rmol_n_csum[j][idx + 1]
+                    self.rmol_n_csum[j][idx] : self.rmol_n_csum[j][idx + 1]
                 ]
             ).float()
 
@@ -128,24 +146,24 @@ class GraphDataset:
         for j in range(self.pmol_max_cnt):
 
             p_src = self.pmol_src[j][
-                self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
             ]
             p_dst = self.pmol_dst[j][
-                self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
             ]
 
-            p_edge_index = torch.tensor([p_src, p_dst], dtype=torch.long)
+            p_edge_index = torch.tensor(np.array([p_src, p_dst]), dtype=torch.long)
             p_edge_index = torch.reshape(p_edge_index, (2, -1))
 
             p_edge_attr = torch.from_numpy(
                 self.pmol_edge_attr[j][
-                    self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                    self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
                 ]
             ).float()
 
             p_node_attr = torch.from_numpy(
                 self.pmol_node_attr[j][
-                    self.pmol_n_csum[j][idx]: self.pmol_n_csum[j][idx + 1]
+                    self.pmol_n_csum[j][idx] : self.pmol_n_csum[j][idx + 1]
                 ]
             ).float()
 

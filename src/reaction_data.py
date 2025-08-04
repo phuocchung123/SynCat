@@ -25,12 +25,12 @@ def mol_dict() -> dict:
 
 
 def get_graph_data(
-    args,
     rsmi_list,
-    y_list,
-    filename,
     rmol_max_cnt,
     pmol_max_cnt,
+    args=None,
+    filename=None,
+    y_list=None,
 ) -> None:
     """
     Processes reaction SMILES and target values, encodes reactant and product information,
@@ -42,8 +42,9 @@ def get_graph_data(
         Argument namespace containing configuration parameters.
     rsmi_list : list
         List of reaction SMILES strings.
-    y_list : list or np.ndarray
+    y_list : list or np.ndarray or None
         List or array of target values (labels) for each reaction.
+        y_list is None when prediction is performed
     filename : str
         Output filename for saving processed data.
     rmol_max_cnt : int
@@ -55,7 +56,8 @@ def get_graph_data(
     -------
     None
     """
-    logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
+    if args is not None:
+        logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     rmol_max_cnt = rmol_max_cnt
     pmol_max_cnt = pmol_max_cnt
 
@@ -63,16 +65,25 @@ def get_graph_data(
     pmol_dict = [mol_dict() for _ in range(pmol_max_cnt)]
 
     reaction_dict = {"y": [], "rsmi": []}
-
-    logger.info("--- generating graph data for %s" % filename)
-    logger.info(
-        "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
-        % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
-    )
+    if args is not None:
+        logger.info("--- generating graph data for %s" % filename)
+        logger.info(
+            "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
+            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
+        )
+    else:
+        print("--- generating graph data for %s" % filename)
+        print(
+            "--- n_reactions: %d, reactant_max_cnt: %d, product_max_cnt: %d"
+            % (len(rsmi_list), rmol_max_cnt, pmol_max_cnt)
+        )
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
-        y = y_list[i]
+        if y_list is not None:
+            y = y_list[i]
+        else:
+            y = 0  # pseudo y for prediction
 
         [reactants_smi, products_smi] = rsmi.split(">>")
 
@@ -144,7 +155,10 @@ def get_graph_data(
 
         # monitoring
         if (i + 1) % 10000 == 0:
-            logger.info("--- %d/%d processed" % (i + 1, len(rsmi_list)))
+            if args is not None:
+                logger.info("--- %d/%d processed" % (i + 1, len(rsmi_list)))
+            else:
+                print("--- %d/%d processed" % (i + 1, len(rsmi_list)))
 
     # datatype to numpy
     for j in range(rmol_max_cnt):
@@ -153,6 +167,9 @@ def get_graph_data(
         pmol_dict[j] = dict_list_to_numpy(pmol_dict[j])
     reaction_dict["y"] = np.array(reaction_dict["y"])
     # save file
-    np.savez_compressed(
-        filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
-    )
+    if y_list is not None:
+        np.savez_compressed(
+            filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
+        )
+    else:
+        return rmol_dict, pmol_dict, reaction_dict
