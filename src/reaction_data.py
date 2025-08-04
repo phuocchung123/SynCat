@@ -167,7 +167,7 @@ def get_graph_data(
         pmol_dict[j] = dict_list_to_numpy(pmol_dict[j])
     reaction_dict["y"] = np.array(reaction_dict["y"])
     # save file
-    if y_list:
+    if y_list is not None:
         np.savez_compressed(
             filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
         )
