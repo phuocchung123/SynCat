@@ -96,6 +96,10 @@ git pull
 - [Phuoc-Chung Nguyen Van](https://github.com/phuocchung123)
 - [Tieu-Long Phan](https://tieulongphan.github.io/)
 
+## Publication
+
+[SynCat: A light weight graph neural network model to classify chemical reactions](https://doi.org/10.26434/chemrxiv-2025-5f868)
+
 ## License
 This project is licensed under MIT License - see the [License](LICENSE) file for details.
 
