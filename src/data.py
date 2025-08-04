@@ -9,11 +9,13 @@ class GraphDataset:
     Dataset for chemical reaction graph classification.
     """
 
-    def __init__(self, 
-                save_path: str = None,
-                rmol: Dict = None,
-                pmol: Dict= None,
-                reaction: Dict= None) -> None:
+    def __init__(
+        self,
+        save_path: str = None,
+        rmol: Dict = None,
+        pmol: Dict = None,
+        reaction: Dict = None,
+    ) -> None:
         """
         Initialize GraphDataset and load data.
 
@@ -30,9 +32,11 @@ class GraphDataset:
             rmol_dict = rmol
             pmol_dict = pmol
             reaction_dict = reaction
-        else: 
-            raise ValueError("Either save_path or rmol, pmol, reaction must be provided.")
-            
+        else:
+            raise ValueError(
+                "Either save_path or rmol, pmol, reaction must be provided."
+            )
+
         self.load(rmol_dict, pmol_dict, reaction_dict)
 
     def load(self, rmol_dict, pmol_dict, reaction_dict) -> None:
@@ -113,10 +117,10 @@ class GraphDataset:
         data_r_lst = []
         for j in range(self.rmol_max_cnt):
             r_src = self.rmol_src[j][
-                self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
             ]
             r_dst = self.rmol_dst[j][
-                self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
             ]
 
             r_edge_index = torch.tensor(np.array([r_src, r_dst]), dtype=torch.long)
@@ -124,13 +128,13 @@ class GraphDataset:
 
             r_edge_attr = torch.from_numpy(
                 self.rmol_edge_attr[j][
-                    self.rmol_e_csum[j][idx]: self.rmol_e_csum[j][idx + 1]
+                    self.rmol_e_csum[j][idx] : self.rmol_e_csum[j][idx + 1]
                 ]
             ).float()
 
             r_node_attr = torch.from_numpy(
                 self.rmol_node_attr[j][
-                    self.rmol_n_csum[j][idx]: self.rmol_n_csum[j][idx + 1]
+                    self.rmol_n_csum[j][idx] : self.rmol_n_csum[j][idx + 1]
                 ]
             ).float()
 
@@ -142,10 +146,10 @@ class GraphDataset:
         for j in range(self.pmol_max_cnt):
 
             p_src = self.pmol_src[j][
-                self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
             ]
             p_dst = self.pmol_dst[j][
-                self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
             ]
 
             p_edge_index = torch.tensor(np.array([p_src, p_dst]), dtype=torch.long)
@@ -153,13 +157,13 @@ class GraphDataset:
 
             p_edge_attr = torch.from_numpy(
                 self.pmol_edge_attr[j][
-                    self.pmol_e_csum[j][idx]: self.pmol_e_csum[j][idx + 1]
+                    self.pmol_e_csum[j][idx] : self.pmol_e_csum[j][idx + 1]
                 ]
             ).float()
 
             p_node_attr = torch.from_numpy(
                 self.pmol_node_attr[j][
-                    self.pmol_n_csum[j][idx]: self.pmol_n_csum[j][idx + 1]
+                    self.pmol_n_csum[j][idx] : self.pmol_n_csum[j][idx + 1]
                 ]
             ).float()
 

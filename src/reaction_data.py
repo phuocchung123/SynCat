@@ -83,7 +83,7 @@ def get_graph_data(
         if y_list is not None:
             y = y_list[i]
         else:
-            y = 0 # pseudo y for prediction 
+            y = 0  # pseudo y for prediction
 
         [reactants_smi, products_smi] = rsmi.split(">>")
 

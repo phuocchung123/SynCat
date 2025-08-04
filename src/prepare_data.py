@@ -20,9 +20,7 @@ def prepare_data(args) -> None:
     -------
     None
     """
-    data = pd.read_csv(
-        args.Data_folder + args.data_csv, compression="gzip"
-    )
+    data = pd.read_csv(args.Data_folder + args.data_csv, compression="gzip")
     y = data[args.y_column]
     if args.train_test_split:
         data_pretrain = data[data[args.split_column] == "train"]
@@ -74,10 +72,10 @@ def prepare_data(args) -> None:
         y_list_valid,
     )
     get_graph_data(
-        rsmi_list_test, 
-        rmol_max_cnt, 
+        rsmi_list_test,
+        rmol_max_cnt,
         pmol_max_cnt,
         args,
-        filename_test, 
-        y_list_test, 
+        filename_test,
+        y_list_test,
     )
