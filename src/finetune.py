@@ -9,6 +9,7 @@ from model import model
 from training import train
 from validation import validation
 from utils import collate_reaction_graphs, setup_logging
+from sklearn.metrics import f1_score
 
 
 def finetune(args) -> None:
@@ -131,12 +132,13 @@ def finetune(args) -> None:
     )
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc, att_r, att_p, rsmis, _, _, emb = validation(
+    acc, mcc, att_r, att_p, rsmis, pred_infer, label_infer, emb = validation(
         args, net, test_loader, device
     )
     logger.info("-- RESULT")
     logger.info("--- test size: %d" % (len(test_y)))
     logger.info("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
+    logger.info('The weighted F1 score: %.3f' % (f1_score(label_infer, pred_infer,average = 'weighted')))
 
     dict_att = {
         "Name": "Attention",

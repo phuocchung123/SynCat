@@ -14,8 +14,8 @@ configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--batch_size", type=int, default=128)
-    arg_parser.add_argument("--epochs", type=int, default=0)
-    arg_parser.add_argument("--device", type=int, default=1)
+    arg_parser.add_argument("--epochs", type=int, default=100)
+    arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--layer", type=int, default=3)
     arg_parser.add_argument("--emb_dim", type=int, default=384)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
@@ -24,15 +24,15 @@ if __name__ == "__main__":
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
-        "--data_csv", type=str, default="raw/USPTO_TPL_unbalanced.csv.gz"
+        "--data_csv", type=str, default="raw/claire_full.csv.gz"
     )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_tpl.pt")
-    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_tpl")
-    arg_parser.add_argument("--y_column", type=str, default="rxn_class")
+    arg_parser.add_argument("--model_name", type=str, default="model_claire3_2.pt")
+    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_claire_3")
+    arg_parser.add_argument("--y_column", type=str, default="ec3_encode")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)
     arg_parser.add_argument("--split_column", type=str, default="split")
-    arg_parser.add_argument("--reaction_column", type=str, default="rxn")
+    arg_parser.add_argument("--reaction_column", type=str, default="rxn_smiles")
     arg_parser.add_argument("--seed", type=int, default=42)
     args = arg_parser.parse_args()
 

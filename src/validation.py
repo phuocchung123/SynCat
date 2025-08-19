@@ -71,4 +71,4 @@ def validation(args, net, test_loader, device, loss_fn=None):
     if loss_fn is None:
         return acc, mcc, att_r, att_p, rsmis, labels, preds, emb
     else:
-        return acc, mcc, np.mean(inference_loss_list)
+        return acc, mcc, np.mean(inference_loss_list), labels, preds
