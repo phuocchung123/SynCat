@@ -28,11 +28,12 @@ def finetune(args) -> None:
     model_path = args.model_path + args.model_name
     data = pd.read_csv(args.Data_folder + args.data_csv, compression="gzip")
     out_dim = data[args.y_column].nunique()
-    device = (
-        torch.device("cuda:" + str(args.device))
-        if torch.cuda.is_available()
-        else torch.device("cpu")
-    )
+    # device = (
+    #     torch.device("cuda:" + str(args.device))
+    #     if torch.cuda.is_available()
+    #     else torch.device("cpu")
+    # )
+    device = 'xla'
     logger.info("device is\t", device)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)

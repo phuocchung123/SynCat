@@ -6,6 +6,7 @@ from tqdm import tqdm
 from validation import validation
 from utils import setup_logging
 from sklearn.metrics import accuracy_score, matthews_corrcoef
+import torch_xla
 
 
 def train(
@@ -72,28 +73,30 @@ def train(
         preds = []
 
         for batchdata in tqdm(train_loader, desc="Training"):
-            inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
-            # fmt: off
-            inputs_pmol = [
-                b.to(device)
-                for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
-            ]
-            r_dummy = batchdata[-4]
-            p_dummy = batchdata[-3]
+            with torch_xla.step():
+                inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
+                # fmt: off
+                inputs_pmol = [
+                    b.to(device)
+                    for b in batchdata[rmol_max_cnt: rmol_max_cnt + pmol_max_cnt]
+                ]
+                r_dummy = batchdata[-4]
+                p_dummy = batchdata[-3]
 
-            pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
-            label = batchdata[-2]
-            label = label.to(device)
-            loss = loss_fn(pred, label)
+                pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
+                label = batchdata[-2]
+                label = label.to(device)
+                loss = loss_fn(pred, label)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            labels.extend(label.tolist())
-            preds.extend(torch.argmax(pred, dim=1).tolist())
-            train_loss = loss.detach().item()
-            train_loss_list.append(train_loss)
+                labels.extend(label.tolist())
+                preds.extend(torch.argmax(pred, dim=1).tolist())
+                train_loss = loss.detach().item()
+                train_loss_list.append(train_loss)
+        torch_xla.sync()
 
         acc = accuracy_score(labels, preds)
         mcc = matthews_corrcoef(labels, preds)
