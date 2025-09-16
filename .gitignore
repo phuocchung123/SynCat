@@ -4,3 +4,6 @@
 /Data/npz/npz_tpl/
 dev/*
 draft.ipynb
+Data/data_claire/
+Data/mlm_train_file.txt
+Data/rxnmapper_data.txt
