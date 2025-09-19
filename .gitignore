@@ -2,5 +2,7 @@
 *.DS_Store
 /Data/*.csv
 /Data/npz/npz_tpl/
+/Data/npz/npz_tpl_ba/
+/Data/model/model_tpl_ba_cat.pt
 dev/*
 draft.ipynb
