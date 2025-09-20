@@ -24,7 +24,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
-        "--data_csv", type=str, default="raw/USPTO_TPL_unbalanced.csv.gz"
+        "--data_csv", type=str, default="raw/final_df_ec2.csv.gz"
     )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
     arg_parser.add_argument("--model_name", type=str, default="model_tpl.pt")
