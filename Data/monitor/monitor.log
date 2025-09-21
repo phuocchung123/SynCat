@@ -70,3 +70,16 @@
 2025-09-21 20:30:07,413 - INFO - -- CONFIGURATIONS
 2025-09-21 20:30:07,413 - INFO - --- train/valid/test: 45209/5651/5652
 2025-09-21 20:30:07,533 - INFO - -- TRAINING
+2025-09-21 20:32:07,610 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv2/train.npz
+2025-09-21 20:32:07,610 - INFO - --- n_reactions: 45209, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:36:06,129 - INFO - --- 10000/45209 processed
+2025-09-21 20:40:04,852 - INFO - --- 20000/45209 processed
+2025-09-21 20:44:08,985 - INFO - --- 30000/45209 processed
+2025-09-21 20:48:09,292 - INFO - --- 40000/45209 processed
+2025-09-21 20:50:20,190 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv2/valid.npz
+2025-09-21 20:50:20,190 - INFO - --- n_reactions: 5651, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:52:35,239 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv2/test.npz
+2025-09-21 20:52:35,239 - INFO - --- n_reactions: 5652, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:54:53,839 - INFO - -- CONFIGURATIONS
+2025-09-21 20:54:53,839 - INFO - --- train/valid/test: 45209/5651/5652
+2025-09-21 20:54:53,957 - INFO - -- TRAINING
