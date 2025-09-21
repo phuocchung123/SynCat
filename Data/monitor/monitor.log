@@ -55,3 +55,18 @@
 2025-09-20 16:33:00,494 - INFO - -- CONFIGURATIONS
 2025-09-20 16:33:00,494 - INFO - --- train/valid/test: 45209/5651/5652
 2025-09-20 16:33:00,616 - INFO - -- TRAINING
+2025-09-21 19:35:33,331 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv1/train.npz
+2025-09-21 19:35:33,331 - INFO - --- n_reactions: 45209, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:07:20,751 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv1/train.npz
+2025-09-21 20:07:20,751 - INFO - --- n_reactions: 45209, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:11:20,303 - INFO - --- 10000/45209 processed
+2025-09-21 20:15:17,769 - INFO - --- 20000/45209 processed
+2025-09-21 20:19:20,953 - INFO - --- 30000/45209 processed
+2025-09-21 20:23:21,973 - INFO - --- 40000/45209 processed
+2025-09-21 20:25:32,818 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv1/valid.npz
+2025-09-21 20:25:32,818 - INFO - --- n_reactions: 5651, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:27:49,087 - INFO - --- generating graph data for ../Data/npz/npz_ecreact_lv1/test.npz
+2025-09-21 20:27:49,087 - INFO - --- n_reactions: 5652, reactant_max_cnt: 12, product_max_cnt: 1
+2025-09-21 20:30:07,413 - INFO - -- CONFIGURATIONS
+2025-09-21 20:30:07,413 - INFO - --- train/valid/test: 45209/5651/5652
+2025-09-21 20:30:07,533 - INFO - -- TRAINING
