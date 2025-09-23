@@ -43,7 +43,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(train_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=2,
         drop_last=True,
     )
 
@@ -53,7 +53,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(test_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=2,
         drop_last=False,
     )
 
@@ -63,7 +63,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(val_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=2,
         drop_last=False,
     )
 

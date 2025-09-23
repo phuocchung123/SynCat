@@ -14,7 +14,7 @@ configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--batch_size", type=int, default=128)
-    arg_parser.add_argument("--epochs", type=int, default=0)
+    arg_parser.add_argument("--epochs", type=int, default=50)
     arg_parser.add_argument("--device", type=int, default=1)
     arg_parser.add_argument("--layer", type=int, default=3)
     arg_parser.add_argument("--emb_dim", type=int, default=384)
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "--data_csv", type=str, default="raw/USPTO_TPL_unbalanced.csv.gz"
     )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_tpl.pt")
+    arg_parser.add_argument("--model_name", type=str, default="model_tpl_sum1.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_tpl")
     arg_parser.add_argument("--y_column", type=str, default="rxn_class")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)

@@ -124,7 +124,8 @@ class model(nn.Module):
                 product_tensor += att_procduct[idx] * p_graph_feats_1[idx]
 
             # Reaction center
-            reaction_center = torch.sub(reactant_tensor, product_tensor)
+            # reaction_center = torch.sub(reactant_tensor, product_tensor)
+            reaction_center = torch.add(reactant_tensor, product_tensor)
             reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
