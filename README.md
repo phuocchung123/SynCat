@@ -100,6 +100,20 @@ git pull
 
 [SynCat: A light weight graph neural network model to classify chemical reactions](https://doi.org/10.26434/chemrxiv-2025-5f868)
 
+### Citation
+```
+@article{van2025syncat,
+author ={Van Nguyen, Phuoc-Chung and To, Van-Thinh and Tran, Nguyen Ngoc Vi and Phan, Tieu-Long and Truong, Tuyen Ngoc and Gärtner, Thomas and Merkle, Daniel and Stadler, Peter},
+title  ={SynCat: Molecule-Level Attention Graph Neural Network for Precise Reaction Classification},
+journal  ={Digital Discovery},
+year  ={2025},
+pages  ={-},
+publisher  ={RSC},
+doi  ={10.1039/D5DD00367A},
+url  ={http://dx.doi.org/10.1039/D5DD00367A}
+}
+```
+
 ## License
 This project is licensed under MIT License - see the [License](LICENSE) file for details.
 
