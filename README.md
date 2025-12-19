@@ -98,7 +98,7 @@ git pull
 
 ## Publication
 
-[SynCat: A light weight graph neural network model to classify chemical reactions](https://doi.org/10.1039/D5DD00367A)
+[SynCat: molecule-level attention graph neural network for precise reaction classification](https://doi.org/10.1039/D5DD00367A)
 
 ### Citation
 ```
