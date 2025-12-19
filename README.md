@@ -98,7 +98,7 @@ git pull
 
 ## Publication
 
-[SynCat: A light weight graph neural network model to classify chemical reactions](https://doi.org/10.26434/chemrxiv-2025-5f868)
+[SynCat: A light weight graph neural network model to classify chemical reactions](https://doi.org/10.1039/D5DD00367A)
 
 ### Citation
 ```
