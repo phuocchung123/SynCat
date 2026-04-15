@@ -86,7 +86,7 @@ class model(nn.Module):
         reaction_vectors = torch.tensor([]).to(device)
         for batch in range(r_graph_feats.shape[1]):
             # The initial reactant's embeddings of each reaction in a batch
-            r_graph_feats_1 = r_graph_feats[:, batch, :][r_dummy[batch]].to(device)
+            r_graph_feats_1 = r_graph_feats[:, batch, :].to(device)
             # num_r = r_graph_feats_1.shape[0]
             # # Add pairwise embeddings into the initial reactant's embedding
             # for i, j in itertools.combinations(range(num_r), 2):
@@ -95,7 +95,7 @@ class model(nn.Module):
             #     r_graph_feats_1 = torch.cat((r_graph_feats_1, pairwise_r), dim=0)
 
             # The initial product's emdeddings of each reaction in a batch
-            p_graph_feats_1 = p_graph_feats[:, batch, :][p_dummy[batch]].to(device)
+            p_graph_feats_1 = p_graph_feats[:, batch, :].to(device)
             # num_p = p_graph_feats_1.shape[0]
             # # Add pairwise embeddings into the initial product's embeddings
             # for i, j in itertools.combinations(range(num_p), 2):
