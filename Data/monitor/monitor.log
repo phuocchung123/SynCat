@@ -40,3 +40,24 @@
 2025-07-31 08:46:39,147 - INFO - Already exist files in ../Data/npz/npz_sch/
 2025-07-31 08:46:46,005 - INFO - -- CONFIGURATIONS
 2025-07-31 08:46:46,005 - INFO - --- train/valid/test: 9000/1000/40000
+2026-04-16 01:49:16,225 - INFO - --- generating graph data for ../Data/npz/npz_Hieu/train.npz
+2026-04-16 01:49:16,225 - INFO - --- n_reactions: 23085, reactant_max_cnt: 6, product_max_cnt: 4
+2026-04-16 01:50:17,912 - INFO - --- 10000/23085 processed
+2026-04-16 02:03:11,179 - INFO - --- generating graph data for ../Data/npz/npz_Hieu/train.npz
+2026-04-16 02:03:11,179 - INFO - --- n_reactions: 23085, reactant_max_cnt: 6, product_max_cnt: 4
+2026-04-16 02:04:12,944 - INFO - --- 10000/23085 processed
+2026-04-16 03:28:16,266 - INFO - --- generating graph data for ../Data/npz/npz_Hieu/train.npz
+2026-04-16 03:28:16,266 - INFO - --- n_reactions: 23084, reactant_max_cnt: 6, product_max_cnt: 4
+2026-04-16 03:29:16,915 - INFO - --- 10000/23084 processed
+2026-04-16 03:30:17,141 - INFO - --- 20000/23084 processed
+2026-04-16 03:30:38,428 - INFO - --- generating graph data for ../Data/npz/npz_Hieu/valid.npz
+2026-04-16 03:30:38,428 - INFO - --- n_reactions: 2565, reactant_max_cnt: 6, product_max_cnt: 4
+2026-04-16 03:30:54,084 - INFO - --- generating graph data for ../Data/npz/npz_Hieu/test.npz
+2026-04-16 03:30:54,084 - INFO - --- n_reactions: 6413, reactant_max_cnt: 6, product_max_cnt: 4
+2026-04-16 03:31:34,095 - INFO - -- CONFIGURATIONS
+2026-04-16 03:31:34,095 - INFO - --- train/valid/test: 23084/2565/6413
+2026-04-16 03:31:34,286 - INFO - -- TRAINING
+2026-04-16 03:33:21,903 - INFO - Already exist files in ../Data/npz/npz_Hieu/
+2026-04-16 03:33:22,612 - INFO - -- CONFIGURATIONS
+2026-04-16 03:33:22,612 - INFO - --- train/valid/test: 23084/2565/6413
+2026-04-16 03:33:22,723 - INFO - -- TRAINING
