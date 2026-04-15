@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, matthews_corrcoef
+# from sklearn.metrics import accuracy_score, matthews_corrcoef
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 def validation(args, net, test_loader, device, loss_fn=None):
@@ -55,20 +56,30 @@ def validation(args, net, test_loader, device, loss_fn=None):
             p_dummy = batchdata[-3]
 
             pred, att_r, att_p, emb = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
-            label = batchdata[-2]
+            pred = pred.float()
+            label = batchdata[-2].float()
             label = label.to(device)
             if loss_fn is not None:
                 inference_loss = loss_fn(pred, label)
                 inference_loss_list.append(inference_loss.item())
 
-            labels.extend(label.tolist())
-            preds.extend(torch.argmax(pred, dim=1).tolist())
+            # labels.extend(label.tolist())
+            # preds.extend(torch.argmax(pred, dim=1).tolist())
+
+            preds.extend(pred.detach().cpu().tolist())
+            labels.extend(label.detach().cpu().tolist())
+
             rsmis.append(batchdata[-1])
 
-    acc = accuracy_score(labels, preds)
-    mcc = matthews_corrcoef(labels, preds)
+    # acc = accuracy_score(labels, preds)
+    # mcc = matthews_corrcoef(labels, preds)
+
+    mse = mean_squared_error(labels, preds)
+    mae = mean_absolute_error(labels, preds)
+    rmse = mean_squared_error(labels, preds) ** 0.5
+    r2 = r2_score(labels, preds)
 
     if loss_fn is None:
-        return acc, mcc, att_r, att_p, rsmis, labels, preds, emb
+        return mse, mae, rmse, r2, att_r, att_p, rsmis, labels, preds, emb
     else:
-        return acc, mcc, np.mean(inference_loss_list)
+        return mse, mae, rmse, r2, np.mean(inference_loss_list)

@@ -26,13 +26,22 @@ def prepare_data(args) -> None:
         data_pretrain = data[data[args.split_column] == "train"]
         data_test = data[data[args.split_column] == "test"]
     else:
+        # data_pretrain, data_test = train_test_split(
+        #     data, test_size=0.1, stratify=y, random_state=42
+        # )
         data_pretrain, data_test = train_test_split(
-            data, test_size=0.1, stratify=y, random_state=42
+            data, test_size=0.1, random_state=42
         )
+    # data_train, data_valid = train_test_split(
+    #     data_pretrain,
+    #     test_size=0.1,
+    #     stratify=data_pretrain[args.y_column],
+    #     random_state=42,
+    # )
+
     data_train, data_valid = train_test_split(
         data_pretrain,
         test_size=0.1,
-        stratify=data_pretrain[args.y_column],
         random_state=42,
     )
 

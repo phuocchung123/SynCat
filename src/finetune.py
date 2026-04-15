@@ -27,7 +27,9 @@ def finetune(args) -> None:
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     model_path = args.model_path + args.model_name
     data = pd.read_csv(args.Data_folder + args.data_csv, compression="gzip")
-    out_dim = data[args.y_column].nunique()
+    data[args.y_column] = data[args.y_column].astype(float)
+    # out_dim = data[args.y_column].nunique()
+    out_dim  = 1
     device = (
         torch.device("cuda:" + str(args.device))
         if torch.cuda.is_available()
@@ -131,19 +133,22 @@ def finetune(args) -> None:
     )
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    acc, mcc, att_r, att_p, rsmis, _, _, emb = validation(
+    mse, mae, rmse, r2, _, _, _, _, _, emb = validation(
         args, net, test_loader, device
     )
     logger.info("-- RESULT")
     logger.info("--- test size: %d" % (len(test_y)))
-    logger.info("--- Accuracy: %.3f, Mattews Correlation: %.3f," % (acc, mcc))
+    logger.info(
+        "Test MSE: %.6f | MAE: %.6f | RMSE: %.6f | R2: %.6f"
+        % (mse, mae, rmse, r2)
+    )
 
-    dict_att = {
-        "Name": "Attention",
-        "rsmis": rsmis,
-        "att_r": att_r,
-        "att_p": att_p,
-        "emb": emb,
-    }
-    with open(args.monitor_folder + "attention.json", "w") as f:
-        json.dump(dict_att, f)
+    # dict_att = {
+    #     "Name": "Attention",
+    #     "rsmis": rsmis,
+    #     "att_r": att_r,
+    #     "att_p": att_p,
+    #     "emb": emb,
+    # }
+    # with open(args.monitor_folder + "attention.json", "w") as f:
+    #     json.dump(dict_att, f)

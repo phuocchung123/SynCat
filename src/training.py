@@ -5,7 +5,8 @@ from torch.optim import Adam
 from tqdm import tqdm
 from validation import validation
 from utils import setup_logging
-from sklearn.metrics import accuracy_score, matthews_corrcoef
+# from sklearn.metrics import accuracy_score, 
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
 def train(
@@ -59,7 +60,8 @@ def train(
     rmol_max_cnt = train_loader.dataset.rmol_max_cnt
     pmol_max_cnt = train_loader.dataset.pmol_max_cnt
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    # loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.MSELoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     for epoch in range(epochs):
@@ -82,7 +84,8 @@ def train(
             p_dummy = batchdata[-3]
 
             pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
-            label = batchdata[-2]
+            pred = pred.float()
+            label = batchdata[-2].float()
             label = label.to(device)
             loss = loss_fn(pred, label)
 
@@ -90,31 +93,41 @@ def train(
             loss.backward()
             optimizer.step()
 
-            labels.extend(label.tolist())
-            preds.extend(torch.argmax(pred, dim=1).tolist())
+            # labels.extend(label.tolist())
+            # preds.extend(torch.argmax(pred, dim=1).tolist())
+            preds.extend(pred.detach().cpu().tolist())
+            labels.extend(label.detach().cpu().tolist())
             train_loss = loss.detach().item()
             train_loss_list.append(train_loss)
 
-        acc = accuracy_score(labels, preds)
-        mcc = matthews_corrcoef(labels, preds)
+        # acc = accuracy_score(labels, preds)
+        # mcc = matthews_corrcoef(labels, preds)
+
+        mse = mean_squared_error(labels, preds)
+        mae = mean_absolute_error(labels, preds)
+        rmse = mean_squared_error(labels, preds) ** 0.5
+        r2 = r2_score(labels, preds)
+
         logger.info(
-            "--- training epoch %d, loss %.3f, acc %.3f, mcc %.3f, time elapsed(min) %.2f---"
+            "--- training epoch %d, loss %.3f, mse %.3f, mae %.3f, rmse %.3f, r2 %.3f, time elapsed(min) %.2f---"
             % (
                 epoch,
                 np.mean(train_loss_list),
-                acc,
-                mcc,
+                mse,
+                mae,
+                rmse,
+                r2,
                 (time.time() - start_time) / 60,
             )
         )
 
         # validation
         net.eval()
-        val_acc, val_mcc, val_loss = validation(args, net, val_loader, device, loss_fn)
+        val_mse, val_mae, val_rmse, val_r2, val_loss = validation(args, net, val_loader, device, loss_fn)
 
         logger.info(
-            "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
-            % (epoch, val_loss, val_acc, val_mcc)
+            "--- validation at epoch %d, val_loss %.3f, val_mse %.3f, val_mae %.3f, val_rmse %.3f, val_r2 %.3f ---"
+            % (epoch, val_loss, val_mse, val_mae, val_rmse, val_r2)
         )
         logger.info("\n" + "*" * 100)
 
