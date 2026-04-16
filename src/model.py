@@ -125,12 +125,19 @@ class model(nn.Module):
 
             # Reaction center
             
-            reactant_tensor = torch.sum(r_graph_feats_1, dim =0)
-            product_tensor = torch.sum(p_graph_feats_1, dim =0)
+            reactant_tensor = torch.sum(r_graph_feats_1, dim =0).unsqueeze(0)
+            # print(reactant_tensor.shape)
+            product_tensor = torch.sum(p_graph_feats_1, dim =0).unsqueeze(0)
+            # print(product_tensor.shape)
             
-            reaction_center = torch.sub(reactant_tensor, product_tensor)
+            # reaction_center = torch.sub(reactant_tensor, product_tensor)
+            reaction_center = reactant_tensor + product_tensor
+            # print(reaction_center.shape)
             reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
+            # print(reaction_vectors.shape)
+            # break
             self.atts_reactant.append([])
             self.atts_product.append([])
+        # print(reaction_vectors.shape)
         out = self.predict(reaction_vectors).squeeze(-1)
         return out, self.atts_reactant, self.atts_product, reaction_vectors.tolist()
