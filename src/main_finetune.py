@@ -24,15 +24,15 @@ if __name__ == "__main__":
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
-        "--data_csv", type=str, default="raw/da_dataset_xtb_1.csv.gz"
+        "--data_csv", type=str, default="raw/xtb_Hieu_filter.csv.gz"
     )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_regression_free_sub.pt")
-    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_DD_xtb_free")
-    arg_parser.add_argument("--y_column", type=str, default="DrG")
+    arg_parser.add_argument("--model_name", type=str, default="model_regression_Hieu_filter_fwd.pt")
+    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_Hieu_filter_fwd")
+    arg_parser.add_argument("--y_column", type=str, default="Ea_fwd")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)
-    arg_parser.add_argument("--split_column", type=str, default="split_free")
-    arg_parser.add_argument("--reaction_column", type=str, default="reaction")
+    arg_parser.add_argument("--split_column", type=str, default="split_fwd")
+    arg_parser.add_argument("--reaction_column", type=str, default="rxn")
     arg_parser.add_argument("--seed", type=int, default=42)
     args = arg_parser.parse_args()
 
