@@ -8,8 +8,8 @@ draft.ipynb
 /Data/model/model_regression_free_sub.pt
 /Data/model/model_regression_free.pt
 /Data/model/model_regression_free.pt
-/Data/npz/npz_DD_xtb/
-/Data/npz/npz_DD_xtb_free/
+# /Data/npz/npz_DD_xtb/
+# /Data/npz/npz_DD_xtb_free/
 /Data/model/model_regression.pt
 /Data/model/model_regression_Hieu_filter_fwd.pt
 /Data/model/model_regression_Hieu_filter_bwd.pt
