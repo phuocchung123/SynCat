@@ -13,3 +13,7 @@ draft.ipynb
 /Data/model/model_regression.pt
 /Data/model/model_regression_Hieu_filter_fwd.pt
 /Data/model/model_regression_Hieu_filter_bwd.pt
+/Data/model/model_regression_Hieu_filter_bwd_log.pt
+/Data/model/model_regression_Hieu_filter_fwd_log.pt
+/Data/npz/npz_Hieu_filter_bwd_log/
+/Data/npz/npz_Hieu_filter_fwd_log/
