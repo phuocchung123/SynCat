@@ -3189,3 +3189,13 @@
 2026-04-18 21:28:44,422 - INFO - -- RESULT
 2026-04-18 21:28:44,422 - INFO - --- test size: 4237
 2026-04-18 21:28:44,422 - INFO - Test MSE: 0.878153 | MAE: 0.756768 | RMSE: 0.937098 | R2: 0.075304
+2026-05-01 17:14:28,986 - INFO - --- generating graph data for ../Data/npz/npz_15kHieu_forward/train.npz
+2026-05-01 17:14:28,987 - INFO - --- n_reactions: 10913, reactant_max_cnt: 4, product_max_cnt: 4
+2026-05-01 17:18:07,540 - INFO - --- 10000/10913 processed
+2026-05-01 17:18:36,823 - INFO - --- generating graph data for ../Data/npz/npz_15kHieu_forward/valid.npz
+2026-05-01 17:18:36,823 - INFO - --- n_reactions: 1213, reactant_max_cnt: 4, product_max_cnt: 4
+2026-05-01 17:18:57,936 - INFO - --- generating graph data for ../Data/npz/npz_15kHieu_forward/test.npz
+2026-05-01 17:18:57,936 - INFO - --- n_reactions: 3032, reactant_max_cnt: 4, product_max_cnt: 4
+2026-05-01 17:19:50,822 - INFO - -- CONFIGURATIONS
+2026-05-01 17:19:50,822 - INFO - --- train/valid/test: 10913/1213/3032
+2026-05-01 17:19:50,958 - INFO - -- TRAINING
