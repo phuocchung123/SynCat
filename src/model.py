@@ -130,8 +130,8 @@ class model(nn.Module):
             product_tensor = torch.sum(p_graph_feats_1, dim =0).unsqueeze(0)
             # print(product_tensor.shape)
             
-            reaction_center = torch.sub(reactant_tensor, product_tensor)
-            # reaction_center = reactant_tensor + product_tensor
+            # reaction_center = torch.sub(reactant_tensor, product_tensor)
+            reaction_center = reactant_tensor + product_tensor
             # print(reaction_center.shape)
             reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
             # print(reaction_vectors.shape)
