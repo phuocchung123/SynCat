@@ -16,7 +16,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--batch_size", type=int, default=128)
     arg_parser.add_argument("--epochs", type=int, default=100)
     arg_parser.add_argument("--device", type=int, default=0)
-    arg_parser.add_argument("--layer", type=int, default=2)
+    arg_parser.add_argument("--layer", type=int, default=3)
     arg_parser.add_argument("--emb_dim", type=int, default=256)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=1e-3)
@@ -24,12 +24,12 @@ if __name__ == "__main__":
     arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
-        "--data_csv", type=str, default="raw/7kH_scaled_SynCat.csv.gz"
+        "--data_csv", type=str, default="raw/7k_dataset_Hieu_SynCat.csv.gz"
     )
     arg_parser.add_argument("--model_path", type=str, default="../Data/model/")
-    arg_parser.add_argument("--model_name", type=str, default="model_regression_7k_scaled.pt")
-    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_7kH_forward_scaled")
-    arg_parser.add_argument("--y_column", type=str, default="Ea_fwd_scaled")
+    arg_parser.add_argument("--model_name", type=str, default="model_regression_7k.pt")
+    arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_7kH_forward")
+    arg_parser.add_argument("--y_column", type=str, default="Ea_fwd")
     arg_parser.add_argument("--train_test_split", type=bool, default=True)
     arg_parser.add_argument("--split_column", type=str, default="split")
     arg_parser.add_argument("--reaction_column", type=str, default="rxn")
