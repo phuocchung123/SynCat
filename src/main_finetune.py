@@ -21,7 +21,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=1e-3)
     arg_parser.add_argument("--weight_decay", type=float, default=1e-4)
-    arg_parser.add_argument("--monitor_folder", type=str, default="/kaggle/working/")
+    arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
         "--data_csv", type=str, default="raw/7kH_scaled_SynCat.csv.gz"
