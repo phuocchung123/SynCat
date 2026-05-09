@@ -14,14 +14,14 @@ configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--batch_size", type=int, default=128)
-    arg_parser.add_argument("--epochs", type=int, default=100)
+    arg_parser.add_argument("--epochs", type=int, default=1)
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--layer", type=int, default=3)
     arg_parser.add_argument("--emb_dim", type=int, default=256)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=1e-3)
     arg_parser.add_argument("--weight_decay", type=float, default=1e-4)
-    arg_parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
+    arg_parser.add_argument("--monitor_folder", type=str, default="/kaggle/working/")
     arg_parser.add_argument("--Data_folder", type=str, default="../Data/")
     arg_parser.add_argument(
         "--data_csv", type=str, default="raw/7k_dataset_Hieu_SynCat.csv.gz"
