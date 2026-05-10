@@ -172,6 +172,7 @@ def train(
                     "epoch": epoch + current_epoch,
                     "model_state_dict": net.state_dict(),
                     "val_loss": best_val_loss,
+                    "scaler": scaler,
                 },
                 model_path,
             )

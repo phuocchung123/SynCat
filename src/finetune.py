@@ -133,8 +133,9 @@ def finetune(args) -> None:
     )
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
+    scaler = checkpoint.get("scaler", None)
     mse, mae, rmse, r2, _, _, _, _, _, emb = validation(
-        args, net, test_loader, device
+        args, net, test_loader, device, scaler=scaler
     )
     logger.info("-- RESULT")
     logger.info("--- test size: %d" % (len(test_y)))
