@@ -9,7 +9,6 @@ from validation import validation
 from utils import setup_logging
 # from sklearn.metrics import accuracy_score, 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.preprocessing import StandardScaler
 
 
 def train(
@@ -67,13 +66,6 @@ def train(
     loss_fn = torch.nn.MSELoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    # Initialize and fit StandardScaler for labels
-    scaler = StandardScaler()
-    all_train_labels = []
-    for batchdata in train_loader:
-        all_train_labels.extend(batchdata[-2].tolist())
-    scaler.fit(np.array(all_train_labels).reshape(-1, 1))
-
     # Initialize history dictionary to store metrics for plotting
     history = {
         'train_loss': [], 'val_loss': [],
@@ -105,19 +97,15 @@ def train(
             pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
             pred = pred.float()
             label = batchdata[-2].float()
+            label = label.to(device)
 
-            # Scale labels for loss calculation
-            scaled_label_np = scaler.transform(label.numpy().reshape(-1, 1)).flatten()
-            scaled_label = torch.tensor(scaled_label_np, dtype=torch.float32, device=device)
-            loss = loss_fn(pred, scaled_label)
+            loss = loss_fn(pred, label)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            # Inverse transform predictions for metrics against original labels
-            pred_inv = scaler.inverse_transform(pred.detach().cpu().numpy().reshape(-1, 1)).flatten()
-            preds.extend(pred_inv.tolist())
+            preds.extend(pred.detach().cpu().tolist())
             labels.extend(label.detach().cpu().tolist())
             train_loss = loss.detach().item()
             train_loss_list.append(train_loss)
@@ -145,7 +133,7 @@ def train(
 
         # validation
         net.eval()
-        val_mse, val_mae, val_rmse, val_r2, val_loss = validation(args, net, val_loader, device, loss_fn, scaler)
+        val_mse, val_mae, val_rmse, val_r2, val_loss = validation(args, net, val_loader, device, loss_fn)
 
         # Record metrics for plotting
         history['train_loss'].append(np.mean(train_loss_list))

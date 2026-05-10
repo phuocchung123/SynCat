@@ -5,7 +5,7 @@ from tqdm import tqdm
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
-def validation(args, net, test_loader, device, loss_fn=None, scaler=None):
+def validation(args, net, test_loader, device, loss_fn=None):
     """
     Runs model inference on the test set, computes metrics, and optionally returns attention and embeddings.
 
@@ -21,8 +21,6 @@ def validation(args, net, test_loader, device, loss_fn=None, scaler=None):
         Device to run the computations.
     loss_fn : callable, optional
         Loss function for evaluating inference loss (default is None, for external validation).
-    scaler : StandardScaler, optional
-        StandardScaler object used to inverse transform predictions and scale labels for validation loss.
 
     Returns
     -------
@@ -62,22 +60,10 @@ def validation(args, net, test_loader, device, loss_fn=None, scaler=None):
             label = batchdata[-2].float()
 
             if loss_fn is not None:
-                if scaler is not None:
-                    scaled_label_np = scaler.transform(label.numpy().reshape(-1, 1)).flatten()
-                    scaled_label = torch.tensor(scaled_label_np, dtype=torch.float32, device=device)
-                    inference_loss = loss_fn(pred, scaled_label)
-                else:
-                    inference_loss = loss_fn(pred, label.to(device))
+                inference_loss = loss_fn(pred, label.to(device))
                 inference_loss_list.append(inference_loss.item())
 
-            # Inverse transform predictions if scaler is provided
-            pred_np = pred.detach().cpu().numpy().reshape(-1, 1)
-            if scaler is not None:
-                pred_inv = scaler.inverse_transform(pred_np).flatten()
-                preds.extend(pred_inv.tolist())
-            else:
-                preds.extend(pred_np.flatten().tolist())
-
+            preds.extend(pred.detach().cpu().tolist())
             labels.extend(label.detach().cpu().tolist())
 
             rsmis.append(batchdata[-1])
