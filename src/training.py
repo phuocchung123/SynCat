@@ -1,6 +1,8 @@
+import os
 import time
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 from torch.optim import Adam
 from tqdm import tqdm
 from validation import validation
@@ -72,6 +74,15 @@ def train(
         all_train_labels.extend(batchdata[-2].tolist())
     scaler.fit(np.array(all_train_labels).reshape(-1, 1))
 
+    # Initialize history dictionary to store metrics for plotting
+    history = {
+        'train_loss': [], 'val_loss': [],
+        'train_mse': [], 'val_mse': [],
+        'train_mae': [], 'val_mae': [],
+        'train_rmse': [], 'val_rmse': [],
+        'train_r2': [], 'val_r2': []
+    }
+
     for epoch in range(epochs):
         # training
         net.train()
@@ -136,6 +147,18 @@ def train(
         net.eval()
         val_mse, val_mae, val_rmse, val_r2, val_loss = validation(args, net, val_loader, device, loss_fn, scaler)
 
+        # Record metrics for plotting
+        history['train_loss'].append(np.mean(train_loss_list))
+        history['train_mse'].append(mse)
+        history['train_mae'].append(mae)
+        history['train_rmse'].append(rmse)
+        history['train_r2'].append(r2)
+        history['val_loss'].append(val_loss)
+        history['val_mse'].append(val_mse)
+        history['val_mae'].append(val_mae)
+        history['val_rmse'].append(val_rmse)
+        history['val_r2'].append(val_r2)
+
         logger.info(
             "--- validation at epoch %d, val_loss %.3f, val_mse %.3f, val_mae %.3f, val_rmse %.3f, val_r2 %.3f ---"
             % (epoch, val_loss, val_mse, val_mae, val_rmse, val_r2)
@@ -152,3 +175,31 @@ def train(
                 },
                 model_path,
             )
+
+    # After training completes, plot and save the learning curves
+    plot_dir = os.path.join(args.Data_folder, "plots")
+    os.makedirs(plot_dir, exist_ok=True)
+
+    metrics_to_plot = [
+        ('loss', 'Loss'),
+        ('mse', 'MSE'),
+        ('mae', 'MAE'),
+        ('rmse', 'RMSE'),
+        ('r2', 'R2 Score')
+    ]
+
+    for key, title in metrics_to_plot:
+        plt.figure()
+        plt.plot(history[f'train_{key}'], label=f'Train {title}')
+        plt.plot(history[f'val_{key}'], label=f'Validation {title}')
+        plt.xlabel('Epoch')
+        plt.ylabel(title)
+        plt.title(f'{title} over Epochs')
+        plt.legend()
+        plt.grid(True)
+        plot_path = os.path.join(plot_dir, f'{key}_curve.png')
+        plt.savefig(plot_path)
+        plt.close()
+        logger.info(f"Saved {title} curve to {plot_path}")
+
+    return net
