@@ -46,7 +46,8 @@ class model(nn.Module):
             drop_ratio,
         )
 
-        self.predict = torch.nn.Linear(emb_dim, 1)
+        #self.predict = torch.nn.Linear(emb_dim, 1)
+        self.predict = torch.nn.Linear(emb_dim * 2, 1)
         self.attention = SingleHeadAttention(emb_dim)
         self.atts_reactant = []
         self.atts_product = []
@@ -131,8 +132,9 @@ class model(nn.Module):
             # print(product_tensor.shape)
             # reaction_center = reactant_tensor + product_tensor
             #reaction_center = torch.sub(reactant_tensor, product_tensor)
+            # reaction_center = torch.cat((reactant_tensor, product_tensor), dim=1)
             
-            reaction_center = reactant_tensor + product_tensor
+            reaction_center = torch.cat((reactant_tensor, product_tensor), dim=1)
             # print(reaction_center.shape)
             reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
             # print(reaction_vectors.shape)
