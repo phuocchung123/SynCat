@@ -1,7 +1,7 @@
 import itertools
 import torch
 import torch.nn as nn
-from gin import GIN
+from dmpnn import DMPNN
 from attention import SingleHeadAttention
 
 
@@ -38,7 +38,7 @@ class model(nn.Module):
             Dropout rate.
         """
         super(model, self).__init__()
-        self.gnn = GIN(
+        self.gnn = DMPNN(
             node_in_feats,
             edge_in_feats,
             num_layer,

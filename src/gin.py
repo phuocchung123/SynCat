@@ -1,8 +1,53 @@
 import torch
 import torch.nn as nn
-from torch_geometric.nn.conv import GINEConv
-from torch_geometric.nn.pool import global_add_pool
+from dmpnn import DMPNN
 
+
+
+def get_rev_edge_index(edge_index: torch.Tensor) -> torch.Tensor:
+    """
+    Compute rev_edge_index from PyG edge_index.
+
+    Args:
+        edge_index: Tensor of shape [2, num_edges]
+            edge_index[0] = source nodes
+            edge_index[1] = destination nodes
+
+    Returns:
+        rev_edge_index: Tensor of shape [num_edges]
+            rev_edge_index[e] is the index of the reverse edge of edge e.
+    """
+
+    if edge_index.dim() != 2 or edge_index.size(0) != 2:
+        raise ValueError(
+            f"edge_index must have shape [2, num_edges], got {edge_index.shape}"
+        )
+
+    source = edge_index[0]
+    destination = edge_index[1]
+
+    edge_to_index = {}
+
+    for i, (src, dst) in enumerate(zip(source.tolist(), destination.tolist())):
+        edge_to_index[(src, dst)] = i
+
+    rev_edge_index = []
+
+    for i, (src, dst) in enumerate(zip(source.tolist(), destination.tolist())):
+        reverse_edge = (dst, src)
+
+        if reverse_edge not in edge_to_index:
+            raise ValueError(
+                f"Missing reverse edge for edge {i}: {src} -> {dst}"
+            )
+
+        rev_edge_index.append(edge_to_index[reverse_edge])
+
+    return torch.tensor(
+        rev_edge_index,
+        dtype=torch.long,
+        device=edge_index.device,
+    )
 
 class GIN(nn.Module):
     """
@@ -37,28 +82,16 @@ class GIN(nn.Module):
 
         self.depth = depth
 
-        self.project_node_feats = nn.Sequential(
-            nn.Linear(node_in_feats, node_hid_feats), nn.ReLU()
+        self.gnn = DMPNN(
+            in_channels=node_in_feats,
+            edge_channels=edge_in_feats,
+            hidden_channels=node_hid_feats,
+            num_layers=depth,
+            out_channels=node_hid_feats,
+            dropout=dr,
+            pool="sum",
+            ffn_num_layers=1,
         )
-
-        self.project_edge_feats = nn.Sequential(
-            nn.Linear(edge_in_feats, node_hid_feats)
-        )
-
-        self.gnn_layers = nn.ModuleList(
-            [
-                GINEConv(
-                    nn=torch.nn.Sequential(
-                        nn.Linear(node_hid_feats, node_hid_feats),
-                        nn.ReLU(),
-                        nn.Linear(node_hid_feats, node_hid_feats),
-                    )
-                )
-                for _ in range(self.depth)
-            ]
-        )
-
-        self.dropout = nn.Dropout(dr)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         """
@@ -77,19 +110,12 @@ class GIN(nn.Module):
         node_feats_orig = data.x
         edge_feats_orig = data.edge_attr
         batch = data.batch
+        edge_index = data.edge_index
+        rev_edge_index = get_rev_edge_index(edge_index)
 
-        node_feats_init = self.project_node_feats(node_feats_orig)
-        node_feats = node_feats_init
-        edge_feats = self.project_edge_feats(edge_feats_orig)
+        self.gnn(node_feats_orig,
+        edge_index = edge_index,
+        edge_attr= edge_feats_orig,
+        batch=batch,
+        rev_edge_index= rev_edge_index)
 
-        for i in range(self.depth):
-            node_feats = self.gnn_layers[i](node_feats, data.edge_index, edge_feats)
-
-            if i < self.depth - 1:
-                node_feats = nn.functional.relu(node_feats)
-
-            node_feats = self.dropout(node_feats)
-
-        readout = global_add_pool(node_feats, batch)
-
-        return readout

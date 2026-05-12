@@ -92,6 +92,7 @@ dependencies:
   - torch-geometric==2.6.1
   - torchaudio==2.4.1+cu124
   - torchvision==0.19.1+cu124
+  - torch-scatter -f https://data.pyg.org/whl/torch-2.4.0+cu124.html
   - tqdm==4.66.5
   - transformers==4.57.1
   - trio==0.33.0
