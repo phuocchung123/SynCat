@@ -1,12 +1,56 @@
 import numpy as np
 import torch
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, matthews_corrcoef
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from scipy.stats import pearsonr
+
+
+def compute_regression_metrics(labels: list, preds: list) -> dict:
+    """
+    Computes regression metrics between ground-truth yields and predicted yields.
+
+    Handles constant or very small evaluation sets safely: R-squared and Pearson
+    correlation are undefined when there are fewer than 2 samples or when the
+    ground-truth values are constant (zero variance), in which case they are
+    reported as `None` instead of raising an error.
+
+    Parameters
+    ----------
+    labels : list
+        Ground-truth yield values.
+    preds : list
+        Predicted yield values.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys "mae", "rmse", "r2", and "pearson". "r2" and
+        "pearson" may be `None` when undefined for the given data.
+    """
+    labels_arr = np.asarray(labels, dtype=float)
+    preds_arr = np.asarray(preds, dtype=float)
+
+    mae = mean_absolute_error(labels_arr, preds_arr)
+    rmse = mean_squared_error(labels_arr, preds_arr) ** 0.5
+
+    if len(labels_arr) < 2:
+        r2 = None
+        pearson = None
+    elif np.isclose(np.std(labels_arr), 0.0):
+        # R2 and Pearson correlation are undefined when the target has no variance.
+        r2 = None
+        pearson = None
+    else:
+        r2 = r2_score(labels_arr, preds_arr)
+        pearson, _ = pearsonr(labels_arr, preds_arr)
+
+    return {"mae": mae, "rmse": rmse, "r2": r2, "pearson": pearson}
 
 
 def validation(args, net, test_loader, device, loss_fn=None):
     """
-    Runs model inference on the test set, computes metrics, and optionally returns attention and embeddings.
+    Runs model inference on the test set, computes regression metrics, and
+    optionally returns attention and embeddings.
 
     Parameters
     ----------
@@ -25,9 +69,10 @@ def validation(args, net, test_loader, device, loss_fn=None):
     -------
     tuple
         If loss_fn is None (external validation), returns:
-            (accuracy, mcc, att_r, att_p, rsmis, labels, preds, emb)
+            (metrics, att_r, att_p, rsmis, labels, preds, emb)
         If loss_fn is given (internal validation), returns:
-            (accuracy, mcc, mean_inference_loss)
+            (metrics, mean_inference_loss)
+        `metrics` is the dict returned by `compute_regression_metrics`.
     """
 
     rmol_max_cnt = test_loader.dataset.rmol_max_cnt
@@ -56,19 +101,18 @@ def validation(args, net, test_loader, device, loss_fn=None):
 
             pred, att_r, att_p, emb = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
             label = batchdata[-2]
-            label = label.to(device)
+            label = label.to(device).float()
             if loss_fn is not None:
                 inference_loss = loss_fn(pred, label)
                 inference_loss_list.append(inference_loss.item())
 
             labels.extend(label.tolist())
-            preds.extend(torch.argmax(pred, dim=1).tolist())
+            preds.extend(pred.tolist())
             rsmis.append(batchdata[-1])
 
-    acc = accuracy_score(labels, preds)
-    mcc = matthews_corrcoef(labels, preds)
+    metrics = compute_regression_metrics(labels, preds)
 
     if loss_fn is None:
-        return acc, mcc, att_r, att_p, rsmis, labels, preds, emb
+        return metrics, att_r, att_p, rsmis, labels, preds, emb
     else:
-        return acc, mcc, np.mean(inference_loss_list)
+        return metrics, np.mean(inference_loss_list)

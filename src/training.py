@@ -3,9 +3,9 @@ import numpy as np
 import torch
 from torch.optim import Adam
 from tqdm import tqdm
-from validation import validation
+from validation import validation, compute_regression_metrics
 from utils import setup_logging
-from sklearn.metrics import accuracy_score, matthews_corrcoef
+from visualization import init_history, record_epoch, save_history, plot_training_history
 
 
 def train(
@@ -20,9 +20,10 @@ def train(
     weight_decay,
     current_epoch: int = 0,
     best_val_loss: float = 1e10,
+    test_loader=None,
 ):
     """
-    Trains a neural network for reaction classification, monitors metrics, and saves the best model.
+    Trains a neural network for reaction-yield regression, monitors metrics, and saves the best model.
 
     Parameters
     ----------
@@ -48,19 +49,23 @@ def train(
         Starting epoch number, useful for resuming training (default is 0).
     best_val_loss : float, optional
         Best validation loss seen so far (default is 1e10).
+    test_loader : DataLoader, optional
+        DataLoader for the test set; when given, test loss/metrics are tracked per epoch.
 
     Returns
     -------
-    torch.nn.Module
-        The trained neural network model.
+    dict
+        Per-epoch loss and metrics for train/val/test (see `visualization.init_history`).
+        Also saved to `<monitor_folder>/history.json`, with plots in `args.image_folder`.
     """
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
 
     rmol_max_cnt = train_loader.dataset.rmol_max_cnt
     pmol_max_cnt = train_loader.dataset.pmol_max_cnt
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.HuberLoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    history = init_history()
 
     for epoch in range(epochs):
         # training
@@ -83,7 +88,7 @@ def train(
 
             pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
             label = batchdata[-2]
-            label = label.to(device)
+            label = label.to(device).float()
             loss = loss_fn(pred, label)
 
             optimizer.zero_grad()
@@ -91,31 +96,59 @@ def train(
             optimizer.step()
 
             labels.extend(label.tolist())
-            preds.extend(torch.argmax(pred, dim=1).tolist())
+            preds.extend(pred.detach().tolist())
             train_loss = loss.detach().item()
             train_loss_list.append(train_loss)
 
-        acc = accuracy_score(labels, preds)
-        mcc = matthews_corrcoef(labels, preds)
+        train_metrics = compute_regression_metrics(labels, preds)
         logger.info(
-            "--- training epoch %d, loss %.3f, acc %.3f, mcc %.3f, time elapsed(min) %.2f---"
+            "--- training epoch %d, loss %.4f, mae %.4f, rmse %.4f, time elapsed(min) %.2f---"
             % (
                 epoch,
                 np.mean(train_loss_list),
-                acc,
-                mcc,
+                train_metrics["mae"],
+                train_metrics["rmse"],
                 (time.time() - start_time) / 60,
             )
         )
 
         # validation
         net.eval()
-        val_acc, val_mcc, val_loss = validation(args, net, val_loader, device, loss_fn)
+        val_metrics, val_loss = validation(args, net, val_loader, device, loss_fn)
 
-        logger.info(
-            "--- validation at epoch %d, val_loss %.3f, val_acc %.3f, val_mcc %.3f ---"
-            % (epoch, val_loss, val_acc, val_mcc)
+        val_r2_str = "n/a" if val_metrics["r2"] is None else "%.4f" % val_metrics["r2"]
+        val_pearson_str = (
+            "n/a" if val_metrics["pearson"] is None else "%.4f" % val_metrics["pearson"]
         )
+        logger.info(
+            "--- validation at epoch %d, val_loss %.4f, val_mae %.4f, val_rmse %.4f, "
+            "val_r2 %s, val_pearson %s ---"
+            % (
+                epoch,
+                val_loss,
+                val_metrics["mae"],
+                val_metrics["rmse"],
+                val_r2_str,
+                val_pearson_str,
+            )
+        )
+
+        if test_loader is not None:
+            test_metrics, test_loss = validation(args, net, test_loader, device, loss_fn)
+            logger.info(
+                "--- test at epoch %d, test_loss %.4f, test_mae %.4f, test_rmse %.4f, "
+                "test_r2 %s, test_pearson %s ---"
+                % (
+                    epoch,
+                    test_loss,
+                    test_metrics["mae"],
+                    test_metrics["rmse"],
+                    "n/a" if test_metrics["r2"] is None else "%.4f" % test_metrics["r2"],
+                    "n/a"
+                    if test_metrics["pearson"] is None
+                    else "%.4f" % test_metrics["pearson"],
+                )
+            )
         logger.info("\n" + "*" * 100)
 
         if val_loss < best_val_loss:
@@ -128,3 +161,14 @@ def train(
                 },
                 model_path,
             )
+
+        history["epoch"].append(epoch + current_epoch)
+        record_epoch(history, "train", np.mean(train_loss_list), train_metrics)
+        record_epoch(history, "val", val_loss, val_metrics)
+        if test_loader is not None:
+            record_epoch(history, "test", test_loss, test_metrics)
+        # Rewritten every epoch so curves are available even if training is interrupted.
+        save_history(history, args.monitor_folder + "history.json")
+        plot_training_history(history, args.image_folder)
+
+    return history

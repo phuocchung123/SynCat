@@ -12,34 +12,30 @@ from typing import List, Tuple
 def predict(
     rsmi_lst: List[str],
     model_path: str = "../Data/model/",
-    model_name: str = "model_tpl",
+    model_name: str = "model_yield",
     device: int = 0,
 ) -> List[Tuple[torch.Tensor, List, List, List]]:
     """
     Run inference on a list of reaction SMILES strings.
 
     Each element in `rsmi_lst` is expected to be of the form "reactant_smiles>>product_smiles".
-    The model choices currently supported are 'model_schneider' and 'model_tpl', which
-    determine output dimensionality and architecture hyperparameters.
+    The model choice currently supported is 'model_yield', a reaction-yield
+    regression model, which determines the architecture hyperparameters.
 
     Parameters:
         rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".
         model_path: Directory prefix where the model checkpoint `.pt` file is stored.
-        model_name: Name of the model to load; must be either 'model_schneider' or 'model_tpl'.
+        model_name: Name of the model to load; must be 'model_yield'.
         device: GPU index to use if CUDA is available; falls back to CPU otherwise.
 
     Returns:
         A list of predictions, one per batch. Each prediction is expected to be a tuple
-        (pred, att_r, att_p, emb) as returned by the model during inference
+        (pred, att_r, att_p, emb) as returned by the model during inference, where
+        `pred` holds the predicted yield values of shape [batch_size].
 
     """
 
-    if model_name == "model_schneider":
-        out_dim = 50
-        layer = 2
-        emb_dim = 256
-    elif model_name == "model_tpl":
-        out_dim = 1000
+    if model_name == "model_yield":
         layer = 3
         emb_dim = 384
     else:
@@ -72,7 +68,7 @@ def predict(
         if torch.cuda.is_available()
         else torch.device("cpu")
     )
-    net = model(node_dim, edge_dim, out_dim, layer, emb_dim, 0.1).to(device)
+    net = model(node_dim, edge_dim, layer, emb_dim, 0.1).to(device)
     checkpoint = torch.load(
         model_path + model_name + ".pt", map_location=device, weights_only=False
     )

@@ -2,9 +2,34 @@ import os
 import torch
 import logging
 import warnings
+import pandas as pd
 from rdkit import rdBase
 from typing import List, Tuple, Any
 from torch_geometric.data import Batch
+
+
+def read_reaction_table(path: str) -> pd.DataFrame:
+    """
+    Reads a reaction dataset table, inferring the format from its file extension.
+
+    Supports tab-separated (`.tsv`), comma-separated (`.csv`), and gzip-compressed
+    CSV (`.csv.gz`) files.
+
+    Parameters
+    ----------
+    path : str
+        Path to the dataset file.
+
+    Returns
+    -------
+    pd.DataFrame
+        The loaded dataset.
+    """
+    if path.endswith(".tsv"):
+        return pd.read_csv(path, sep="\t", index_col=0)
+    if path.endswith(".gz"):
+        return pd.read_csv(path, compression="gzip")
+    return pd.read_csv(path)
 
 
 def setup_logging(log_level: str = "INFO", log_filename: str = None) -> logging.Logger:
@@ -96,30 +121,29 @@ def configure_warnings_and_logs(
 def collate_reaction_graphs(batch: List[Tuple[Any, ...]]) -> Tuple[Batch, torch.Tensor]:
     """
     Collates a batch of reaction graphs into a format suitable for processing in
-    machine learning models. This function separates graph data and label data from
+    machine learning models. This function separates graph data and target data from
     a batch. The graph data are collated into `Batch` objects from the PyG library,
-    and labels are processed into a tensor of categorical indices
-    from one-hot encoded vectors.
+    and targets are processed into a float tensor of shape [batch_size] holding the
+    continuous reaction-yield values.
 
     Parameters
     ----------
     batch : List[Tuple[Any, ...]]
         A batch of data, where each tuple typically contains graph data followed by
-        label data. The graph data should be compatible with `Batch.from_data_list`.
+        target data. The graph data should be compatible with `Batch.from_data_list`.
 
     Returns
     -------
     Tuple[Batch, torch.Tensor]
         Returns a tuple where the first elements are `Batch` objects containing collated
-        graph data, and the last element is a tensor of labels. The labels tensor contains
-        indices of the maximum values in the one-hot encoded vectors,
-        representing categorical labels.
+        graph data, and the last element is a float tensor of shape [batch_size]
+        containing the reaction-yield targets.
     """
     batchdata = list(map(list, zip(*batch)))
     datas = [Batch.from_data_list(d) for d in batchdata[:-4]]
     r_dummy = batchdata[-4]
     p_dummy = batchdata[-3]
-    labels = torch.tensor(batchdata[-2])
+    labels = torch.tensor(batchdata[-2], dtype=torch.float32)
     rsmi = [batchdata[-1]]
 
     return *datas, r_dummy, p_dummy, labels, rsmi

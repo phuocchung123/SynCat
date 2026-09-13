@@ -40,3 +40,34 @@
 2025-07-31 08:46:39,147 - INFO - Already exist files in ../Data/npz/npz_sch/
 2025-07-31 08:46:46,005 - INFO - -- CONFIGURATIONS
 2025-07-31 08:46:46,005 - INFO - --- train/valid/test: 9000/1000/40000
+2026-09-14 03:18:08,654 - INFO - --- excluded 0/5760 samples with missing/invalid reaction or yield values
+2026-09-14 03:18:08,694 - INFO - --- train/valid/test sizes: 4665/519/576
+2026-09-14 03:18:08,697 - INFO - --- generating graph data for ../Data/npz/npz_yield/train.npz
+2026-09-14 03:18:08,697 - INFO - --- n_reactions: 4665, reactant_max_cnt: 14, product_max_cnt: 1
+2026-09-14 03:24:16,963 - INFO - --- generating graph data for ../Data/npz/npz_yield/valid.npz
+2026-09-14 03:24:16,963 - INFO - --- n_reactions: 519, reactant_max_cnt: 14, product_max_cnt: 1
+2026-09-14 03:24:54,397 - INFO - --- generating graph data for ../Data/npz/npz_yield/test.npz
+2026-09-14 03:24:54,397 - INFO - --- n_reactions: 576, reactant_max_cnt: 14, product_max_cnt: 1
+2026-09-14 03:26:12,829 - INFO - device is	cpu
+2026-09-14 03:26:13,232 - INFO - -- CONFIGURATIONS
+2026-09-14 03:26:13,232 - INFO - --- train/valid/test: 4665/519/576
+2026-09-14 03:26:13,232 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
+2026-09-14 03:26:13,232 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-09-14 03:26:13,233 - INFO - --- model_path: ../Data/model/model_yield.pt
+2026-09-14 03:26:13,393 - INFO - -- TRAINING
+2026-09-14 03:31:34,699 - INFO - Already exist files in ../Data/npz/npz_yield/
+2026-09-14 03:31:34,701 - INFO - device is	cpu
+2026-09-14 03:31:35,278 - INFO - -- CONFIGURATIONS
+2026-09-14 03:31:35,278 - INFO - --- train/valid/test: 4665/519/576
+2026-09-14 03:31:35,279 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
+2026-09-14 03:31:35,279 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-09-14 03:31:35,279 - INFO - --- model_path: ../Data/model/model_yield.pt
+2026-09-14 03:31:35,388 - INFO - -- TRAINING
+2026-09-14 03:33:07,613 - INFO - Already exist files in ../Data/npz/npz_yield/
+2026-09-14 03:33:07,613 - INFO - device is	cpu
+2026-09-14 03:33:07,975 - INFO - -- CONFIGURATIONS
+2026-09-14 03:33:07,975 - INFO - --- train/valid/test: 4665/519/576
+2026-09-14 03:33:07,975 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
+2026-09-14 03:33:07,975 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-09-14 03:33:07,975 - INFO - --- model_path: ../Data/model/model_yield.pt
+2026-09-14 03:33:08,079 - INFO - -- TRAINING

@@ -7,14 +7,13 @@ from attention import SingleHeadAttention
 
 class model(nn.Module):
     """
-    Graph-based classification model with cross attention.
+    Graph-based regression model with cross attention for reaction-yield prediction.
     """
 
     def __init__(
         self,
         node_in_feats: int,
         edge_in_feats: int,
-        out_dim: int,
         num_layer: int,
         emb_dim: int,
         drop_ratio: float,
@@ -28,8 +27,6 @@ class model(nn.Module):
             Input feature dimension for nodes.
         edge_in_feats : int
             Input feature dimension for edges.
-        out_dim : int
-            Output dimension for prediction.
         num_layer : int
             Number of GNN layers.
         emb_dim : int
@@ -46,7 +43,7 @@ class model(nn.Module):
             drop_ratio,
         )
 
-        self.predict = torch.nn.Linear(emb_dim, out_dim)
+        self.regressor = torch.nn.Linear(emb_dim, 1)
         self.attention = SingleHeadAttention(emb_dim)
         self.atts_reactant = []
         self.atts_product = []
@@ -78,7 +75,8 @@ class model(nn.Module):
         Returns
         -------
         tuple
-            Output logits, reactant attentions, product attentions, and reaction vectors as list.
+            Predicted yields of shape [batch_size], reactant attentions, product
+            attentions, and reaction vectors as list.
         """
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
@@ -128,5 +126,5 @@ class model(nn.Module):
             reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
-        out = self.predict(reaction_vectors)
+        out = self.regressor(reaction_vectors).squeeze(-1)
         return out, self.atts_reactant, self.atts_product, reaction_vectors.tolist()

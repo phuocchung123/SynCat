@@ -6,7 +6,7 @@ from typing import Any, Tuple, Dict
 
 class GraphDataset:
     """
-    Dataset for chemical reaction graph classification.
+    Dataset for chemical reaction graph regression (reaction-yield prediction).
     """
 
     def __init__(

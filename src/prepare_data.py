@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from reaction_data import get_graph_data
-from utils import configure_warnings_and_logs
+from utils import configure_warnings_and_logs, read_reaction_table, setup_logging
 from sklearn.model_selection import train_test_split
 
 configure_warnings_and_logs(ignore_warnings=True)
@@ -9,7 +9,16 @@ configure_warnings_and_logs(ignore_warnings=True)
 
 def prepare_data(args) -> None:
     """
-    Prepare and split chemical reaction data, then save reaction information to npz files.
+    Prepare and split chemical reaction-yield data, then save reaction information to npz files.
+
+    If `args.train_test_split` is True, the train/test split is taken from
+    `args.split_column`. Otherwise, a deterministic split is created with
+    `sklearn.model_selection.train_test_split` using `args.seed`, giving a
+    train/valid/test ratio of 81/9/10 (test_size=0.1 for the test split, then
+    test_size=0.1 again on the remaining 90% for the validation split).
+
+    Rows with a missing/non-numeric reaction or yield value are dropped and the
+    number of excluded rows is logged.
 
     Parameters
     ----------
@@ -20,20 +29,30 @@ def prepare_data(args) -> None:
     -------
     None
     """
-    data = pd.read_csv(args.Data_folder + args.data_csv, compression="gzip")
-    y = data[args.y_column]
+    logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
+    data = read_reaction_table(args.Data_folder + args.data_csv)
+
+    n_before = len(data)
+    data[args.y_column] = pd.to_numeric(data[args.y_column], errors="coerce")
+    data = data.dropna(subset=[args.reaction_column, args.y_column])
+    data = data[data[args.reaction_column].str.contains(">>", na=False)]
+    n_excluded = n_before - len(data)
+    logger.info(
+        "--- excluded %d/%d samples with missing/invalid reaction or yield values"
+        % (n_excluded, n_before)
+    )
+
     if args.train_test_split:
         data_pretrain = data[data[args.split_column] == "train"]
         data_test = data[data[args.split_column] == "test"]
     else:
         data_pretrain, data_test = train_test_split(
-            data, test_size=0.1, stratify=y, random_state=42
+            data, test_size=0.1, random_state=args.seed
         )
     data_train, data_valid = train_test_split(
         data_pretrain,
         test_size=0.1,
-        stratify=data_pretrain[args.y_column],
-        random_state=42,
+        random_state=args.seed,
     )
 
     rsmi_list = data[args.reaction_column].values
@@ -54,6 +73,11 @@ def prepare_data(args) -> None:
     rsmi_list_test = data_test[args.reaction_column].values
     y_list_test = data_test[args.y_column].values
     filename_test = args.Data_folder + args.npz_folder + "/" + "test.npz"
+
+    logger.info(
+        "--- train/valid/test sizes: %d/%d/%d"
+        % (len(data_train), len(data_valid), len(data_test))
+    )
 
     get_graph_data(
         rsmi_list_train,
