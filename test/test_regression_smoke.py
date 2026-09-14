@@ -147,11 +147,15 @@ def test_regression_smoke():
     net = model(node_dim, edge_dim, num_layer=2, emb_dim=16, drop_ratio=0.0).to(device)
 
     # --- forward pass succeeds, output shape is [4] ---
-    pred, _, _, _ = net(rmols, pmols, r_dummy, p_dummy, device)
+    pred, _, _, reaction_vectors = net(rmols, pmols, r_dummy, p_dummy, device)
     assert pred.shape == (4,)
     assert torch.isfinite(pred).all()
 
+    # --- each reaction vector concatenates reactant and product embeddings ---
+    assert np.asarray(reaction_vectors).shape == (4, 2 * 16)
+
     # --- final layer outputs one value per reaction ---
+    assert net.regressor.in_features == 2 * 16
     assert net.regressor.out_features == 1
 
     # --- loss is finite ---

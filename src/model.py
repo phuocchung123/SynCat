@@ -43,7 +43,9 @@ class model(nn.Module):
             drop_ratio,
         )
 
-        self.regressor = torch.nn.Linear(emb_dim, 1)
+        # The reaction representation preserves both sides independently:
+        # [reactant_embedding || product_embedding].
+        self.regressor = torch.nn.Linear(2 * emb_dim, 1)
         self.attention = SingleHeadAttention(emb_dim)
         self.atts_reactant = []
         self.atts_product = []
@@ -76,12 +78,13 @@ class model(nn.Module):
         -------
         tuple
             Predicted yields of shape [batch_size], reactant attentions, product
-            attentions, and reaction vectors as list.
+            attentions, and concatenated reaction vectors of shape
+            [batch_size, 2 * emb_dim] as a list.
         """
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
 
-        reaction_vectors = torch.tensor([]).to(device)
+        reaction_vectors = torch.empty((0, self.regressor.in_features), device=device)
         for batch in range(r_graph_feats.shape[1]):
             # The initial reactant's embeddings of each reaction in a batch
             r_graph_feats_1 = r_graph_feats[:, batch, :][r_dummy[batch]].to(device)
@@ -121,9 +124,10 @@ class model(nn.Module):
             for idx in range(p_graph_feats_1.shape[0]):
                 product_tensor += att_procduct[idx] * p_graph_feats_1[idx]
 
-            # Reaction center
-            reaction_center = torch.sub(reactant_tensor, product_tensor)
-            reaction_vectors = torch.cat((reaction_vectors, reaction_center), dim=0)
+            # Reaction embedding: concatenate the pooled reactant and product
+            # representations instead of collapsing them through subtraction.
+            reaction_vector = torch.cat((reactant_tensor, product_tensor), dim=1)
+            reaction_vectors = torch.cat((reaction_vectors, reaction_vector), dim=0)
             self.atts_reactant.append(att_reactant.tolist())
             self.atts_product.append(att_procduct.tolist())
         out = self.regressor(reaction_vectors).squeeze(-1)
