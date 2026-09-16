@@ -1,0 +1,44 @@
+2026-09-16 20:11:53,098 - INFO - Command stage=prepare, split_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2026-09-16 20:11:53,098 - INFO - ================================================================================
+2026-09-16 20:11:53,098 - INFO - STAGE 1: PREPARE splits [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] -> processed/suzuki/npz
+2026-09-16 20:11:53,190 - INFO - Featurizing 5760 reactions once for all splits (reactant slots 14, product slots 1)
+2026-09-16 20:19:49,874 - INFO - Featurization finished in 476.7 s
+2026-09-16 20:19:52,228 - INFO - Split 0 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 42 -> ../Data/processed/suzuki/npz\split_0
+2026-09-16 20:19:55,302 - INFO - Split 1 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 43 -> ../Data/processed/suzuki/npz\split_1
+2026-09-16 20:19:58,373 - INFO - Split 2 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 44 -> ../Data/processed/suzuki/npz\split_2
+2026-09-16 20:20:00,993 - INFO - Split 3 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 45 -> ../Data/processed/suzuki/npz\split_3
+2026-09-16 20:20:03,641 - INFO - Split 4 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 46 -> ../Data/processed/suzuki/npz\split_4
+2026-09-16 20:20:06,139 - INFO - Split 5 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 47 -> ../Data/processed/suzuki/npz\split_5
+2026-09-16 20:20:09,003 - INFO - Split 6 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 48 -> ../Data/processed/suzuki/npz\split_6
+2026-09-16 20:20:11,845 - INFO - Split 7 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 49 -> ../Data/processed/suzuki/npz\split_7
+2026-09-16 20:20:14,423 - INFO - Split 8 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 50 -> ../Data/processed/suzuki/npz\split_8
+2026-09-16 20:20:16,746 - INFO - Split 9 prepared: train/valid/test 3628/404/1728 (0.6299/0.0701/0.3000), seed 51 -> ../Data/processed/suzuki/npz\split_9
+2026-09-16 20:20:16,757 - INFO - ================================================================================
+2026-09-16 20:20:16,757 - INFO - STAGE 1: VALIDATE splits [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2026-09-16 20:20:17,441 - INFO - Split 0: valid (../Data/processed/suzuki/npz\split_0)
+2026-09-16 20:20:18,224 - INFO - Split 1: valid (../Data/processed/suzuki/npz\split_1)
+2026-09-16 20:20:18,926 - INFO - Split 2: valid (../Data/processed/suzuki/npz\split_2)
+2026-09-16 20:20:19,705 - INFO - Split 3: valid (../Data/processed/suzuki/npz\split_3)
+2026-09-16 20:20:20,373 - INFO - Split 4: valid (../Data/processed/suzuki/npz\split_4)
+2026-09-16 20:20:21,105 - INFO - Split 5: valid (../Data/processed/suzuki/npz\split_5)
+2026-09-16 20:20:21,803 - INFO - Split 6: valid (../Data/processed/suzuki/npz\split_6)
+2026-09-16 20:20:22,503 - INFO - Split 7: valid (../Data/processed/suzuki/npz\split_7)
+2026-09-16 20:20:23,150 - INFO - Split 8: valid (../Data/processed/suzuki/npz\split_8)
+2026-09-16 20:20:23,913 - INFO - Split 9: valid (../Data/processed/suzuki/npz\split_9)
+2026-09-16 20:20:23,913 - INFO - Found 30/30 subset npz files
+2026-09-16 20:20:23,913 - INFO - Preparation barrier passed: all 10 splits and 30 npz files are valid
+2026-09-16 20:20:45,911 - INFO - Command stage=validate, split_ids=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2026-09-16 20:20:45,911 - INFO - ================================================================================
+2026-09-16 20:20:45,911 - INFO - STAGE 1: VALIDATE splits [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2026-09-16 20:20:46,690 - INFO - Split 0: valid (../Data/processed/suzuki/npz\split_0)
+2026-09-16 20:20:47,387 - INFO - Split 1: valid (../Data/processed/suzuki/npz\split_1)
+2026-09-16 20:20:48,155 - INFO - Split 2: valid (../Data/processed/suzuki/npz\split_2)
+2026-09-16 20:20:48,924 - INFO - Split 3: valid (../Data/processed/suzuki/npz\split_3)
+2026-09-16 20:20:49,583 - INFO - Split 4: valid (../Data/processed/suzuki/npz\split_4)
+2026-09-16 20:20:50,231 - INFO - Split 5: valid (../Data/processed/suzuki/npz\split_5)
+2026-09-16 20:20:50,908 - INFO - Split 6: valid (../Data/processed/suzuki/npz\split_6)
+2026-09-16 20:20:51,567 - INFO - Split 7: valid (../Data/processed/suzuki/npz\split_7)
+2026-09-16 20:20:52,280 - INFO - Split 8: valid (../Data/processed/suzuki/npz\split_8)
+2026-09-16 20:20:53,014 - INFO - Split 9: valid (../Data/processed/suzuki/npz\split_9)
+2026-09-16 20:20:53,014 - INFO - Found 30/30 subset npz files
+2026-09-16 20:20:53,014 - INFO - Preparation barrier passed: all 10 splits and 30 npz files are valid

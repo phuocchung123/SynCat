@@ -46,7 +46,8 @@ def get_graph_data(
         List or array of target values (labels) for each reaction.
         y_list is None when prediction is performed
     filename : str
-        Output filename for saving processed data.
+        Output filename for saving processed data. When None, the processed
+        dictionaries are returned instead of being saved.
     rmol_max_cnt : int
         Maximum number of reactant molecules per reaction.
     pmol_max_cnt : int
@@ -54,7 +55,9 @@ def get_graph_data(
 
     Returns
     -------
-    None
+    None or tuple
+        None when the data is saved to `filename`; otherwise
+        (rmol_dict, pmol_dict, reaction_dict).
     """
     if args is not None:
         logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
@@ -167,7 +170,7 @@ def get_graph_data(
         pmol_dict[j] = dict_list_to_numpy(pmol_dict[j])
     reaction_dict["y"] = np.array(reaction_dict["y"])
     # save file
-    if y_list is not None:
+    if y_list is not None and filename is not None:
         np.savez_compressed(
             filename, rmol=rmol_dict, pmol=pmol_dict, reaction=reaction_dict
         )

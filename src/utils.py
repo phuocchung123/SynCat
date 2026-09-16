@@ -1,7 +1,9 @@
 import os
+import random
 import torch
 import logging
 import warnings
+import numpy as np
 import pandas as pd
 from rdkit import rdBase
 from typing import List, Tuple, Any
@@ -30,6 +32,22 @@ def read_reaction_table(path: str) -> pd.DataFrame:
     if path.endswith(".gz"):
         return pd.read_csv(path, compression="gzip")
     return pd.read_csv(path)
+
+
+def set_seed(seed: int) -> None:
+    """
+    Seeds Python, NumPy and PyTorch random number generators for reproducibility.
+
+    Parameters
+    ----------
+    seed : int
+        The random seed.
+    """
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.backends.cudnn.benchmark = False
 
 
 def setup_logging(log_level: str = "INFO", log_filename: str = None) -> logging.Logger:

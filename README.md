@@ -35,6 +35,25 @@
   ```
 
 
+## Suzuki Reaction-Yield Regression on 10 Random Splits
+
+The raw splits are `Data/raw/suzuki/random_split_<id>.tsv` (columns: original sample id, `rxn`, `y`). Each file holds the full dataset in a different random order. For split `<id>`, the first 70% of rows form train1 and the last 30% the test set; train1 is divided 90/10 into train/valid with seed `42 + <id>` (≈63/7/30 overall).
+
+The pipeline has two strictly separated stages. Run all commands from `src/`:
+
+```bash
+# 1. prepare splits 0-9 -> Data/processed/suzuki/npz/split_<id>/{train,valid,test}.npz + split_metadata.json
+python main_finetune.py --stage prepare
+# 2. validate all prepared files (exits non-zero if any split is invalid)
+python main_finetune.py --stage validate
+# 3. train/evaluate every split from the npz files (re-validates all splits first)
+python main_finetune.py --stage train --epochs 1
+# 4. complete workflow: prepare -> validate -> train
+python main_finetune.py --stage all --epochs 1
+```
+
+Valid prepared splits are skipped and missing/invalid ones regenerated (`--overwrite` forces regeneration). Results go to `logs/suzuki_regression/`: `suzuki_splits_0_to_9.log`, `suzuki_splits_0_to_9_results.csv` (per split), `suzuki_splits_0_to_9_summary.csv` (mean/std over successful runs), `suzuki_splits_0_to_9_test_predictions.csv`, and a per-run folder with checkpoints and training curves. Existing result files are never replaced unless `--overwrite_results` is given. Use `--split_ids` to select splits.
+
 ## Setting Up Your Development Environment
 
 Before you start, ensure your local development environment is set up correctly. Pull the latest version of the `main` branch to start with the most recent stable code.

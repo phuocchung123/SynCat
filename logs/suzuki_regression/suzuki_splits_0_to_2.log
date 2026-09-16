@@ -1,0 +1,16 @@
+2026-09-16 20:24:37,996 - INFO - Command stage=train, split_ids=[0, 1, 2]
+2026-09-16 20:24:37,996 - INFO - ================================================================================
+2026-09-16 20:24:37,996 - INFO - STAGE 1: VALIDATE splits [0, 1, 2]
+2026-09-16 20:24:38,833 - INFO - Split 0: valid (../Data/processed/suzuki/npz\split_0)
+2026-09-16 20:24:39,739 - INFO - Split 1: valid (../Data/processed/suzuki/npz\split_1)
+2026-09-16 20:24:40,560 - INFO - Split 2: valid (../Data/processed/suzuki/npz\split_2)
+2026-09-16 20:24:40,560 - INFO - Found 9/9 subset npz files
+2026-09-16 20:24:40,560 - INFO - Preparation barrier passed: all 3 splits and 9 npz files are valid
+2026-09-16 20:24:40,563 - INFO - ================================================================================
+2026-09-16 20:24:40,563 - INFO - STAGE 2: TRAIN splits [0, 1, 2] (run folder ../logs/suzuki_regression/runs\suzuki_splits_0_to_2_20260916_202440)
+2026-09-16 20:24:40,563 - INFO - --------------------------------------------------------------------------------
+2026-09-16 20:24:40,564 - INFO - Split 0: training (seed 42, train/valid/test 3628/404/1728)
+2026-09-16 20:29:05,800 - INFO - Split 0: best epoch 0 | val MAE 0.2628 RMSE 0.2985 R2 0.0083 | test MAE 0.2441 RMSE 0.2781 R2 0.0000
+2026-09-16 20:29:05,800 - INFO - Split 0: TEST RESULT seed=42 n_train=3628 n_valid=404 n_test=1728 test_mae=0.2441 test_rmse=0.2781 test_r2=0.0000 training_runtime_sec=181.2 evaluation_runtime_sec=47.9
+2026-09-16 20:29:05,818 - INFO - --------------------------------------------------------------------------------
+2026-09-16 20:29:05,818 - INFO - Split 1: training (seed 43, train/valid/test 3628/404/1728)

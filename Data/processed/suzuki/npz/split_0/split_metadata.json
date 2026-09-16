@@ -1,0 +1,244 @@
+{
+  "format_version": 1,
+  "split_id": 0,
+  "seed": 42,
+  "seed_rule": "base_seed + split_id",
+  "base_seed": 42,
+  "source_file": "../Data/raw/suzuki\\random_split_0.tsv",
+  "source_file_sha256": "d2acd54d3958a5369346177834e6c2b16388813bb28b105181a252a15c4a79a8",
+  "sample_id_column": "first (index) column of the source file",
+  "source_row_index": "0-based row position in the source file",
+  "reaction_column": "rxn",
+  "target_column": "y",
+  "feature_representation": {
+    "type": "molecular graphs of reactants and products",
+    "featurizer": "reaction_data.get_graph_data",
+    "npz_keys": [
+      "rmol",
+      "pmol",
+      "reaction",
+      "sample_ids",
+      "source_row_indices"
+    ],
+    "mol_dict_keys": [
+      "n_node",
+      "n_edge",
+      "dummy",
+      "node_attr",
+      "edge_attr",
+      "src",
+      "dst"
+    ],
+    "rmol_max_cnt": 14,
+    "pmol_max_cnt": 1
+  },
+  "split_strategy": "ordered",
+  "requested_ratios": {
+    "test_of_full": 0.3,
+    "valid_of_train1": 0.1
+  },
+  "expected_effective_ratios": {
+    "train": 0.63,
+    "valid": 0.06999999999999999,
+    "test": 0.3
+  },
+  "effective_ratios": {
+    "train": 0.6298611111111111,
+    "valid": 0.07013888888888889,
+    "test": 0.3
+  },
+  "ratio_tolerance": 0.01,
+  "n_total": 5760,
+  "n_excluded_rows": 0,
+  "n_samples": {
+    "train": 3628,
+    "valid": 404,
+    "test": 1728
+  },
+  "files": {
+    "train": {
+      "path": "../Data/processed/suzuki/npz\\split_0\\train.npz",
+      "sha256": "87f333f736cf648094a38a7b16351030bfa176ffb39e4e715770126e4bdfe4f6",
+      "n_samples": 3628,
+      "arrays": {
+        "rmol": {
+          "n_slots": 14,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 321199,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 610614,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              3628
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "pmol": {
+          "n_slots": 1,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 94328,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 217680,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              3628
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "y": {
+          "dtype": "float64",
+          "shape": [
+            3628
+          ]
+        },
+        "sample_ids": {
+          "dtype": "int64",
+          "shape": [
+            3628
+          ]
+        }
+      }
+    },
+    "valid": {
+      "path": "../Data/processed/suzuki/npz\\split_0\\valid.npz",
+      "sha256": "b3e11ff2489504b0fd48e579d52d3fd5d0e95d13a45b6442ebc6a6318c18d550",
+      "n_samples": 404,
+      "arrays": {
+        "rmol": {
+          "n_slots": 14,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 35723,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 67956,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              404
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "pmol": {
+          "n_slots": 1,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 10504,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 24240,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              404
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "y": {
+          "dtype": "float64",
+          "shape": [
+            404
+          ]
+        },
+        "sample_ids": {
+          "dtype": "int64",
+          "shape": [
+            404
+          ]
+        }
+      }
+    },
+    "test": {
+      "path": "../Data/processed/suzuki/npz\\split_0\\test.npz",
+      "sha256": "02aae3bc3ac6a5202e5d024d512f19105ece0f8373857ea88e41019ffe1b6191",
+      "n_samples": 1728,
+      "arrays": {
+        "rmol": {
+          "n_slots": 14,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 152694,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 290358,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              1728
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "pmol": {
+          "n_slots": 1,
+          "node_attr": {
+            "dtype": "bool",
+            "n_rows": 44928,
+            "feature_dim": 155
+          },
+          "edge_attr": {
+            "dtype": "bool",
+            "n_rows": 103680,
+            "feature_dim": 9
+          },
+          "n_node": {
+            "dtype": "int32",
+            "shape": [
+              1728
+            ]
+          },
+          "src_dst_dtype": "int32"
+        },
+        "y": {
+          "dtype": "float64",
+          "shape": [
+            1728
+          ]
+        },
+        "sample_ids": {
+          "dtype": "int64",
+          "shape": [
+            1728
+          ]
+        }
+      }
+    }
+  },
+  "preprocessing": {
+    "learned_transformations": [],
+    "note": "Graph featurization is a fixed per-molecule mapping; no statistics are fitted and targets are used untransformed."
+  },
+  "prepared_at": "2026-09-16T20:19:52",
+  "shared_featurization_runtime_sec": 476.7052025794983,
+  "preparation_runtime_sec": 479.1157133579254
+}

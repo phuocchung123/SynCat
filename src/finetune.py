@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import torch
 import numpy as np
 from data import GraphDataset
@@ -48,18 +49,31 @@ def _load_checkpoint_safely(net, checkpoint, logger):
         )
 
 
-def finetune(args) -> None:
+def finetune(args, save_attention: bool = True) -> dict:
     """
     Fine-tune a graph neural network on chemical reaction-yield data.
+
+    The checkpoint with the lowest validation loss is selected, re-scored once on
+    the validation set, and then evaluated exactly once on the test set. The test
+    set is only scored during training when `args.track_test_each_epoch` is set,
+    and even then it never influences checkpoint selection.
 
     Parameters
     ----------
     args : argparse.Namespace
         Argument namespace containing all required settings and paths.
+    save_attention : bool, optional
+        Whether to dump attention weights/embeddings to
+        `<monitor_folder>/attention.json` (default is True).
 
     Returns
     -------
-    None
+    dict
+        Selected epoch ("best_epoch"), validation loss/metrics of the selected
+        checkpoint ("val_loss", "val_metrics"), test metrics ("test_metrics"),
+        per-sample test labels/predictions in test-set order ("test_labels",
+        "test_preds"), subset sizes ("n_train", "n_valid", "n_test") and
+        runtimes in seconds ("train_runtime_sec", "eval_runtime_sec").
     """
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     model_path = args.model_path + args.model_name
@@ -78,7 +92,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(train_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=args.num_workers,
         drop_last=True,
     )
 
@@ -88,7 +102,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(test_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=args.num_workers,
         drop_last=False,
     )
 
@@ -98,7 +112,7 @@ def finetune(args) -> None:
         batch_size=int(np.min([args.batch_size, len(val_set)])),
         shuffle=False,
         collate_fn=collate_reaction_graphs,
-        num_workers=4,
+        num_workers=args.num_workers,
         drop_last=False,
     )
 
@@ -115,12 +129,14 @@ def finetune(args) -> None:
         % (train_set.pmol_max_cnt, val_set.pmol_max_cnt, test_set.pmol_max_cnt)
     )
     logger.info("--- model_path: %s" % model_path)
+    monitor_test_loader = test_loader if args.track_test_each_epoch else None
 
     # training
 
     node_dim = train_set.rmol_node_attr[0].shape[1]
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
     net = model(node_dim, edge_dim, args.layer, args.emb_dim, args.dropout).to(device)
+    train_start = time.time()
     if not os.path.exists(model_path):
         logger.info("-- TRAINING")
         train(
@@ -133,7 +149,7 @@ def finetune(args) -> None:
             args.epochs,
             args.lr,
             args.weight_decay,
-            test_loader=test_loader,
+            test_loader=monitor_test_loader,
         )
     else:
         checkpoint = torch.load(model_path, weights_only=False, map_location=device)
@@ -152,17 +168,35 @@ def finetune(args) -> None:
             args.weight_decay,
             current_epoch=current_epoch,
             best_val_loss=checkpoint["val_loss"],
-            test_loader=test_loader,
+            test_loader=monitor_test_loader,
         )
 
-    # test
+    train_runtime = time.time() - train_start
+    if not os.path.exists(model_path):
+        raise RuntimeError(
+            "Training finished without saving a checkpoint to %s (the validation "
+            "loss never improved, e.g. because it was NaN)" % model_path
+        )
+
+    # model selection: reload the best-validation checkpoint
     test_y = test_loader.dataset.y
     net = model(node_dim, edge_dim, args.layer, args.emb_dim, args.dropout).to(device)
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
+    val_metrics, val_loss = validation(
+        args, net, val_loader, device, torch.nn.HuberLoss()
+    )
+    logger.info(
+        "--- selected checkpoint from epoch %d, val_loss %.4f, val_mae %.4f, val_rmse %.4f"
+        % (checkpoint["epoch"], val_loss, val_metrics["mae"], val_metrics["rmse"])
+    )
+
+    # test: the selected model is evaluated exactly once
+    eval_start = time.time()
     metrics, att_r, att_p, rsmis, test_labels, test_preds, emb = validation(
         args, net, test_loader, device
     )
+    eval_runtime = time.time() - eval_start
     plot_parity(
         test_labels,
         test_preds,
@@ -183,12 +217,27 @@ def finetune(args) -> None:
         )
     )
 
-    dict_att = {
-        "Name": "Attention",
-        "rsmis": rsmis,
-        "att_r": att_r,
-        "att_p": att_p,
-        "emb": emb,
+    if save_attention:
+        dict_att = {
+            "Name": "Attention",
+            "rsmis": rsmis,
+            "att_r": att_r,
+            "att_p": att_p,
+            "emb": emb,
+        }
+        with open(args.monitor_folder + "attention.json", "w") as f:
+            json.dump(dict_att, f)
+
+    return {
+        "best_epoch": int(checkpoint["epoch"]),
+        "val_loss": float(val_loss),
+        "val_metrics": val_metrics,
+        "test_metrics": metrics,
+        "test_labels": test_labels,
+        "test_preds": test_preds,
+        "n_train": len(train_set),
+        "n_valid": len(val_set),
+        "n_test": len(test_set),
+        "train_runtime_sec": train_runtime,
+        "eval_runtime_sec": eval_runtime,
     }
-    with open(args.monitor_folder + "attention.json", "w") as f:
-        json.dump(dict_att, f)

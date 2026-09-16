@@ -1,0 +1,11 @@
+2026-09-16 21:51:05,328 - INFO - Command stage=train, split_ids=[1, 2]
+2026-09-16 21:51:05,330 - INFO - ================================================================================
+2026-09-16 21:51:05,331 - INFO - STAGE 1: VALIDATE splits [1, 2]
+2026-09-16 21:51:06,452 - INFO - Split 1: valid (../Data/processed/suzuki/npz\split_1)
+2026-09-16 21:51:07,582 - INFO - Split 2: valid (../Data/processed/suzuki/npz\split_2)
+2026-09-16 21:51:07,583 - INFO - Found 6/6 subset npz files
+2026-09-16 21:51:07,583 - INFO - Preparation barrier passed: all 2 splits and 6 npz files are valid
+2026-09-16 21:51:07,585 - INFO - ================================================================================
+2026-09-16 21:51:07,586 - INFO - STAGE 2: TRAIN splits [1, 2] (run folder ../logs/suzuki_regression/runs\suzuki_splits_1_to_2_20260916_215107)
+2026-09-16 21:51:07,588 - INFO - --------------------------------------------------------------------------------
+2026-09-16 21:51:07,588 - INFO - Split 1: training (seed 43, train/valid/test 3628/404/1728)

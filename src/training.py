@@ -51,12 +51,18 @@ def train(
         Best validation loss seen so far (default is 1e10).
     test_loader : DataLoader, optional
         DataLoader for the test set; when given, test loss/metrics are tracked per epoch.
+        They are only monitored and never used for checkpoint selection or early stopping.
 
     Returns
     -------
     dict
         Per-epoch loss and metrics for train/val/test (see `visualization.init_history`).
         Also saved to `<monitor_folder>/history.json`, with plots in `args.image_folder`.
+
+    Notes
+    -----
+    When `args.patience` > 0, training stops early once the validation loss has
+    not improved for `args.patience` consecutive epochs.
     """
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
 
@@ -66,6 +72,8 @@ def train(
     loss_fn = torch.nn.HuberLoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
     history = init_history()
+    patience = getattr(args, "patience", 0)
+    epochs_without_improvement = 0
 
     for epoch in range(epochs):
         # training
@@ -161,6 +169,9 @@ def train(
                 },
                 model_path,
             )
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
 
         history["epoch"].append(epoch + current_epoch)
         record_epoch(history, "train", np.mean(train_loss_list), train_metrics)
@@ -170,5 +181,12 @@ def train(
         # Rewritten every epoch so curves are available even if training is interrupted.
         save_history(history, args.monitor_folder + "history.json")
         plot_training_history(history, args.image_folder)
+
+        if patience > 0 and epochs_without_improvement >= patience:
+            logger.info(
+                "--- early stopping at epoch %d: val_loss did not improve for %d epochs ---"
+                % (epoch + current_epoch, patience)
+            )
+            break
 
     return history
