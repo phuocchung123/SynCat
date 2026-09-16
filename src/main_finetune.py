@@ -75,7 +75,7 @@ if __name__ == "__main__":
         default=None,
         help="run a stage of the multi-split pipeline instead of the single-file run",
     )
-    arg_parser.add_argument("--split_ids", type=int, nargs="+", default=[6,7,8])
+    arg_parser.add_argument("--split_ids", type=int, nargs="+", default=[9])
     arg_parser.add_argument("--raw_split_dir", type=str, default="raw/suzuki")
     arg_parser.add_argument(
         "--split_file_pattern", type=str, default="random_split_{split_id}.tsv"
