@@ -148,7 +148,7 @@ def test_regression_smoke():
     net = model(node_dim, edge_dim, num_layer=2, emb_dim=16, drop_ratio=0.0).to(device)
 
     # --- forward pass succeeds, output shape is [4] ---
-    pred, _, _, reaction_vectors = net(rmols, pmols, r_dummy, p_dummy, device)
+    pred, reaction_vectors = net(rmols, pmols, r_dummy, p_dummy, device)
     assert pred.shape == (4,)
     assert torch.isfinite(pred).all()
 
@@ -180,7 +180,7 @@ def test_regression_smoke():
     )
     assert labels1.shape == (1,)
 
-    pred1, _, _, _ = net(rmols1, pmols1, r_dummy1, p_dummy1, device)
+    pred1, _ = net(rmols1, pmols1, r_dummy1, p_dummy1, device)
     assert pred1.shape == (1,)
     assert torch.isfinite(pred1).all()
 

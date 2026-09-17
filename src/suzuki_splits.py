@@ -898,7 +898,7 @@ def train_split(args, split_id: int, run_dir: str, logger):
         split_args = _split_args(args, split_id, metadata, run_dir)
         row["model_path"] = split_args.model_path + split_args.model_name
         set_seed(split_args.seed)
-        result = finetune(split_args, save_attention=False)
+        result = finetune(split_args, save_embedding=False)
 
         with np.load(row["test_npz"], allow_pickle=True) as npz:
             sample_ids = npz["sample_ids"]

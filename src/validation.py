@@ -50,7 +50,7 @@ def compute_regression_metrics(labels: list, preds: list) -> dict:
 def validation(args, net, test_loader, device, loss_fn=None):
     """
     Runs model inference on the test set, computes regression metrics, and
-    optionally returns attention and embeddings.
+    optionally returns the reaction embeddings.
 
     Parameters
     ----------
@@ -69,7 +69,7 @@ def validation(args, net, test_loader, device, loss_fn=None):
     -------
     tuple
         If loss_fn is None (external validation), returns:
-            (metrics, att_r, att_p, rsmis, labels, preds, emb)
+            (metrics, rsmis, labels, preds, emb)
         If loss_fn is given (internal validation), returns:
             (metrics, mean_inference_loss)
         `metrics` is the dict returned by `compute_regression_metrics`.
@@ -99,7 +99,7 @@ def validation(args, net, test_loader, device, loss_fn=None):
             r_dummy = batchdata[-4]
             p_dummy = batchdata[-3]
 
-            pred, att_r, att_p, emb = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
+            pred, emb = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
             label = batchdata[-2]
             label = label.to(device).float()
             if loss_fn is not None:
@@ -113,6 +113,6 @@ def validation(args, net, test_loader, device, loss_fn=None):
     metrics = compute_regression_metrics(labels, preds)
 
     if loss_fn is None:
-        return metrics, att_r, att_p, rsmis, labels, preds, emb
+        return metrics, rsmis, labels, preds, emb
     else:
         return metrics, np.mean(inference_loss_list)

@@ -1,13 +1,11 @@
-import itertools
 import torch
 import torch.nn as nn
 from gin import GIN
-from attention import SingleHeadAttention
 
 
 class model(nn.Module):
     """
-    Graph-based regression model with cross attention for reaction-yield prediction.
+    Graph-based regression model for reaction-yield prediction.
     """
 
     def __init__(
@@ -46,9 +44,6 @@ class model(nn.Module):
         # The reaction representation preserves both sides independently:
         # [reactant_embedding || product_embedding].
         self.regressor = torch.nn.Linear(2 * emb_dim, 1)
-        self.attention = SingleHeadAttention(emb_dim)
-        self.atts_reactant = []
-        self.atts_product = []
 
     def forward(
         self,
@@ -77,9 +72,8 @@ class model(nn.Module):
         Returns
         -------
         tuple
-            Predicted yields of shape [batch_size], reactant attentions, product
-            attentions, and concatenated reaction vectors of shape
-            [batch_size, 2 * emb_dim] as a list.
+            Predicted yields of shape [batch_size] and the concatenated reaction
+            vectors of shape [batch_size, 2 * emb_dim] as a list.
         """
         r_graph_feats = torch.stack([self.gnn(rmol) for rmol in rmols])
         p_graph_feats = torch.stack([self.gnn(pmol) for pmol in pmols])
@@ -88,47 +82,17 @@ class model(nn.Module):
         for batch in range(r_graph_feats.shape[1]):
             # The initial reactant's embeddings of each reaction in a batch
             r_graph_feats_1 = r_graph_feats[:, batch, :][r_dummy[batch]].to(device)
-            num_r = r_graph_feats_1.shape[0]
-            # Add pairwise embeddings into the initial reactant's embedding
-            for i, j in itertools.combinations(range(num_r), 2):
-                pairwise_r = r_graph_feats_1[i] + r_graph_feats_1[j]
-                pairwise_r = pairwise_r.reshape(1, -1)
-                r_graph_feats_1 = torch.cat((r_graph_feats_1, pairwise_r), dim=0)
-
-            # The initial product's emdeddings of each reaction in a batch
+            # The initial product's embeddings of each reaction in a batch
             p_graph_feats_1 = p_graph_feats[:, batch, :][p_dummy[batch]].to(device)
-            num_p = p_graph_feats_1.shape[0]
-            # Add pairwise embeddings into the initial product's embeddings
-            for i, j in itertools.combinations(range(num_p), 2):
-                pairwise_p = p_graph_feats_1[i] + p_graph_feats_1[j]
-                pairwise_p = pairwise_p.reshape(1, -1)
-                p_graph_feats_1 = torch.cat((p_graph_feats_1, pairwise_p), dim=0)
 
-            # attention of reactants
-            att_r = self.attention(p_graph_feats_1, r_graph_feats_1)
-            att_reactant = torch.sum(att_r, dim=0) / att_r.shape[0]
-            att_reactant = att_reactant.reshape(-1).to(device)
-
-            # attention of products
-            att_p = self.attention(r_graph_feats_1, p_graph_feats_1)
-            att_procduct = torch.sum(att_p, dim=0) / att_p.shape[0]
-            att_procduct = att_procduct.reshape(-1).to(device)
-
-            # reactants embeddings with attention weights
-            reactant_tensor = torch.zeros(1, r_graph_feats_1.shape[1]).to(device)
-            for idx in range(r_graph_feats_1.shape[0]):
-                reactant_tensor += att_reactant[idx] * r_graph_feats_1[idx]
-
-            # products embeddings with attention weights
-            product_tensor = torch.zeros(1, p_graph_feats_1.shape[1]).to(device)
-            for idx in range(p_graph_feats_1.shape[0]):
-                product_tensor += att_procduct[idx] * p_graph_feats_1[idx]
+            # Each side is pooled by summing the embeddings of the molecules it
+            # actually contains, so no attention weighting is involved.
+            reactant_tensor = torch.sum(r_graph_feats_1, dim=0, keepdim=True)
+            product_tensor = torch.sum(p_graph_feats_1, dim=0, keepdim=True)
 
             # Reaction embedding: concatenate the pooled reactant and product
             # representations instead of collapsing them through subtraction.
             reaction_vector = torch.cat((reactant_tensor, product_tensor), dim=1)
             reaction_vectors = torch.cat((reaction_vectors, reaction_vector), dim=0)
-            self.atts_reactant.append(att_reactant.tolist())
-            self.atts_product.append(att_procduct.tolist())
         out = self.regressor(reaction_vectors).squeeze(-1)
-        return out, self.atts_reactant, self.atts_product, reaction_vectors.tolist()
+        return out, reaction_vectors.tolist()

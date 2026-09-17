@@ -39,7 +39,7 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     ]
     if encoder_mismatches:
         raise RuntimeError(
-            "Checkpoint is incompatible with the current encoder/attention "
+            "Checkpoint is incompatible with the current encoder "
             "architecture (mismatched keys: %s)" % encoder_mismatches
         )
     if result.missing_keys or result.unexpected_keys:
@@ -49,7 +49,7 @@ def _load_checkpoint_safely(net, checkpoint, logger):
         )
 
 
-def finetune(args, save_attention: bool = True) -> dict:
+def finetune(args, save_embedding: bool = True) -> dict:
     """
     Fine-tune a graph neural network on chemical reaction-yield data.
 
@@ -62,9 +62,9 @@ def finetune(args, save_attention: bool = True) -> dict:
     ----------
     args : argparse.Namespace
         Argument namespace containing all required settings and paths.
-    save_attention : bool, optional
-        Whether to dump attention weights/embeddings to
-        `<monitor_folder>/attention.json` (default is True).
+    save_embedding : bool, optional
+        Whether to dump the reaction embeddings to
+        `<monitor_folder>/embedding.json` (default is True).
 
     Returns
     -------
@@ -193,7 +193,7 @@ def finetune(args, save_attention: bool = True) -> dict:
 
     # test: the selected model is evaluated exactly once
     eval_start = time.time()
-    metrics, att_r, att_p, rsmis, test_labels, test_preds, emb = validation(
+    metrics, rsmis, test_labels, test_preds, emb = validation(
         args, net, test_loader, device
     )
     eval_runtime = time.time() - eval_start
@@ -217,16 +217,14 @@ def finetune(args, save_attention: bool = True) -> dict:
         )
     )
 
-    if save_attention:
-        dict_att = {
-            "Name": "Attention",
+    if save_embedding:
+        dict_emb = {
+            "Name": "Embedding",
             "rsmis": rsmis,
-            "att_r": att_r,
-            "att_p": att_p,
             "emb": emb,
         }
-        with open(args.monitor_folder + "attention.json", "w") as f:
-            json.dump(dict_att, f)
+        with open(args.monitor_folder + "embedding.json", "w") as f:
+            json.dump(dict_emb, f)
 
     return {
         "best_epoch": int(checkpoint["epoch"]),

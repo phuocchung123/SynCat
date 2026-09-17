@@ -30,7 +30,7 @@ def predict(
 
     Returns:
         A list of predictions, one per batch. Each prediction is expected to be a tuple
-        (pred, att_r, att_p, emb) as returned by the model during inference, where
+        (pred, emb) as returned by the model during inference, where
         `pred` holds the predicted yield values of shape [batch_size].
 
     """
@@ -88,6 +88,6 @@ def predict(
 
             prediction = net(
                 rmol, pmol, r_dummy, p_dummy, device
-            )  # prediction: pred, att_r, att_p, emb
+            )  # prediction: pred, emb
             prediction_list.append(prediction)
     return prediction_list

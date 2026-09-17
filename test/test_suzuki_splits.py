@@ -211,7 +211,7 @@ class TestPreparationBarrier(unittest.TestCase):
             setattr(args, key, value)
         return ss.run_stage(args)
 
-    def _fake_finetune(self, split_args, save_attention=True):
+    def _fake_finetune(self, split_args, save_embedding=True):
         path = split_args.Data_folder + split_args.npz_folder + "/test.npz"
         y = np.load(path, allow_pickle=True)["reaction"].item()["y"]
         metrics = {"mae": 0.1, "rmse": 0.2, "r2": 0.5, "pearson": 0.7}
@@ -298,11 +298,11 @@ class TestPreparationBarrier(unittest.TestCase):
         self.assertEqual(self._run("prepare"), 0)
         calls = {"n": 0}
 
-        def flaky(split_args, save_attention=True):
+        def flaky(split_args, save_embedding=True):
             calls["n"] += 1
             if calls["n"] == 2:
                 raise RuntimeError("boom")
-            return self._fake_finetune(split_args, save_attention)
+            return self._fake_finetune(split_args, save_embedding)
 
         with mock.patch.object(ss, "finetune", side_effect=flaky):
             self.assertEqual(self._run("train"), 1)

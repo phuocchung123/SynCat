@@ -94,7 +94,7 @@ def train(
             r_dummy = batchdata[-4]
             p_dummy = batchdata[-3]
 
-            pred, _, _, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
+            pred, _ = net(inputs_rmol, inputs_pmol, r_dummy, p_dummy, device)
             label = batchdata[-2]
             label = label.to(device).float()
             loss = loss_fn(pred, label)
