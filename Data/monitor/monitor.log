@@ -73,3 +73,11 @@
 2026-09-14 03:33:08,079 - INFO - -- TRAINING
 2026-09-16 20:11:53,190 - INFO - --- generating graph data for None
 2026-09-16 20:11:53,190 - INFO - --- n_reactions: 5760, reactant_max_cnt: 14, product_max_cnt: 1
+2026-09-17 07:55:34,047 - INFO - Already exist files in ../Data/npz/npz_yield/
+2026-09-17 07:55:34,047 - INFO - device is	cpu
+2026-09-17 07:55:34,270 - INFO - -- CONFIGURATIONS
+2026-09-17 07:55:34,270 - INFO - --- train/valid/test: 4665/519/576
+2026-09-17 07:55:34,270 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
+2026-09-17 07:55:34,270 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-09-17 07:55:34,270 - INFO - --- model_path: ../Data/model/model_yield.pt
+2026-09-17 07:55:34,382 - INFO - -- TRAINING

@@ -1,7 +1,0 @@
-2026-09-16 20:29:05,823 - INFO - device is	cpu
-2026-09-16 20:29:06,263 - INFO - -- CONFIGURATIONS
-2026-09-16 20:29:06,264 - INFO - --- train/valid/test: 3628/404/1728
-2026-09-16 20:29:06,264 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
-2026-09-16 20:29:06,264 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
-2026-09-16 20:29:06,264 - INFO - --- model_path: ../logs/suzuki_regression/runs\suzuki_splits_0_to_2_20260916_202440\split_1\model.pt
-2026-09-16 20:29:06,288 - INFO - -- TRAINING
