@@ -81,3 +81,23 @@
 2026-09-17 07:55:34,270 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
 2026-09-17 07:55:34,270 - INFO - --- model_path: ../Data/model/model_yield.pt
 2026-09-17 07:55:34,382 - INFO - -- TRAINING
+2026-09-20 04:29:27,260 - INFO - --- excluded 0/197619 samples with missing/invalid reaction or yield values
+2026-09-20 04:29:28,065 - INFO - --- train/valid/test sizes: 142285/15810/39524
+2026-09-20 04:29:28,067 - INFO - --- generating graph data for ../Data/npz/npz_uspto_above/train.npz
+2026-09-20 04:29:28,067 - INFO - --- n_reactions: 142285, reactant_max_cnt: 58, product_max_cnt: 11
+2026-09-20 04:29:30,433 - INFO - --- excluded 0/302040 samples with missing/invalid reaction or yield values
+2026-09-20 04:29:31,399 - INFO - --- train/valid/test sizes: 217468/24164/60408
+2026-09-20 04:29:31,400 - INFO - --- generating graph data for ../Data/npz/npz_uspto_below/train.npz
+2026-09-20 04:29:31,400 - INFO - --- n_reactions: 217468, reactant_max_cnt: 36, product_max_cnt: 9
+2026-09-20 04:35:31,672 - INFO - --- 10000/142285 processed
+2026-09-20 04:46:44,510 - INFO - --- excluded 0/197619 samples with missing/invalid reaction or yield values
+2026-09-20 04:46:44,835 - INFO - --- train/valid/test sizes: 142285/15810/39524
+2026-09-20 04:46:44,838 - INFO - --- generating graph data for ../Data/npz/npz_uspto_above/train.npz
+2026-09-20 04:46:44,839 - INFO - --- n_reactions: 142285, reactant_max_cnt: 58, product_max_cnt: 11
+2026-09-20 04:51:40,164 - INFO - --- 10000/142285 processed
+2026-09-20 04:57:16,971 - INFO - --- 20000/142285 processed
+2026-09-20 05:02:23,314 - INFO - --- 30000/142285 processed
+2026-09-20 05:08:26,993 - INFO - --- 40000/142285 processed
+2026-09-20 05:14:47,170 - INFO - --- 50000/142285 processed
+2026-09-20 05:20:50,774 - INFO - --- 60000/142285 processed
+2026-09-20 05:26:55,662 - INFO - --- 70000/142285 processed

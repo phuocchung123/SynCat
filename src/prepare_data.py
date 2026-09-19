@@ -122,7 +122,9 @@ def prepare_data(args) -> None:
     Prepare and split chemical reaction-yield data, then save reaction information to npz files.
 
     If `args.train_test_split` is True, the train/test split is taken from
-    `args.split_column`. Otherwise, a deterministic split is created with
+    `args.split_column` (as in the `uspto_yields_*` datasets, whose "split"
+    column holds "train"/"test"); the validation set is then carved out of the
+    train rows with `args.valid_ratio`. Otherwise, a deterministic split is created with
     `split_reaction_data` using `args.seed`: `args.test_ratio` of the data forms
     the test set and `args.valid_ratio` of the remainder forms the validation
     set (0.3 and 0.1 by default, i.e. a 63/7/30 train/valid/test ratio).
@@ -150,8 +152,18 @@ def prepare_data(args) -> None:
     )
 
     if args.train_test_split:
+        if args.split_column not in data.columns:
+            raise ValueError(
+                "--train_test_split needs the column %r; available columns: %s"
+                % (args.split_column, list(data.columns))
+            )
         data_pretrain = data[data[args.split_column] == "train"]
         data_test = data[data[args.split_column] == "test"]
+        if data_pretrain.empty or data_test.empty:
+            raise ValueError(
+                "Column %r must hold 'train' and 'test' rows; found %s"
+                % (args.split_column, data[args.split_column].value_counts().to_dict())
+            )
         data_train, data_valid = train_test_split(
             data_pretrain,
             test_size=args.valid_ratio,

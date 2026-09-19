@@ -325,17 +325,31 @@ def finetune(args, save_embedding: bool = True) -> dict:
     )
     logger.info("-- RESULT")
     logger.info("--- test size: %d" % (len(test_y)))
-    logger.info(
-        "--- MAE: %.4f (%.2f pp), RMSE: %.4f (%.2f pp), R2: %s, Pearson: %s"
-        % (
-            metrics["mae"],
-            metrics["mae"] * 100,
-            metrics["rmse"],
-            metrics["rmse"] * 100,
-            "n/a" if metrics["r2"] is None else "%.4f" % metrics["r2"],
-            "n/a" if metrics["pearson"] is None else "%.4f" % metrics["pearson"],
+    # The suzuki splits store yields as fractions (0-1) and uspto_yields_* as
+    # percentages (0-100); percentage points are only a conversion for the former.
+    targets_in_percent = float(np.nanmax(np.abs(np.asarray(test_y, dtype=float)))) > 1.5
+    if targets_in_percent:
+        logger.info(
+            "--- MAE: %.4f pp, RMSE: %.4f pp, R2: %s, Pearson: %s"
+            % (
+                metrics["mae"],
+                metrics["rmse"],
+                "n/a" if metrics["r2"] is None else "%.4f" % metrics["r2"],
+                "n/a" if metrics["pearson"] is None else "%.4f" % metrics["pearson"],
+            )
         )
-    )
+    else:
+        logger.info(
+            "--- MAE: %.4f (%.2f pp), RMSE: %.4f (%.2f pp), R2: %s, Pearson: %s"
+            % (
+                metrics["mae"],
+                metrics["mae"] * 100,
+                metrics["rmse"],
+                metrics["rmse"] * 100,
+                "n/a" if metrics["r2"] is None else "%.4f" % metrics["r2"],
+                "n/a" if metrics["pearson"] is None else "%.4f" % metrics["pearson"],
+            )
+        )
 
     if save_embedding:
         dict_emb = {

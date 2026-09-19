@@ -68,7 +68,12 @@ if __name__ == "__main__":
     arg_parser.add_argument("--model_name", type=str, default="model_yield.pt")
     arg_parser.add_argument("--npz_folder", type=str, default="npz/npz_yield")
     arg_parser.add_argument("--y_column", type=str, default="y")
-    arg_parser.add_argument("--train_test_split", type=bool, default=False)
+    arg_parser.add_argument(
+        "--train_test_split",
+        action="store_true",
+        help="take the train/test split from --split_column instead of splitting "
+        "the table here (the uspto_yields_* datasets ship such a column)",
+    )
     arg_parser.add_argument("--split_column", type=str, default="split")
     arg_parser.add_argument("--reaction_column", type=str, default="rxn")
     arg_parser.add_argument(
@@ -139,6 +144,11 @@ if __name__ == "__main__":
         help="only record per-split test results; do not compute mean/std across splits",
     )
     arg_parser.add_argument(
+        "--prepare_only",
+        action="store_true",
+        help="write the train/valid/test npz files and stop, without training",
+    )
+    arg_parser.add_argument(
         "--overwrite_results",
         action="store_true",
         help="replace existing experiment result files",
@@ -149,6 +159,9 @@ if __name__ == "__main__":
             "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
             % (args.num_heads, args.emb_dim)
         )
+
+    if args.prepare_only and args.stage is not None:
+        arg_parser.error("--prepare_only cannot be combined with --stage")
 
     if args.stage is not None:
         from suzuki_splits import run_stage
@@ -167,5 +180,9 @@ if __name__ == "__main__":
             logger.info("Already exist files in {}".format(dirpath))
         else:
             prepare_data(args)
+
+    if args.prepare_only:
+        logger.info("--- prepared %s; stopping before training" % npz_folder)
+        sys.exit(0)
 
     finetune(args)
