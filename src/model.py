@@ -4,6 +4,17 @@ import torch.nn as nn
 from gin import GIN
 from attention import ReactionSelfAttention
 
+# How the reactant vector r and the product vector p are combined into the
+# reaction vector, with the size of the result in multiples of emb_dim.
+REACTION_COMBINE_DIMS = {
+    "concat": 2,  # [r, p]
+    "sum": 1,  # r + p
+    "sub": 1,  # p - r, the change from reactants to products
+    "mul": 1,  # r * p, element-wise
+    "concat_sub": 3,  # [r, p, p - r]
+    "interaction": 4,  # [r, p, |p - r|, r * p]
+}
+
 
 class model(nn.Module):
     """
@@ -15,8 +26,9 @@ class model(nn.Module):
     compounds on the left of ">>", then attend to each other in a (multi-head)
     self-attention block; their value vectors are averaged into one reactant
     vector. The products do not take part in the attention: their GNN embeddings
-    are averaged into one product vector, and the reaction vector is the
-    concatenation [reactant vector, product vector].
+    are averaged into one product vector. The two vectors are then combined into
+    the reaction vector as set by `reaction_combine` (by default the
+    concatenation [reactant vector, product vector]).
     """
 
     def __init__(
@@ -28,6 +40,7 @@ class model(nn.Module):
         drop_ratio: float,
         num_attention_layer: int = 1,
         num_heads: int = 1,
+        reaction_combine: str = "concat",
     ) -> None:
         """
         Initialize the model.
@@ -51,6 +64,11 @@ class model(nn.Module):
         num_heads : int, optional
             Number of heads in every self-attention layer; must divide `emb_dim`
             (default is 1, i.e. single-head attention).
+        reaction_combine : str, optional
+            How the reactant vector r and the product vector p are combined
+            into the reaction vector (default is "concat"):
+            "concat" [r, p]; "sum" r + p; "sub" p - r; "mul" r * p;
+            "concat_sub" [r, p, p - r]; "interaction" [r, p, |p - r|, r * p].
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -63,6 +81,7 @@ class model(nn.Module):
             "drop_ratio": float(drop_ratio),
             "num_attention_layer": int(num_attention_layer),
             "num_heads": int(num_heads),
+            "reaction_combine": str(reaction_combine),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -83,10 +102,18 @@ class model(nn.Module):
             ]
         )
 
-        # The reaction is summarised by [reactant vector, product vector]: the
-        # mean of the self-attended reactant value vectors, concatenated with the
-        # mean of the product GNN embeddings.
-        self.regressor = torch.nn.Linear(2 * emb_dim, 1)
+        # The reaction is summarised by combining the reactant vector (mean of
+        # the self-attended reactant value vectors) with the product vector
+        # (mean of the product GNN embeddings).
+        if reaction_combine not in REACTION_COMBINE_DIMS:
+            raise ValueError(
+                "reaction_combine must be one of %s, got %r"
+                % (sorted(REACTION_COMBINE_DIMS), reaction_combine)
+            )
+        self.reaction_combine = reaction_combine
+        self.regressor = torch.nn.Linear(
+            REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
+        )
 
         # Optional bookkeeping for interpretation; disabled by default so that
         # training does not accumulate attention matrices. Only the last layer's
@@ -134,6 +161,36 @@ class model(nn.Module):
         count = weights.sum(dim=1).clamp(min=1.0)
         return (x * weights).sum(dim=1) / count
 
+    def _combine(self, r: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+        """
+        Combine the reactant and product vectors into the reaction vector.
+
+        Parameters
+        ----------
+        r : torch.Tensor
+            Reactant vectors of shape [batch_size, emb_dim].
+        p : torch.Tensor
+            Product vectors of shape [batch_size, emb_dim].
+
+        Returns
+        -------
+        torch.Tensor
+            Reaction vectors of shape [batch_size, k * emb_dim], with k given by
+            `REACTION_COMBINE_DIMS[self.reaction_combine]`.
+        """
+        mode = self.reaction_combine
+        if mode == "concat":
+            return torch.cat((r, p), dim=1)
+        if mode == "sum":
+            return r + p
+        if mode == "sub":
+            return p - r
+        if mode == "mul":
+            return r * p
+        if mode == "concat_sub":
+            return torch.cat((r, p, p - r), dim=1)
+        return torch.cat((r, p, torch.abs(p - r), r * p), dim=1)  # interaction
+
     def forward(
         self,
         rmols: list,
@@ -162,7 +219,8 @@ class model(nn.Module):
         -------
         tuple
             Predicted yields of shape [batch_size] and the reaction vectors of
-            shape [batch_size, 2 * emb_dim] as a list.
+            shape [batch_size, k * emb_dim] as a list (k depends on
+            `reaction_combine`).
         """
         # Shape [batch_size, num_slots, emb_dim], one token per compound slot.
         r_tokens = torch.stack([self.gnn(rmol) for rmol in rmols], dim=1).to(device)
@@ -191,7 +249,7 @@ class model(nn.Module):
         # Products bypass the attention: their GNN embeddings are averaged.
         product_vectors = self._masked_mean(p_feats, p_mask)
 
-        reaction_vectors = torch.cat((reactant_vectors, product_vectors), dim=1)
+        reaction_vectors = self._combine(reactant_vectors, product_vectors)
 
         out = self.regressor(reaction_vectors).squeeze(-1)
         return out, reaction_vectors.tolist()

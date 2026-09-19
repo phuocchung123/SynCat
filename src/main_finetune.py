@@ -3,6 +3,7 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
+from model import REACTION_COMBINE_DIMS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -43,6 +44,15 @@ if __name__ == "__main__":
         default=1,
         help="number of heads per self-attention layer; must divide --emb_dim "
         "(1 = single-head attention)",
+    )
+    arg_parser.add_argument(
+        "--reaction_combine",
+        type=str,
+        default="concat",
+        choices=sorted(REACTION_COMBINE_DIMS),
+        help="how the reactant vector r and product vector p form the reaction "
+        "vector: concat [r, p]; sum r + p; sub p - r; mul r * p; "
+        "concat_sub [r, p, p - r]; interaction [r, p, |p - r|, r * p]",
     )
     arg_parser.add_argument("--emb_dim", type=int, default=384)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
