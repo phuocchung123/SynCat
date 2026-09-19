@@ -183,6 +183,7 @@ def train(
                 {
                     "epoch": epoch + current_epoch,
                     "model_state_dict": plain_net.state_dict(),
+                    "model_config": plain_net.config,
                     "val_loss": best_val_loss,
                 },
                 model_path,

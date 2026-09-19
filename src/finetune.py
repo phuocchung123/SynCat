@@ -36,6 +36,20 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     -------
     None
     """
+    saved_config = checkpoint.get("model_config")
+    if saved_config is not None:
+        # Mismatched settings do not always change the weight shapes (e.g. the
+        # number of heads), so compare the architectures explicitly.
+        mismatched = {
+            k: (saved_config.get(k), v)
+            for k, v in net.config.items()
+            if k != "drop_ratio" and saved_config.get(k) != v
+        }
+        if mismatched:
+            raise RuntimeError(
+                "Checkpoint was trained with a different architecture "
+                "(setting: (checkpoint, current)): %s" % mismatched
+            )
     result = net.load_state_dict(checkpoint["model_state_dict"], strict=False)
     encoder_mismatches = [
         k
@@ -62,6 +76,7 @@ def _build_model(args, node_dim, edge_dim):
         args.emb_dim,
         args.dropout,
         num_attention_layer=getattr(args, "attention_layer", 1),
+        num_heads=getattr(args, "num_heads", 1),
     )
 
 
@@ -279,8 +294,11 @@ def finetune(args, save_embedding: bool = True) -> dict:
 
     # model selection: reload the best-validation checkpoint
     test_y = test_loader.dataset.y
-    net = _build_model(args, node_dim, edge_dim).to(device)
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
+    if "model_config" in checkpoint:
+        net = model.from_config(checkpoint["model_config"]).to(device)
+    else:  # checkpoint saved before the config was stored
+        net = _build_model(args, node_dim, edge_dim).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
     val_metrics, val_loss = validation(
         args, net, val_loader, device, torch.nn.HuberLoss()

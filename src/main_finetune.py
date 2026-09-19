@@ -37,6 +37,13 @@ if __name__ == "__main__":
         default=1,
         help="number of self-attention layers over the compounds of a reaction",
     )
+    arg_parser.add_argument(
+        "--num_heads",
+        type=int,
+        default=1,
+        help="number of heads per self-attention layer; must divide --emb_dim "
+        "(1 = single-head attention)",
+    )
     arg_parser.add_argument("--emb_dim", type=int, default=384)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=1e-3)
@@ -127,6 +134,11 @@ if __name__ == "__main__":
         help="replace existing experiment result files",
     )
     args = arg_parser.parse_args()
+    if args.num_heads < 1 or args.emb_dim % args.num_heads != 0:
+        arg_parser.error(
+            "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
+            % (args.num_heads, args.emb_dim)
+        )
 
     if args.stage is not None:
         from suzuki_splits import run_stage
