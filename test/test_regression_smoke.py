@@ -152,11 +152,11 @@ def test_regression_smoke():
     assert pred.shape == (4,)
     assert torch.isfinite(pred).all()
 
-    # --- each reaction vector concatenates reactant and product embeddings ---
-    assert np.asarray(reaction_vectors).shape == (4, 2 * 16)
+    # --- each reaction is summarised by one self-attended vector ---
+    assert np.asarray(reaction_vectors).shape == (4, 16)
 
     # --- final layer outputs one value per reaction ---
-    assert net.regressor.in_features == 2 * 16
+    assert net.regressor.in_features == 16
     assert net.regressor.out_features == 1
 
     # --- loss is finite ---

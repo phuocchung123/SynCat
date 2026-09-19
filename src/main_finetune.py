@@ -5,7 +5,6 @@ from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
-
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
 
 
@@ -20,7 +19,15 @@ if __name__ == "__main__":
         default=4,
         help="DataLoader worker processes (0 loads batches in the main process)",
     )
-    arg_parser.add_argument("--layer", type=int, default=3)
+    arg_parser.add_argument(
+        "--layer", type=int, default=3, help="number of GNN (GIN) layers"
+    )
+    arg_parser.add_argument(
+        "--attention_layer",
+        type=int,
+        default=1,
+        help="number of self-attention layers over the compounds of a reaction",
+    )
     arg_parser.add_argument("--emb_dim", type=int, default=384)
     arg_parser.add_argument("--dropout", type=float, default=0.1)
     arg_parser.add_argument("--lr", type=float, default=1e-3)

@@ -135,7 +135,14 @@ def finetune(args, save_embedding: bool = True) -> dict:
 
     node_dim = train_set.rmol_node_attr[0].shape[1]
     edge_dim = train_set.rmol_edge_attr[0].shape[1]
-    net = model(node_dim, edge_dim, args.layer, args.emb_dim, args.dropout).to(device)
+    net = model(
+        node_dim,
+        edge_dim,
+        args.layer,
+        args.emb_dim,
+        args.dropout,
+        num_attention_layer=getattr(args, "attention_layer", 1),
+    ).to(device)
     train_start = time.time()
     if not os.path.exists(model_path):
         logger.info("-- TRAINING")
@@ -180,7 +187,14 @@ def finetune(args, save_embedding: bool = True) -> dict:
 
     # model selection: reload the best-validation checkpoint
     test_y = test_loader.dataset.y
-    net = model(node_dim, edge_dim, args.layer, args.emb_dim, args.dropout).to(device)
+    net = model(
+        node_dim,
+        edge_dim,
+        args.layer,
+        args.emb_dim,
+        args.dropout,
+        num_attention_layer=getattr(args, "attention_layer", 1),
+    ).to(device)
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     net.load_state_dict(checkpoint["model_state_dict"])
     val_metrics, val_loss = validation(
