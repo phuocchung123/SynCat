@@ -54,6 +54,13 @@ python main_finetune.py --stage all --epochs 1
 
 Valid prepared splits are skipped and missing/invalid ones regenerated (`--overwrite` forces regeneration). Results go to `logs/suzuki_regression/`: `suzuki_splits_0_to_9.log`, `suzuki_splits_0_to_9_results.csv` (per split), `suzuki_splits_0_to_9_summary.csv` (mean/std over successful runs), `suzuki_splits_0_to_9_test_predictions.csv`, and a per-run folder with checkpoints and training curves. Existing result files are never replaced unless `--overwrite_results` is given. Use `--split_ids` to select splits.
 
+**Multi-GPU training.** Add `--gpus 0 1` (or `--gpus all`) to any training command to train with DistributedDataParallel, one process per GPU. The script starts the processes itself, so you don't need `torchrun`. `--batch_size` stays the total batch size and is split evenly across the GPUs (128 → 64 per GPU on 2 GPUs). Validation, checkpointing and the final test evaluation run on the first GPU. Without `--gpus`, training uses the single GPU given by `--device`.
+
+```bash
+python main_finetune.py --stage train --gpus 0 1 --epochs 100 --patience 10
+python run_splits_sequential.py --gpus 0 1 --epochs 100 --patience 10
+```
+
 ## Setting Up Your Development Environment
 
 Before you start, ensure your local development environment is set up correctly. Pull the latest version of the `main` branch to start with the most recent stable code.

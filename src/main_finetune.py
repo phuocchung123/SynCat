@@ -14,6 +14,15 @@ if __name__ == "__main__":
     arg_parser.add_argument("--epochs", type=int, default=100)
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument(
+        "--gpus",
+        type=str,
+        nargs="+",
+        default=None,
+        help="GPU ids to train on, e.g. '--gpus 0 1' or '--gpus all'; more than one "
+        "runs DistributedDataParallel (--batch_size stays the total batch, split "
+        "evenly across GPUs). Default: the single GPU given by --device",
+    )
+    arg_parser.add_argument(
         "--num_workers",
         type=int,
         default=4,

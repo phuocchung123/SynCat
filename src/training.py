@@ -5,6 +5,7 @@ from torch.optim import Adam
 from tqdm import tqdm
 from validation import validation, compute_regression_metrics
 from utils import setup_logging
+from multi_gpu import broadcast_flag, gather_lists, is_main_process, unwrap
 from visualization import init_history, record_epoch, save_history, plot_training_history
 
 
@@ -63,6 +64,10 @@ def train(
     -----
     When `args.patience` > 0, training stops early once the validation loss has
     not improved for `args.patience` consecutive epochs.
+
+    Under DistributedDataParallel every rank trains on its shard of the training
+    set; only rank 0 (which may get `val_loader=None` on the other ranks) logs,
+    validates and saves checkpoints, and it tells the others when to stop.
     """
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
 
@@ -74,17 +79,21 @@ def train(
     history = init_history()
     patience = getattr(args, "patience", 0)
     epochs_without_improvement = 0
+    is_main = is_main_process()
+    plain_net = unwrap(net)
 
     for epoch in range(epochs):
         # training
         net.train()
         start_time = time.time()
+        if hasattr(train_loader.sampler, "set_epoch"):
+            train_loader.sampler.set_epoch(epoch + current_epoch)
 
         train_loss_list = []
         labels = []
         preds = []
 
-        for batchdata in tqdm(train_loader, desc="Training"):
+        for batchdata in tqdm(train_loader, desc="Training", disable=not is_main):
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
             inputs_pmol = [
@@ -108,6 +117,13 @@ def train(
             train_loss = loss.detach().item()
             train_loss_list.append(train_loss)
 
+        # under DDP, score the whole training set rather than this rank's shard
+        labels, preds, train_loss_list = gather_lists(labels, preds, train_loss_list)
+        if not is_main:
+            if broadcast_flag(False, device):
+                break
+            continue
+
         train_metrics = compute_regression_metrics(labels, preds)
         logger.info(
             "--- training epoch %d, loss %.4f, mae %.4f, rmse %.4f, time elapsed(min) %.2f---"
@@ -122,7 +138,7 @@ def train(
 
         # validation
         net.eval()
-        val_metrics, val_loss = validation(args, net, val_loader, device, loss_fn)
+        val_metrics, val_loss = validation(args, plain_net, val_loader, device, loss_fn)
 
         val_r2_str = "n/a" if val_metrics["r2"] is None else "%.4f" % val_metrics["r2"]
         val_pearson_str = (
@@ -142,7 +158,9 @@ def train(
         )
 
         if test_loader is not None:
-            test_metrics, test_loss = validation(args, net, test_loader, device, loss_fn)
+            test_metrics, test_loss = validation(
+                args, plain_net, test_loader, device, loss_fn
+            )
             logger.info(
                 "--- test at epoch %d, test_loss %.4f, test_mae %.4f, test_rmse %.4f, "
                 "test_r2 %s, test_pearson %s ---"
@@ -164,7 +182,7 @@ def train(
             torch.save(
                 {
                     "epoch": epoch + current_epoch,
-                    "model_state_dict": net.state_dict(),
+                    "model_state_dict": plain_net.state_dict(),
                     "val_loss": best_val_loss,
                 },
                 model_path,
@@ -182,7 +200,8 @@ def train(
         save_history(history, args.monitor_folder + "history.json")
         plot_training_history(history, args.image_folder)
 
-        if patience > 0 and epochs_without_improvement >= patience:
+        stop = patience > 0 and epochs_without_improvement >= patience
+        if broadcast_flag(stop, device):
             logger.info(
                 "--- early stopping at epoch %d: val_loss did not improve for %d epochs ---"
                 % (epoch + current_epoch, patience)
