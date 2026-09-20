@@ -15,6 +15,9 @@ REACTION_COMBINE_DIMS = {
     "interaction": 4,  # [r, p, |p - r|, r * p]
 }
 
+# Which compounds take part in the self-attention.
+ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
+
 
 class model(nn.Module):
     """
@@ -22,13 +25,13 @@ class model(nn.Module):
     reaction-yield prediction.
 
     Every compound of a reaction "reactants >> products" is encoded by the
-    shared GNN. Only the reactants (reagents are treated as reactants), i.e. the
-    compounds on the left of ">>", then attend to each other in a (multi-head)
-    self-attention block; their value vectors are averaged into one reactant
-    vector. The products do not take part in the attention: their GNN embeddings
-    are averaged into one product vector. The two vectors are then combined into
-    the reaction vector as set by `reaction_combine` (by default the
-    concatenation [reactant vector, product vector]).
+    shared GNN. Which of them then attend to each other in the (multi-head)
+    self-attention block is set by `attention_on`: by default only the reactants
+    (reagents are treated as reactants), i.e. the compounds on the left of ">>".
+    Each side is averaged into one vector - the attended value vectors where
+    attention applies, the plain GNN embeddings where it does not - and the two
+    vectors are combined into the reaction vector as set by `reaction_combine`
+    (by default the concatenation [reactant vector, product vector]).
     """
 
     def __init__(
@@ -41,6 +44,7 @@ class model(nn.Module):
         num_attention_layer: int = 1,
         num_heads: int = 1,
         reaction_combine: str = "concat",
+        attention_on: str = "reactants",
     ) -> None:
         """
         Initialize the model.
@@ -69,6 +73,13 @@ class model(nn.Module):
             into the reaction vector (default is "concat"):
             "concat" [r, p]; "sum" r + p; "sub" p - r; "mul" r * p;
             "concat_sub" [r, p, p - r]; "interaction" [r, p, |p - r|, r * p].
+        attention_on : str, optional
+            Which compounds attend to each other (default is "reactants"):
+            "reactants" only the left of ">>", "products" only the right,
+            "both" each side separately through the same attention layers,
+            "all" every compound of the reaction in one shared attention, and
+            "none" no attention at all (the vectors are then plain means of the
+            GNN embeddings). A side that does not attend is averaged directly.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -82,6 +93,7 @@ class model(nn.Module):
             "num_attention_layer": int(num_attention_layer),
             "num_heads": int(num_heads),
             "reaction_combine": str(reaction_combine),
+            "attention_on": str(attention_on),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -95,10 +107,18 @@ class model(nn.Module):
             raise ValueError(
                 "num_attention_layer must be at least 1, got %d" % num_attention_layer
             )
+        if attention_on not in ATTENTION_TARGETS:
+            raise ValueError(
+                "attention_on must be one of %s, got %r"
+                % (list(ATTENTION_TARGETS), attention_on)
+            )
+        self.attention_on = attention_on
+        # "both" runs the same layers over each side in turn, so that the weights
+        # are shared and a one-compound side costs nothing extra.
         self.attention_layers = nn.ModuleList(
             [
                 ReactionSelfAttention(emb_dim, num_heads=num_heads, dropout=drop_ratio)
-                for _ in range(num_attention_layer)
+                for _ in range(num_attention_layer if attention_on != "none" else 0)
             ]
         )
 
@@ -117,7 +137,8 @@ class model(nn.Module):
 
         # Optional bookkeeping for interpretation; disabled by default so that
         # training does not accumulate attention matrices. Only the last layer's
-        # weights, averaged over heads, are kept.
+        # weights, averaged over heads, are kept: one matrix, or one per side
+        # with `attention_on="both"`.
         self.store_attention = False
         self.last_attention = None
 
@@ -138,6 +159,39 @@ class model(nn.Module):
             A freshly initialised model with that architecture.
         """
         return cls(**config)
+
+    def _attend(self, tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """
+        Run the stack of self-attention layers over one set of compounds.
+
+        Intermediate layers refine the compound representations through a
+        residual connection, which keeps a deeper stack stable; the last layer
+        emits the value vectors that are averaged into a side's vector.
+
+        Parameters
+        ----------
+        tokens : torch.Tensor
+            Compound embeddings of shape [batch_size, num_slots, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_slots], True for real slots.
+
+        Returns
+        -------
+        tuple
+            The attended vectors, of the same shape as `tokens`, and the last
+            layer's attention weights when `store_attention` is set (else None).
+        """
+        for attention_layer in self.attention_layers[:-1]:
+            tokens = tokens + attention_layer(tokens, mask=mask)
+
+        attended = self.attention_layers[-1](
+            tokens, mask=mask, return_weights=self.store_attention
+        )
+        if self.store_attention:
+            attended, att_weights = attended
+            return attended, att_weights.detach().cpu().tolist()
+
+        return attended, None
 
     @staticmethod
     def _masked_mean(x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -224,30 +278,39 @@ class model(nn.Module):
         """
         # Shape [batch_size, num_slots, emb_dim], one token per compound slot.
         r_tokens = torch.stack([self.gnn(rmol) for rmol in rmols], dim=1).to(device)
-        p_feats = torch.stack([self.gnn(pmol) for pmol in pmols], dim=1).to(device)
+        p_tokens = torch.stack([self.gnn(pmol) for pmol in pmols], dim=1).to(device)
 
         # Padding slots carry a dummy graph, so they are excluded from attention
         # and from the averages.
         r_mask = torch.as_tensor(np.asarray(r_dummy, dtype=bool), device=device)
         p_mask = torch.as_tensor(np.asarray(p_dummy, dtype=bool), device=device)
 
-        # Self attention over the reactants only (the left of ">>").
-        # Intermediate layers refine the reactant representations through a
-        # residual connection, which keeps a deeper stack stable; the last layer
-        # emits the value vectors that are averaged into the reactant vector.
-        for attention_layer in self.attention_layers[:-1]:
-            r_tokens = r_tokens + attention_layer(r_tokens, mask=r_mask)
+        weights = {}
+        if self.attention_on == "all":
+            # One shared attention over the whole reaction; the two sides are
+            # only told apart afterwards, when each is averaged on its own.
+            n_reactant_slots = r_tokens.shape[1]
+            attended, weights["all"] = self._attend(
+                torch.cat((r_tokens, p_tokens), dim=1),
+                torch.cat((r_mask, p_mask), dim=1),
+            )
+            r_tokens = attended[:, :n_reactant_slots]
+            p_tokens = attended[:, n_reactant_slots:]
+        else:
+            if self.attention_on in ("reactants", "both"):
+                r_tokens, weights["reactants"] = self._attend(r_tokens, r_mask)
+            if self.attention_on in ("products", "both"):
+                p_tokens, weights["products"] = self._attend(p_tokens, p_mask)
 
-        attended = self.attention_layers[-1](
-            r_tokens, mask=r_mask, return_weights=self.store_attention
-        )
         if self.store_attention:
-            attended, att_weights = attended
-            self.last_attention = att_weights.detach().cpu().tolist()
+            # One matrix for a single attended set, one per side for "both".
+            self.last_attention = (
+                weights if len(weights) > 1 else next(iter(weights.values()), None)
+            )
 
-        reactant_vectors = self._masked_mean(attended, r_mask)
-        # Products bypass the attention: their GNN embeddings are averaged.
-        product_vectors = self._masked_mean(p_feats, p_mask)
+        # A side that does not attend keeps the plain mean of its GNN embeddings.
+        reactant_vectors = self._masked_mean(r_tokens, r_mask)
+        product_vectors = self._masked_mean(p_tokens, p_mask)
 
         reaction_vectors = self._combine(reactant_vectors, product_vectors)
 

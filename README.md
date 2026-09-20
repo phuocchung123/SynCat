@@ -106,17 +106,48 @@ python main_finetune.py \
 
 ### Model options (all datasets)
 
+Each reaction becomes one vector in three steps: every compound is encoded by the shared GINE; `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GINE embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
+
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--reaction_combine` | `concat` | how the reactant vector `r` and product vector `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
-| `--attention_layer` | `1` | self-attention layers over the reactants |
+| `--attention_on` | `reactants` | which compounds attend to each other — see the table below |
+| `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
+| `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |
 | `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
 | `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
 | `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
 | `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
 | `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
 
-Self-attention is applied to the reactants only (everything left of `>>`); their attended value vectors are averaged into `r`, the product embeddings are averaged into `p`, and `--reaction_combine` decides how the two become the reaction vector.
+**`--attention_on`**
+
+| Value | Which compounds attend | Note |
+| --- | --- | --- |
+| `reactants` | everything left of `>>`, products untouched | default |
+| `products` | everything right of `>>`, reactants untouched | |
+| `both` | each side separately, sharing the same attention weights | a product never sees a reactant |
+| `all` | every compound of the reaction in one shared attention | a reactant can attend to a product; the two sides are told apart only by being averaged separately |
+| `none` | nothing; both sides are plain means of the GINE embeddings | drops ~1.2M parameters — the ablation baseline for "does attention help?" |
+
+Reactions in these datasets usually have a single product, and self-attention over one compound reduces to a linear projection of its embedding, so `products` and `both` mostly add capacity rather than interaction between compounds.
+
+The size of the reaction vector follows from the two options — `emb_dim` for `sum`/`sub`/`mul`, `2 × emb_dim` for `concat`, `3 ×` for `concat_sub`, `4 ×` for `interaction` — and is what `Data/monitor/embedding.json` contains.
+
+### Comparing configurations
+
+Both options change the architecture, so give each configuration its own `--model_name`, and reuse one `--npz_folder` per dataset (the prepared graphs do not depend on the model):
+
+```bash
+for mode in reactants products both all none; do
+  python main_finetune.py \
+    --data_csv raw/uspto_yields_above.csv.gz --npz_folder npz/npz_uspto_above \
+    --model_name model_above_$mode.pt --attention_on $mode \
+    --train_test_split --reaction_column rxn --y_column yield \
+    --epochs 100 --patience 10
+done
+```
+
+A checkpoint records the architecture it was trained with, so reloading one into a differently configured model fails with an explicit message instead of loading silently.
 
 ### Outputs
 
@@ -132,20 +163,52 @@ Self-attention is applied to the reactants only (everything left of `>>`); their
 
 The raw splits are `Data/raw/suzuki/random_split_<id>.tsv` (columns: original sample id, `rxn`, `y`). Each file holds the full dataset in a different random order. For split `<id>`, the first 70% of rows form train1 and the last 30% the test set; train1 is divided 90/10 into train/valid with seed `42 + <id>` (≈63/7/30 overall).
 
-The pipeline has two strictly separated stages. Run all commands from `src/`:
+The pipeline has strictly separated stages, selected with `--stage`. **`--split_ids` defaults to `9` (a single split), so pass the splits you want explicitly.** Run all commands from `src/`:
 
 ```bash
-# 1. prepare splits 0-9 -> Data/processed/suzuki/npz/split_<id>/{train,valid,test}.npz + split_metadata.json
-python main_finetune.py --stage prepare
-# 2. validate all prepared files (exits non-zero if any split is invalid)
-python main_finetune.py --stage validate
-# 3. train/evaluate every split from the npz files (re-validates all splits first)
-python main_finetune.py --stage train --epochs 1
-# 4. complete workflow: prepare -> validate -> train
-python main_finetune.py --stage all --epochs 1
+IDS="0 1 2 3 4 5 6 7 8 9"
+
+# 1. prepare -> Data/processed/suzuki/npz/split_<id>/{train,valid,test}.npz + split_metadata.json
+python main_finetune.py --stage prepare --split_ids $IDS
+# 2. validate every prepared file (exits non-zero if any split is invalid)
+python main_finetune.py --stage validate --split_ids $IDS
+# 3. train and evaluate each split from its npz files (re-validates them first)
+python main_finetune.py --stage train --split_ids $IDS --epochs 100 --patience 10
+# 4. the whole workflow in one command: prepare -> validate -> train
+python main_finetune.py --stage all --split_ids $IDS --epochs 100 --patience 10
 ```
 
-Valid prepared splits are skipped and missing/invalid ones regenerated (`--overwrite` forces regeneration). Results go to `logs/suzuki_regression/`: `suzuki_splits_0_to_9.log`, `suzuki_splits_0_to_9_results.csv` (per split), `suzuki_splits_0_to_9_summary.csv` (mean/std over successful runs), `suzuki_splits_0_to_9_test_predictions.csv`, and a per-run folder with checkpoints and training curves. Existing result files are never replaced unless `--overwrite_results` is given. Use `--split_ids` to select splits.
+Use `--epochs 1` for a quick end-to-end check before committing to a full run.
+
+**Stage by stage.** *prepare* reads each `random_split_<id>.tsv`, derives the subsets, featurizes every molecule once and writes the npz files plus a `split_metadata.json` recording seed, checksums and row counts. Already-valid splits are skipped, so the stage is resumable; `--overwrite` forces regeneration. *validate* re-checks every prepared split against its raw file — row counts, subset ratios (within `--ratio_tolerance`, default 0.01), sample alignment and array shapes — and exits non-zero if any split fails. *train* enforces that barrier again before training anything, so a corrupt split can never be trained on silently.
+
+**One split per process (recommended for long runs).** `run_splits_sequential.py` trains the splits one after another, each in its own process, skipping any split that already has a successful result. It can be interrupted with Ctrl+C and re-run to continue, and unknown arguments are forwarded to `main_finetune.py`:
+
+```bash
+python run_splits_sequential.py --epochs 100 --patience 10
+python run_splits_sequential.py --split_ids 3 4 5 --epochs 100 --rerun_successful
+```
+
+**Collecting results** of splits trained separately:
+
+```bash
+python collect_split_results.py                  # splits 0..9
+python collect_split_results.py --split_ids 0 1 2
+```
+
+**Outputs** land in `logs/suzuki_regression/` (`--log_dir`), named after the splits in the run (e.g. `suzuki_splits_0_to_9`):
+
+| Path | Content |
+| --- | --- |
+| `<name>.log` | the experiment log for every stage |
+| `<name>_results.csv` | one row per split: status, best epoch, test MAE/RMSE/R²/Pearson, runtime |
+| `<name>_summary.csv` | mean and sample std (ddof=1) of the test metrics over successful runs |
+| `<name>_test_predictions.csv` | per-sample test labels and predictions |
+| `runs/<name>_<timestamp>/split_<id>/` | that split's `model.pt`, `monitor/`, `images/` |
+
+Existing result files are never replaced unless `--overwrite_results` is given, and `--skip_aggregate` records per-split results without computing the mean/std across splits.
+
+**Model options** (`--attention_on`, `--reaction_combine`, `--num_heads`, …) work with `--stage` exactly as in a single-file run, and each split writes its checkpoint into its own run folder, so different configurations never collide as long as they use different `--log_dir` values.
 
 **Multi-GPU training.** Add `--gpus 0 1` (or `--gpus all`) to any training command to train with DistributedDataParallel, one process per GPU. The script starts the processes itself, so you don't need `torchrun`. `--batch_size` stays the total batch size and is split evenly across the GPUs (128 → 64 per GPU on 2 GPUs). Validation, checkpointing and the final test evaluation run on the first GPU. Without `--gpus`, training uses the single GPU given by `--device`.
 
