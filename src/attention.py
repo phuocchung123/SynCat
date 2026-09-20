@@ -124,3 +124,84 @@ class ReactionSelfAttention(nn.Module):
             return out, x_att.mean(dim=1)
 
         return out
+
+
+class CompoundCrossAttention(nn.Module):
+    """
+    Single-head cross-attention weights between two sets of compounds.
+
+    Only the attention matrix is produced: the caller decides what to weight with
+    it, which keeps the pooling explicit (the weights scale the compound
+    embeddings themselves, as in the original SynCat classification model).
+
+    Queries and keys are normalised and projected, and the softmax runs over the
+    keys, so every query row sums to one over the real (non-padding) keys.
+    """
+
+    def __init__(self, emb_dim: int) -> None:
+        """
+        Initialize CompoundCrossAttention module.
+
+        Parameters
+        ----------
+        emb_dim : int
+            Dimension of the embedding vectors.
+        """
+        super(CompoundCrossAttention, self).__init__()
+
+        self.emb_dim = emb_dim
+        self.scale = emb_dim**-0.5
+
+        self.attention_norm = nn.LayerNorm(emb_dim)
+        self.linear_q = nn.Linear(emb_dim, emb_dim)
+        self.linear_k = nn.Linear(emb_dim, emb_dim)
+
+    def forward(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        q_mask: Optional[torch.Tensor] = None,
+        k_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """
+        Compute the attention weights of every query over every key.
+
+        Parameters
+        ----------
+        q : torch.Tensor
+            Query embeddings of shape [batch_size, len_q, emb_dim].
+        k : torch.Tensor
+            Key embeddings of shape [batch_size, len_k, emb_dim].
+        q_mask : torch.Tensor, optional
+            Boolean tensor of shape [batch_size, len_q], True for a real query.
+            The rows of padding queries are zeroed.
+        k_mask : torch.Tensor, optional
+            Boolean tensor of shape [batch_size, len_k], True for a real key.
+            Padding keys never receive attention.
+
+        Returns
+        -------
+        torch.Tensor
+            Attention weights of shape [batch_size, len_q, len_k].
+        """
+        q = self.linear_q(self.attention_norm(q))
+        k = self.linear_k(self.attention_norm(k))
+
+        # Attention_weight(Q, K) = softmax((QK^T)/sqrt(dim))
+        scores = torch.matmul(q * self.scale, k.transpose(-2, -1))
+
+        if k_mask is not None:
+            # A finite floor instead of -inf keeps an all-padded row finite.
+            scores = scores.masked_fill(
+                ~k_mask.unsqueeze(1), torch.finfo(scores.dtype).min
+            )
+
+        weights = torch.softmax(scores, dim=-1)
+
+        if k_mask is not None:
+            # Rows of an all-padded key set would otherwise be uniform, not zero.
+            weights = weights * k_mask.unsqueeze(1)
+        if q_mask is not None:
+            weights = weights * q_mask.unsqueeze(-1)
+
+        return weights

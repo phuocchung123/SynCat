@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from gin import GIN
-from attention import ReactionSelfAttention
+from attention import CompoundCrossAttention, ReactionSelfAttention
 
 # How the reactant vector r and the product vector p are combined into the
 # reaction vector, with the size of the result in multiples of emb_dim.
@@ -17,6 +17,9 @@ REACTION_COMBINE_DIMS = {
 
 # Which compounds take part in the self-attention.
 ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
+
+# How a reaction is turned into one vector.
+ARCHITECTURES = ("attention_pool", "cross_center")
 
 
 class model(nn.Module):
@@ -45,6 +48,7 @@ class model(nn.Module):
         num_heads: int = 1,
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
+        architecture: str = "attention_pool",
     ) -> None:
         """
         Initialize the model.
@@ -80,6 +84,17 @@ class model(nn.Module):
             "all" every compound of the reaction in one shared attention, and
             "none" no attention at all (the vectors are then plain means of the
             GNN embeddings). A side that does not attend is averaged directly.
+        architecture : str, optional
+            How a reaction becomes one vector (default is "attention_pool"):
+
+            - "attention_pool": self attention as set by `attention_on`, each
+              side averaged, the two sides merged by `reaction_combine`.
+            - "cross_center": reactants and products weight each other through
+              cross attention and are pooled by a weighted sum into r and p; the
+              reaction centre is c = r - p; a second cross attention, with c as
+              the query and the reactants as keys and values, pools the reactants
+              once more into a, and the reaction vector is [a, c]. With this
+              architecture `attention_on` and `reaction_combine` are unused.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -94,6 +109,7 @@ class model(nn.Module):
             "num_heads": int(num_heads),
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
+            "architecture": str(architecture),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -107,6 +123,12 @@ class model(nn.Module):
             raise ValueError(
                 "num_attention_layer must be at least 1, got %d" % num_attention_layer
             )
+        if architecture not in ARCHITECTURES:
+            raise ValueError(
+                "architecture must be one of %s, got %r"
+                % (list(ARCHITECTURES), architecture)
+            )
+        self.architecture = architecture
         if attention_on not in ATTENTION_TARGETS:
             raise ValueError(
                 "attention_on must be one of %s, got %r"
@@ -115,12 +137,19 @@ class model(nn.Module):
         self.attention_on = attention_on
         # "both" runs the same layers over each side in turn, so that the weights
         # are shared and a one-compound side costs nothing extra.
+        uses_self_attention = architecture == "attention_pool" and attention_on != "none"
         self.attention_layers = nn.ModuleList(
             [
                 ReactionSelfAttention(emb_dim, num_heads=num_heads, dropout=drop_ratio)
-                for _ in range(num_attention_layer if attention_on != "none" else 0)
+                for _ in range(num_attention_layer if uses_self_attention else 0)
             ]
         )
+
+        if architecture == "cross_center":
+            # One module for the reactant/product pass, in both directions as in
+            # the original SynCat model, and one for the reaction-centre query.
+            self.pair_attention = CompoundCrossAttention(emb_dim)
+            self.center_attention = CompoundCrossAttention(emb_dim)
 
         # The reaction is summarised by combining the reactant vector (mean of
         # the self-attended reactant value vectors) with the product vector
@@ -132,7 +161,10 @@ class model(nn.Module):
             )
         self.reaction_combine = reaction_combine
         self.regressor = torch.nn.Linear(
-            REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
+            2 * emb_dim
+            if architecture == "cross_center"
+            else REACTION_COMBINE_DIMS[reaction_combine] * emb_dim,
+            1,
         )
 
         # Optional bookkeeping for interpretation; disabled by default so that
@@ -192,6 +224,95 @@ class model(nn.Module):
             return attended, att_weights.detach().cpu().tolist()
 
         return attended, None
+
+    @staticmethod
+    def _pooled_weights(
+        weights: torch.Tensor, q_mask: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Average an attention matrix over its real queries, giving one weight per
+        key, as in the original SynCat model.
+
+        Parameters
+        ----------
+        weights : torch.Tensor
+            Attention weights of shape [batch_size, len_q, len_k]; the rows of
+            padding queries are zero.
+        q_mask : torch.Tensor
+            Boolean tensor of shape [batch_size, len_q], True for a real query.
+
+        Returns
+        -------
+        torch.Tensor
+            One weight per key, of shape [batch_size, len_k].
+        """
+        n_queries = q_mask.sum(dim=1, keepdim=True).clamp(min=1).to(weights.dtype)
+        return weights.sum(dim=1) / n_queries
+
+    def _cross_center(
+        self,
+        r_tokens: torch.Tensor,
+        p_tokens: torch.Tensor,
+        r_mask: torch.Tensor,
+        p_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Build the reaction vector of the "cross_center" architecture.
+
+        Reactants and products weight each other through cross attention; each
+        side is pooled by the weighted sum of its compound embeddings, giving r
+        and p. Their difference c = r - p is the reaction centre, which then
+        queries the reactants through a second cross attention, pooling them into
+        a. The reaction vector is [a, c].
+
+        Parameters
+        ----------
+        r_tokens : torch.Tensor
+            Reactant embeddings of shape [batch_size, num_r_slots, emb_dim].
+        p_tokens : torch.Tensor
+            Product embeddings of shape [batch_size, num_p_slots, emb_dim].
+        r_mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_r_slots].
+        p_mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_p_slots].
+
+        Returns
+        -------
+        torch.Tensor
+            Reaction vectors of shape [batch_size, 2 * emb_dim].
+        """
+        # Every product attends to every reactant and vice versa; averaging over
+        # the queries leaves one weight per compound.
+        w_r = self._pooled_weights(
+            self.pair_attention(p_tokens, r_tokens, q_mask=p_mask, k_mask=r_mask),
+            p_mask,
+        )
+        w_p = self._pooled_weights(
+            self.pair_attention(r_tokens, p_tokens, q_mask=r_mask, k_mask=p_mask),
+            r_mask,
+        )
+
+        # Weighted sum of the compounds of each side.
+        reactant_vectors = torch.sum(w_r.unsqueeze(-1) * r_tokens, dim=1)
+        product_vectors = torch.sum(w_p.unsqueeze(-1) * p_tokens, dim=1)
+
+        center_vectors = reactant_vectors - product_vectors
+
+        # The reaction centre asks the reactants once more: query is the centre,
+        # keys and values are the reactant compounds.
+        w_center = self.center_attention(
+            center_vectors.unsqueeze(1), r_tokens, k_mask=r_mask
+        )
+        attended_reactants = torch.sum(w_center.transpose(1, 2) * r_tokens, dim=1)
+
+        if self.store_attention:
+            self.last_attention = {
+                "reactants": w_r.detach().cpu().tolist(),
+                "products": w_p.detach().cpu().tolist(),
+                "center": w_center.squeeze(1).detach().cpu().tolist(),
+            }
+
+        return torch.cat((attended_reactants, center_vectors), dim=1)
 
     @staticmethod
     def _masked_mean(x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -284,6 +405,11 @@ class model(nn.Module):
         # and from the averages.
         r_mask = torch.as_tensor(np.asarray(r_dummy, dtype=bool), device=device)
         p_mask = torch.as_tensor(np.asarray(p_dummy, dtype=bool), device=device)
+
+        if self.architecture == "cross_center":
+            reaction_vectors = self._cross_center(r_tokens, p_tokens, r_mask, p_mask)
+            out = self.regressor(reaction_vectors).squeeze(-1)
+            return out, reaction_vectors.tolist()
 
         weights = {}
         if self.attention_on == "all":

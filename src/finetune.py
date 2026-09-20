@@ -40,7 +40,11 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     if saved_config is not None:
         # Checkpoints saved before `reaction_combine` existed always concatenated.
         saved_config = dict(
-            {"reaction_combine": "concat", "attention_on": "reactants"},
+            {
+                "reaction_combine": "concat",
+                "attention_on": "reactants",
+                "architecture": "attention_pool",
+            },
             **saved_config
         )
         # Mismatched settings do not always change the weight shapes (e.g. the
@@ -84,6 +88,7 @@ def _build_model(args, node_dim, edge_dim):
         num_heads=getattr(args, "num_heads", 1),
         reaction_combine=getattr(args, "reaction_combine", "concat"),
         attention_on=getattr(args, "attention_on", "reactants"),
+        architecture=getattr(args, "architecture", "attention_pool"),
     )
 
 
