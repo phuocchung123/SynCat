@@ -35,6 +35,99 @@
   ```
 
 
+## Reaction-Yield Regression
+
+Three datasets are supported. They differ in **where the train/test split comes from** and in **the unit of the target**, which changes the command you run:
+
+| Dataset | File | Target column | Target unit | Split |
+| --- | --- | --- | --- | --- |
+| Suzuki (10 random splits) | `Data/raw/suzuki/random_split_<id>.tsv` | `y` | fraction, 0–1 | row order of the file (70/30), via `--stage` |
+| USPTO above | `Data/raw/uspto_yields_above.csv.gz` | `yield` | percent, 0–100 | the file's own `split` column |
+| USPTO below | `Data/raw/uspto_yields_below.csv.gz` | `yield` | percent, 0–100 | the file's own `split` column |
+
+Every run has the same two stages: **prepare** (read the table, split it, featurize each molecule with RDKit, write `train.npz`, `valid.npz`, `test.npz`) and **train** (train, select the best-validation checkpoint, evaluate it once on the test set). Preparation is single-threaded CPU work and is by far the slower of the two for USPTO; the npz files are written once and reused by every later training run.
+
+All commands run from `src/`.
+
+### Dataset 1-2: USPTO above / below
+
+These files carry a `split` column holding `train`/`test`, so `--train_test_split` tells the pipeline to use it instead of splitting the table itself. The validation set is carved out of the train rows (10%, `--valid_ratio`). Nothing else about the data is modified: no row is dropped, no value rescaled.
+
+**Stage 1 — prepare (~70 min for above, ~110 min for below):**
+
+```bash
+python main_finetune.py --prepare_only \
+  --data_csv raw/uspto_yields_above.csv.gz \
+  --npz_folder npz/npz_uspto_above \
+  --train_test_split --reaction_column rxn --y_column yield
+```
+
+Swap `above` for `below` in both paths for the other file. `--prepare_only` stops the script before training. Progress is logged every 10,000 reactions to `Data/monitor/monitor.log`.
+
+**Stage 2 — train:**
+
+```bash
+python main_finetune.py \
+  --data_csv raw/uspto_yields_above.csv.gz \
+  --npz_folder npz/npz_uspto_above \
+  --model_name model_uspto_above.pt \
+  --train_test_split --reaction_column rxn --y_column yield \
+  --reaction_combine concat_sub --epochs 100 --patience 10 --batch_size 128
+```
+
+Preparation is skipped automatically because the npz folder already holds files, so this goes straight to training.
+
+**Both stages in one command:** drop `--prepare_only` from stage 1 and add the training options — preparation then runs first and training follows in the same process.
+
+Notes specific to these datasets:
+
+- **Give each run its own `--model_name`.** An existing checkpoint at `--model_path/--model_name` is treated as a run to *resume*, so reusing the Suzuki default `model_yield.pt` would pick up its weights.
+- **Metrics are in percentage points**, because the targets stay at their original 0–100 scale. A USPTO `MAE: 20.0 pp` corresponds to a Suzuki `MAE: 0.20`; don't compare the raw numbers across the two datasets. R² and Pearson are scale-free and stay comparable.
+- **Padding follows the data**: 58 reactant slots for *above*, 36 for *below*, against 14 for Suzuki. That is the number of GNN passes per batch, so USPTO trains several times slower per reaction and its npz files are correspondingly larger.
+- **Known issue:** `uspto_yields_below` contains at least one SMILES that RDKit cannot parse, and `reaction_data.py` raises `Boost.Python.ArgumentError` on it during preparation. Preparing that file requires deciding what to do with those rows first.
+
+### Dataset 3: Suzuki, a single split file
+
+For one `random_split_<id>.tsv` outside the multi-split pipeline, the defaults already point at Suzuki (`--reaction_column rxn`, `--y_column y`), and the split comes from row order rather than a column, so **no** `--train_test_split`:
+
+```bash
+# prepare only
+python main_finetune.py --prepare_only \
+  --data_csv raw/suzuki/random_split_0.tsv --npz_folder npz/npz_yield \
+  --split_strategy ordered
+
+# train
+python main_finetune.py \
+  --data_csv raw/suzuki/random_split_0.tsv --npz_folder npz/npz_yield \
+  --model_name model_yield.pt --epochs 100 --patience 10
+```
+
+`--split_strategy ordered` reproduces the file's intended 70/30 division (the last 30% of rows are the test set); `shuffle` re-splits randomly with `--seed`.
+
+### Model options (all datasets)
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--reaction_combine` | `concat` | how the reactant vector `r` and product vector `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
+| `--attention_layer` | `1` | self-attention layers over the reactants |
+| `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
+| `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
+| `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
+| `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
+| `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
+
+Self-attention is applied to the reactants only (everything left of `>>`); their attended value vectors are averaged into `r`, the product embeddings are averaged into `p`, and `--reaction_combine` decides how the two become the reaction vector.
+
+### Outputs
+
+| Path | Content |
+| --- | --- |
+| `Data/npz/<npz_folder>/{train,valid,test}.npz` | prepared graphs, reused across runs |
+| `Data/model/<model_name>` | best-validation checkpoint, including its architecture config |
+| `Data/monitor/monitor.log` | preparation progress, per-epoch losses, final test metrics |
+| `Data/monitor/embedding.json` | reaction embeddings of the test set |
+| `Image/` | `loss_curve.png`, `metric_curves.png`, `test_parity.png` |
+
 ## Suzuki Reaction-Yield Regression on 10 Random Splits
 
 The raw splits are `Data/raw/suzuki/random_split_<id>.tsv` (columns: original sample id, `rxn`, `y`). Each file holds the full dataset in a different random order. For split `<id>`, the first 70% of rows form train1 and the last 30% the test set; train1 is divided 90/10 into train/valid with seed `42 + <id>` (≈63/7/30 overall).
