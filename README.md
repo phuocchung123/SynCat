@@ -44,6 +44,7 @@ Three datasets are supported. They differ in **where the train/test split comes 
 | Suzuki (10 random splits) | `Data/raw/suzuki/random_split_<id>.tsv` | `y` | fraction, 0–1 | row order of the file (70/30), via `--stage` |
 | USPTO above | `Data/raw/uspto_yields_above.csv.gz` | `yield` | percent, 0–100 | the file's own `split` column |
 | USPTO below | `Data/raw/uspto_yields_below.csv.gz` | `yield` | percent, 0–100 | the file's own `split` column |
+| Buchwald-Hartwig | `Data/raw/BH/FullCV_<01..10>.csv`, `Data/raw/BH/Test<1..4>.csv` | `Output` | percent, 0–100 | one train/test column per training fraction (`split_70` … `split_2.5`); `split` in the Test files |
 
 Every run has the same two stages: **prepare** (read the table, split it, featurize each molecule with RDKit, write `train.npz`, `valid.npz`, `test.npz`) and **train** (train, select the best-validation checkpoint, evaluate it once on the test set). Preparation is single-threaded CPU work and is by far the slower of the two for USPTO; the npz files are written once and reused by every later training run.
 
@@ -103,6 +104,45 @@ python main_finetune.py \
 ```
 
 `--split_strategy ordered` reproduces the file's intended 70/30 division (the last 30% of rows are the test set); `shuffle` re-splits randomly with `--seed`.
+
+### Dataset 4: Buchwald-Hartwig
+
+The BH folder holds 14 tables of the same 3,955 reactions. `FullCV_01` … `FullCV_10` are ten replicates that each carry **seven** train/test columns, one per training fraction (`split_70`, `split_50`, `split_30`, `split_20`, `split_10`, `split_5`, `split_2.5`), so one file yields seven different experiments — hence `--split_column`. `Test1` … `Test4` are out-of-sample tables with a single `split` column.
+
+Because one raw file maps to several experiments, two helper scripts drive the work. Both are resumable: re-run them and they continue where they stopped.
+
+**Stage 1 — prepare.** One npz folder per (file, split column), written to `Data/npz/bh/`:
+
+```bash
+python prepare_bh.py --dry_run                       # print the plan, prepare nothing
+python prepare_bh.py --split_columns split_70        # 10 CV folders + Test1-4 (~20 min)
+python prepare_bh.py                                 # all 7 columns: 74 folders (~2 h)
+python prepare_bh.py --split_columns split_70 --test_ids   # CV files only
+python prepare_bh.py --cv_ids                        # Test files only
+```
+
+Folder names are `npz/bh/fullcv<id>_split<column>` (e.g. `fullcv01_split70`, `fullcv07_split2_5`) and `npz/bh/test<id>`. Jobs are independent, so several of these commands can run in parallel in different terminals — give each one its own `--monitor_folder` if you want unmixed logs, and never point two at the same folder.
+
+**Stage 2 — train.** One model per prepared folder, with the results collected into one table:
+
+```bash
+python train_bh.py --epochs 100 --patience 10                    # 10 CV + 4 Test
+python train_bh.py --test_ids --epochs 100 --patience 10          # CV only
+python train_bh.py --cv_ids --epochs 100 --patience 10            # Test only
+python train_bh.py --cv_ids 1 2 3 --attention_on both \
+  --log_dir ../logs/bh_attention_both/ --epochs 100 --patience 10
+```
+
+`train_bh.py` accepts every model and training option of `main_finetune.py`, sets `--reaction_column rxn` and `--y_column Output` itself, and reads only the prepared npz folders — it never touches `Data/raw/BH`. A dataset that already succeeded is skipped (`--rerun_successful` retrains it), and a failure is recorded so the remaining datasets still run. `--split_columns` defaults to `split_70`; pass more to train the low-data fractions.
+
+Results land in `--log_dir` (default `../logs/bh/`):
+
+| File | Content |
+| --- | --- |
+| `bh_results.csv` | one row per dataset: status, best epoch, subset sizes, test MAE/RMSE/R²/Pearson, runtime |
+| `bh_summary.csv` | mean and sample std (ddof=1) per metric, grouped by kind (`cv`/`test`) and split column |
+| `bh_training.log` | progress across all runs |
+| `runs/<dataset>/` | that run's `model.pt`, `monitor/`, `images/` |
 
 ### Model options (all datasets)
 

@@ -101,3 +101,129 @@
 2026-09-20 05:14:47,170 - INFO - --- 50000/142285 processed
 2026-09-20 05:20:50,774 - INFO - --- 60000/142285 processed
 2026-09-20 05:26:55,662 - INFO - --- 70000/142285 processed
+2026-09-26 02:31:29,635 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 02:31:29,649 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 02:31:29,650 - INFO - --- generating graph data for ../Data/npz/bh/fullcv01_split70/train.npz
+2026-09-26 02:31:29,651 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:34:10,665 - INFO - --- generating graph data for ../Data/npz/bh/fullcv01_split70/valid.npz
+2026-09-26 02:34:10,666 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:34:28,476 - INFO - --- generating graph data for ../Data/npz/bh/fullcv01_split70/test.npz
+2026-09-26 02:34:28,476 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:36:07,610 - INFO - --- prepared ../Data/npz/bh/fullcv01_split70/; stopping before training
+2026-09-26 02:36:18,546 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 02:36:18,561 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 02:36:18,562 - INFO - --- generating graph data for ../Data/npz/bh/fullcv02_split70/train.npz
+2026-09-26 02:36:18,563 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:39:34,246 - INFO - --- generating graph data for ../Data/npz/bh/fullcv02_split70/valid.npz
+2026-09-26 02:39:34,247 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:39:57,904 - INFO - --- generating graph data for ../Data/npz/bh/fullcv02_split70/test.npz
+2026-09-26 02:39:57,904 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:41:40,936 - INFO - --- prepared ../Data/npz/bh/fullcv02_split70/; stopping before training
+2026-09-26 02:41:52,755 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 02:41:52,768 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 02:41:52,769 - INFO - --- generating graph data for ../Data/npz/bh/fullcv03_split70/train.npz
+2026-09-26 02:41:52,769 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:45:04,925 - INFO - --- generating graph data for ../Data/npz/bh/fullcv03_split70/valid.npz
+2026-09-26 02:45:04,925 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:45:29,282 - INFO - --- generating graph data for ../Data/npz/bh/fullcv03_split70/test.npz
+2026-09-26 02:45:29,282 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 02:47:10,339 - INFO - --- prepared ../Data/npz/bh/fullcv03_split70/; stopping before training
+2026-09-26 04:40:48,194 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 04:40:48,223 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 04:40:48,225 - INFO - --- generating graph data for ../Data/npz/bh/fullcv04_split70/train.npz
+2026-09-26 04:40:48,225 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:44:09,264 - INFO - --- generating graph data for ../Data/npz/bh/fullcv04_split70/valid.npz
+2026-09-26 04:44:09,264 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:44:25,583 - INFO - --- generating graph data for ../Data/npz/bh/fullcv04_split70/test.npz
+2026-09-26 04:44:25,583 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:45:36,014 - INFO - --- prepared ../Data/npz/bh/fullcv04_split70/; stopping before training
+2026-09-26 04:45:46,647 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 04:45:46,657 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 04:45:46,657 - INFO - --- generating graph data for ../Data/npz/bh/fullcv05_split70/train.npz
+2026-09-26 04:45:46,657 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:48:17,928 - INFO - --- generating graph data for ../Data/npz/bh/fullcv05_split70/valid.npz
+2026-09-26 04:48:17,928 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:48:34,764 - INFO - --- generating graph data for ../Data/npz/bh/fullcv05_split70/test.npz
+2026-09-26 04:48:34,764 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:49:46,052 - INFO - --- prepared ../Data/npz/bh/fullcv05_split70/; stopping before training
+2026-09-26 04:49:56,108 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 04:49:56,117 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 04:49:56,118 - INFO - --- generating graph data for ../Data/npz/bh/fullcv06_split70/train.npz
+2026-09-26 04:49:56,118 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:52:30,260 - INFO - --- generating graph data for ../Data/npz/bh/fullcv06_split70/valid.npz
+2026-09-26 04:52:30,260 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:52:46,529 - INFO - --- generating graph data for ../Data/npz/bh/fullcv06_split70/test.npz
+2026-09-26 04:52:46,529 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:53:55,794 - INFO - --- prepared ../Data/npz/bh/fullcv06_split70/; stopping before training
+2026-09-26 04:54:05,681 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 04:54:05,690 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 04:54:05,691 - INFO - --- generating graph data for ../Data/npz/bh/fullcv07_split70/train.npz
+2026-09-26 04:54:05,691 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:56:33,564 - INFO - --- generating graph data for ../Data/npz/bh/fullcv07_split70/valid.npz
+2026-09-26 04:56:33,566 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:56:50,133 - INFO - --- generating graph data for ../Data/npz/bh/fullcv07_split70/test.npz
+2026-09-26 04:56:50,133 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 04:57:59,218 - INFO - --- prepared ../Data/npz/bh/fullcv07_split70/; stopping before training
+2026-09-26 04:58:08,917 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 04:58:08,925 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 04:58:08,927 - INFO - --- generating graph data for ../Data/npz/bh/fullcv08_split70/train.npz
+2026-09-26 04:58:08,927 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:00:34,992 - INFO - --- generating graph data for ../Data/npz/bh/fullcv08_split70/valid.npz
+2026-09-26 05:00:34,993 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:00:51,403 - INFO - --- generating graph data for ../Data/npz/bh/fullcv08_split70/test.npz
+2026-09-26 05:00:51,403 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:02:01,664 - INFO - --- prepared ../Data/npz/bh/fullcv08_split70/; stopping before training
+2026-09-26 05:02:10,499 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:02:10,505 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 05:02:10,507 - INFO - --- generating graph data for ../Data/npz/bh/fullcv09_split70/train.npz
+2026-09-26 05:02:10,507 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:04:25,920 - INFO - --- generating graph data for ../Data/npz/bh/fullcv09_split70/valid.npz
+2026-09-26 05:04:25,920 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:04:41,688 - INFO - --- generating graph data for ../Data/npz/bh/fullcv09_split70/test.npz
+2026-09-26 05:04:41,688 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:05:44,952 - INFO - --- prepared ../Data/npz/bh/fullcv09_split70/; stopping before training
+2026-09-26 05:05:53,403 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:05:53,411 - INFO - --- train/valid/test sizes: 2491/277/1187
+2026-09-26 05:05:53,411 - INFO - --- generating graph data for ../Data/npz/bh/fullcv10_split70/train.npz
+2026-09-26 05:05:53,411 - INFO - --- n_reactions: 2491, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:08:05,573 - INFO - --- generating graph data for ../Data/npz/bh/fullcv10_split70/valid.npz
+2026-09-26 05:08:05,573 - INFO - --- n_reactions: 277, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:08:20,895 - INFO - --- generating graph data for ../Data/npz/bh/fullcv10_split70/test.npz
+2026-09-26 05:08:20,895 - INFO - --- n_reactions: 1187, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:09:26,042 - INFO - --- prepared ../Data/npz/bh/fullcv10_split70/; stopping before training
+2026-09-26 05:09:34,910 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:09:34,910 - INFO - --- train/valid/test sizes: 2752/306/897
+2026-09-26 05:09:34,910 - INFO - --- generating graph data for ../Data/npz/bh/test1/train.npz
+2026-09-26 05:09:34,910 - INFO - --- n_reactions: 2752, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:12:02,573 - INFO - --- generating graph data for ../Data/npz/bh/test1/valid.npz
+2026-09-26 05:12:02,573 - INFO - --- n_reactions: 306, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:12:19,287 - INFO - --- generating graph data for ../Data/npz/bh/test1/test.npz
+2026-09-26 05:12:19,287 - INFO - --- n_reactions: 897, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:13:08,553 - INFO - --- prepared ../Data/npz/bh/test1/; stopping before training
+2026-09-26 05:13:17,521 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:13:17,525 - INFO - --- train/valid/test sizes: 2750/306/899
+2026-09-26 05:13:17,525 - INFO - --- generating graph data for ../Data/npz/bh/test2/train.npz
+2026-09-26 05:13:17,525 - INFO - --- n_reactions: 2750, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:15:50,299 - INFO - --- generating graph data for ../Data/npz/bh/test2/valid.npz
+2026-09-26 05:15:50,299 - INFO - --- n_reactions: 306, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:16:07,499 - INFO - --- generating graph data for ../Data/npz/bh/test2/test.npz
+2026-09-26 05:16:07,499 - INFO - --- n_reactions: 899, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:16:55,865 - INFO - --- prepared ../Data/npz/bh/test2/; stopping before training
+2026-09-26 05:17:04,252 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:17:04,268 - INFO - --- train/valid/test sizes: 2753/306/896
+2026-09-26 05:17:04,268 - INFO - --- generating graph data for ../Data/npz/bh/test3/train.npz
+2026-09-26 05:17:04,268 - INFO - --- n_reactions: 2753, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:20:17,713 - INFO - --- generating graph data for ../Data/npz/bh/test3/valid.npz
+2026-09-26 05:20:17,713 - INFO - --- n_reactions: 306, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:20:41,121 - INFO - --- generating graph data for ../Data/npz/bh/test3/test.npz
+2026-09-26 05:20:41,121 - INFO - --- n_reactions: 896, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:21:48,872 - INFO - --- prepared ../Data/npz/bh/test3/; stopping before training
+2026-09-26 05:21:59,773 - INFO - --- excluded 0/3955 samples with missing/invalid reaction or yield values
+2026-09-26 05:21:59,783 - INFO - --- train/valid/test sizes: 2750/306/899
+2026-09-26 05:21:59,784 - INFO - --- generating graph data for ../Data/npz/bh/test4/train.npz
+2026-09-26 05:21:59,784 - INFO - --- n_reactions: 2750, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:25:18,552 - INFO - --- generating graph data for ../Data/npz/bh/test4/valid.npz
+2026-09-26 05:25:18,553 - INFO - --- n_reactions: 306, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:25:37,900 - INFO - --- generating graph data for ../Data/npz/bh/test4/test.npz
+2026-09-26 05:25:37,900 - INFO - --- n_reactions: 899, reactant_max_cnt: 6, product_max_cnt: 1
+2026-09-26 05:26:46,693 - INFO - --- prepared ../Data/npz/bh/test4/; stopping before training
