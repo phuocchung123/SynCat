@@ -21,6 +21,7 @@ def train(
     weight_decay,
     current_epoch: int = 0,
     best_val_loss: float = 1e10,
+    scheduler_state: dict = None,
     test_loader=None,
 ):
     """
@@ -50,6 +51,9 @@ def train(
         Starting epoch number, useful for resuming training (default is 0).
     best_val_loss : float, optional
         Best validation loss seen so far (default is 1e10).
+    scheduler_state : dict, optional
+        State of the learning-rate scheduler of an interrupted run, as stored in
+        a checkpoint's "scheduler_state_dict" (default is None, i.e. a fresh one).
     test_loader : DataLoader, optional
         DataLoader for the test set; when given, test loss/metrics are tracked per epoch.
         They are only monitored and never used for checkpoint selection or early stopping.
@@ -65,6 +69,10 @@ def train(
     When `args.patience` > 0, training stops early once the validation loss has
     not improved for `args.patience` consecutive epochs.
 
+    The learning rate is reduced by `ReduceLROnPlateau` whenever the validation
+    loss stops improving; its patience is deliberately shorter than the early
+    stopping one, so the run gets a smaller learning rate before it is stopped.
+
     Under DistributedDataParallel every rank trains on its shard of the training
     set; only rank 0 (which may get `val_loader=None` on the other ranks) logs,
     validates and saves checkpoints, and it tells the others when to stop.
@@ -76,6 +84,11 @@ def train(
 
     loss_fn = torch.nn.HuberLoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.3, patience=10, min_lr=1e-6
+    )
+    if scheduler_state is not None:
+        scheduler.load_state_dict(scheduler_state)
     history = init_history()
     patience = getattr(args, "patience", 0)
     epochs_without_improvement = 0
@@ -146,7 +159,7 @@ def train(
         )
         logger.info(
             "--- validation at epoch %d, val_loss %.4f, val_mae %.4f, val_rmse %.4f, "
-            "val_r2 %s, val_pearson %s ---"
+            "val_r2 %s, val_pearson %s, lr %.2e ---"
             % (
                 epoch,
                 val_loss,
@@ -154,6 +167,7 @@ def train(
                 val_metrics["rmse"],
                 val_r2_str,
                 val_pearson_str,
+                optimizer.param_groups[0]["lr"],
             )
         )
 
@@ -177,6 +191,9 @@ def train(
             )
         logger.info("\n" + "*" * 100)
 
+        # Once per epoch, on the same validation loss the early stopping watches.
+        scheduler.step(val_loss)
+
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(
@@ -185,6 +202,7 @@ def train(
                     "model_state_dict": plain_net.state_dict(),
                     "model_config": plain_net.config,
                     "val_loss": best_val_loss,
+                    "scheduler_state_dict": scheduler.state_dict(),
                 },
                 model_path,
             )

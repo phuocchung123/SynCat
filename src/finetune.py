@@ -140,10 +140,12 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         edge_dim = train_set.rmol_edge_attr[0].shape[1]
         net = _build_model(args, node_dim, edge_dim).to(device)
         current_epoch, best_val_loss = 0, 1e10
+        scheduler_state = None
         if resume:
             checkpoint = torch.load(model_path, weights_only=False, map_location=device)
             _load_checkpoint_safely(net, checkpoint, setup_logging())
             current_epoch, best_val_loss = checkpoint["epoch"], checkpoint["val_loss"]
+            scheduler_state = checkpoint.get("scheduler_state_dict")
         net = DistributedDataParallel(net, device_ids=[device.index])
         train(
             args,
@@ -157,6 +159,7 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
             args.weight_decay,
             current_epoch=current_epoch,
             best_val_loss=best_val_loss,
+            scheduler_state=scheduler_state,
             test_loader=test_loader,
         )
     finally:
@@ -271,12 +274,14 @@ def finetune(args, save_embedding: bool = True) -> dict:
     else:
         net = _build_model(args, node_dim, edge_dim).to(device)
         current_epoch, best_val_loss = 0, 1e10
+        scheduler_state = None
         if not resume:
             logger.info("-- TRAINING")
         else:
             checkpoint = torch.load(model_path, weights_only=False, map_location=device)
             _load_checkpoint_safely(net, checkpoint, logger)
             current_epoch, best_val_loss = checkpoint["epoch"], checkpoint["val_loss"]
+            scheduler_state = checkpoint.get("scheduler_state_dict")
         train(
             args,
             net,
@@ -289,6 +294,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
             args.weight_decay,
             current_epoch=current_epoch,
             best_val_loss=best_val_loss,
+            scheduler_state=scheduler_state,
             test_loader=monitor_test_loader,
         )
 
