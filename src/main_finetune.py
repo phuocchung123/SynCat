@@ -3,6 +3,7 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
+from accelerator import ACCELERATORS
 from model import ATTENTION_TARGETS, REACTION_COMBINE_DIMS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
@@ -24,6 +25,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument(
+        "--accelerator",
+        type=str,
+        default="auto",
+        choices=list(ACCELERATORS),
+        help="device to train on: 'auto' takes a GPU if CUDA is available, then a "
+        "TPU if torch_xla finds one, then the CPU; 'gpu', 'tpu' or 'cpu' forces "
+        "one and fails if it is missing",
+    )
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument(
         "--gpus",

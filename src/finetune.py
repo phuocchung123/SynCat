@@ -13,6 +13,13 @@ from model import model
 from training import train
 from validation import validation
 from multi_gpu import init_process_group, resolve_gpu_ids, set_launch_env
+from accelerator import (
+    get_device,
+    is_xla,
+    load_location,
+    resolve_accelerator,
+    seed_device,
+)
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from visualization import plot_parity
 
@@ -198,9 +205,24 @@ def finetune(args, save_embedding: bool = True) -> dict:
     """
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     model_path = args.model_path + args.model_name
-    gpus = resolve_gpu_ids(args)
-    device = torch.device("cuda:%d" % gpus[0]) if gpus else torch.device("cpu")
-    logger.info("device is\t%s" % device)
+    accelerator = resolve_accelerator(args)
+    if accelerator == "gpu":
+        gpus = resolve_gpu_ids(args)
+    elif getattr(args, "gpus", None):
+        raise RuntimeError(
+            "--gpus %s needs the gpu accelerator, but %r was selected"
+            % (args.gpus, accelerator)
+        )
+    else:
+        gpus = []
+    device = get_device(accelerator, gpus[0] if gpus else 0)
+    seed_device(device, args.seed)
+    logger.info("accelerator is\t%s, device is\t%s" % (accelerator, device))
+    if is_xla(device):
+        logger.info(
+            "--- TPU: the first epoch compiles one XLA graph per distinct batch "
+            "shape and is much slower than the following ones"
+        )
     if len(gpus) > 1:
         logger.info(
             "--- DistributedDataParallel on GPUs %s, per-GPU batch size %d"
@@ -278,7 +300,9 @@ def finetune(args, save_embedding: bool = True) -> dict:
         if not resume:
             logger.info("-- TRAINING")
         else:
-            checkpoint = torch.load(model_path, weights_only=False, map_location=device)
+            checkpoint = torch.load(
+                model_path, weights_only=False, map_location=load_location(device)
+            )
             _load_checkpoint_safely(net, checkpoint, logger)
             current_epoch, best_val_loss = checkpoint["epoch"], checkpoint["val_loss"]
             scheduler_state = checkpoint.get("scheduler_state_dict")
@@ -307,7 +331,9 @@ def finetune(args, save_embedding: bool = True) -> dict:
 
     # model selection: reload the best-validation checkpoint
     test_y = test_loader.dataset.y
-    checkpoint = torch.load(model_path, weights_only=False, map_location=device)
+    checkpoint = torch.load(
+        model_path, weights_only=False, map_location=load_location(device)
+    )
     if "model_config" in checkpoint:
         net = model.from_config(checkpoint["model_config"]).to(device)
     else:  # checkpoint saved before the config was stored

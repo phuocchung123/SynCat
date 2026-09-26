@@ -189,6 +189,40 @@ done
 
 A checkpoint records the architecture it was trained with, so reloading one into a differently configured model fails with an explicit message instead of loading silently.
 
+### Choosing the device: GPU, TPU or CPU
+
+`--accelerator` works with every training entry point (`main_finetune.py`, `run_splits_sequential.py`, `train_bh.py`):
+
+| Value | Behaviour |
+| --- | --- |
+| `auto` (default) | a GPU if CUDA is available, otherwise a TPU if torch_xla finds one, otherwise the CPU |
+| `gpu` | CUDA only; fails if CUDA is missing. `--device` / `--gpus` pick the GPU(s) |
+| `tpu` | one TPU core through torch_xla; fails if no TPU is found |
+| `cpu` | the CPU, even when an accelerator is present |
+
+```bash
+python main_finetune.py --accelerator tpu ...     # force the TPU
+python train_bh.py --accelerator auto ...         # GPU, else TPU, else CPU
+```
+
+The log states the choice on its first line (`accelerator is tpu, device is xla:0`), and the checkpoints are always written with CPU tensors, so a model trained on a TPU loads on any machine.
+
+**Setting up a TPU.** TPUs need Linux — a Cloud TPU VM, or a Colab / Kaggle TPU runtime — and `torch_xla` installed at the **same version as `torch`**, for example on a Cloud TPU VM:
+
+```bash
+pip install torch==2.6.0 "torch_xla[tpu]==2.6.0" \
+  -f https://storage.googleapis.com/libtpu-releases/index.html
+```
+
+Colab and Kaggle TPU runtimes usually ship torch_xla preinstalled; check with `python -c "import torch_xla.runtime as xr; print(xr.device_type())"`, which should print `TPU`. torch_xla is not needed for GPU or CPU runs.
+
+**What to expect on a TPU:**
+
+- **The first epoch is slow.** XLA compiles one graph per distinct tensor shape, and molecular batches all have different numbers of atoms and bonds, so epoch 1 compiles once per batch. The training loader is not shuffled, so later epochs repeat the same batches and reuse the compiled graphs. The number of compilations equals the number of batches, so a large dataset (≈1,100 batches for USPTO above at `--batch_size 128`) pays a long first epoch; a larger `--batch_size` means fewer batches to compile.
+- **One core only.** `--gpus` is rejected with `--accelerator tpu`; multi-core TPU training is not implemented.
+- **Speed is not guaranteed.** Each training step reads the loss and predictions back to the host for the metrics, which caps TPU throughput. Compare an epoch's time against the CPU or a GPU before committing to a long run.
+- `predict.py` still uses a GPU or the CPU.
+
 ### Outputs
 
 | Path | Content |

@@ -6,6 +6,7 @@ from tqdm import tqdm
 from validation import validation, compute_regression_metrics
 from utils import setup_logging
 from multi_gpu import broadcast_flag, gather_lists, is_main_process, unwrap
+from accelerator import cpu_state_dict, sync
 from visualization import init_history, record_epoch, save_history, plot_training_history
 
 
@@ -124,6 +125,8 @@ def train(
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            # on a TPU the step only runs here; reading pred/loss below needs it
+            sync(device)
 
             labels.extend(label.tolist())
             preds.extend(pred.detach().tolist())
@@ -199,7 +202,7 @@ def train(
             torch.save(
                 {
                     "epoch": epoch + current_epoch,
-                    "model_state_dict": plain_net.state_dict(),
+                    "model_state_dict": cpu_state_dict(plain_net, device),
                     "model_config": plain_net.config,
                     "val_loss": best_val_loss,
                     "scheduler_state_dict": scheduler.state_dict(),
