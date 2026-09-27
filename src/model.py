@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from gin import GIN
 from attention import ReactionSelfAttention
+from pooling import RelationPooling
 
 # How the reactant vector r and the product vector p are combined into the
 # reaction vector, with the size of the result in multiples of emb_dim.
@@ -18,6 +19,13 @@ REACTION_COMBINE_DIMS = {
 # Which compounds take part in the self-attention.
 ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
 
+# How the reactant slots are pooled into the reactant vector: masked mean, or a
+# relation network over every compound and every pair of compounds.
+REACTANT_POOLINGS = ("mean", "rn")
+
+# Regression head on the reaction vector.
+HEADS = ("linear", "mlp")
+
 
 class model(nn.Module):
     """
@@ -32,6 +40,8 @@ class model(nn.Module):
     attention applies, the plain GNN embeddings where it does not - and the two
     vectors are combined into the reaction vector as set by `reaction_combine`
     (by default the concatenation [reactant vector, product vector]).
+    `reactant_pooling` can replace the reactant average by a relation network,
+    and `head` the linear regressor by a small MLP.
     """
 
     def __init__(
@@ -45,6 +55,8 @@ class model(nn.Module):
         num_heads: int = 1,
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
+        reactant_pooling: str = "mean",
+        head: str = "linear",
     ) -> None:
         """
         Initialize the model.
@@ -80,6 +92,18 @@ class model(nn.Module):
             "all" every compound of the reaction in one shared attention, and
             "none" no attention at all (the vectors are then plain means of the
             GNN embeddings). A side that does not attend is averaged directly.
+        reactant_pooling : str, optional
+            How the reactant slots become the reactant vector (default is "mean"):
+            "mean" the masked mean; "rn" a relation network, LayerNorm of the
+            summed per-compound terms phi(x_i) and per-pair terms
+            g([x_i + x_j, x_i * x_j]) over all pairs i < j. It pools whatever
+            the reactant slots hold after attention: attended vectors, or the
+            plain GNN embeddings with `attention_on` "products" or "none". The
+            product side is always a masked mean.
+        head : str, optional
+            Regression head on the reaction vector (default is "linear"):
+            "linear" a single linear layer; "mlp" Linear(k * emb_dim, emb_dim)
+            -> ReLU -> Dropout -> Linear(emb_dim, 1).
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -94,6 +118,8 @@ class model(nn.Module):
             "num_heads": int(num_heads),
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
+            "reactant_pooling": str(reactant_pooling),
+            "head": str(head),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -112,6 +138,13 @@ class model(nn.Module):
                 "attention_on must be one of %s, got %r"
                 % (list(ATTENTION_TARGETS), attention_on)
             )
+        if reactant_pooling not in REACTANT_POOLINGS:
+            raise ValueError(
+                "reactant_pooling must be one of %s, got %r"
+                % (list(REACTANT_POOLINGS), reactant_pooling)
+            )
+        if head not in HEADS:
+            raise ValueError("head must be one of %s, got %r" % (list(HEADS), head))
         self.attention_on = attention_on
         # "both" runs the same layers over each side in turn, so that the weights
         # are shared and a one-compound side costs nothing extra.
@@ -131,16 +164,37 @@ class model(nn.Module):
                 % (sorted(REACTION_COMBINE_DIMS), reaction_combine)
             )
         self.reaction_combine = reaction_combine
-        self.regressor = torch.nn.Linear(
-            REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
+        self.head = head
+        if head == "linear":
+            self.regressor = torch.nn.Linear(
+                REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
+            )
+        else:
+            self.regressor = nn.Sequential(
+                nn.Linear(REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, emb_dim),
+                nn.ReLU(),
+                nn.Dropout(drop_ratio),
+                nn.Linear(emb_dim, 1),
+            )
+
+        # Built last, so that every other layer starts from the same weights as
+        # with the masked mean for the same seed, and a "mean" model has exactly
+        # the parameters it had before this option existed.
+        self.reactant_pooling = reactant_pooling
+        self.relation_pooling = (
+            RelationPooling(emb_dim, dropout=drop_ratio)
+            if reactant_pooling == "rn"
+            else None
         )
 
         # Optional bookkeeping for interpretation; disabled by default so that
         # training does not accumulate attention matrices. Only the last layer's
         # weights, averaged over heads, are kept: one matrix, or one per side
-        # with `attention_on="both"`.
+        # with `attention_on="both"`. With `reactant_pooling="rn"` the norms of
+        # the per-pair terms are kept too, with their slot indices.
         self.store_attention = False
         self.last_attention = None
+        self.last_pair_terms = None
 
     @classmethod
     def from_config(cls, config: dict) -> "model":
@@ -214,6 +268,42 @@ class model(nn.Module):
         weights = mask.unsqueeze(-1).to(x.dtype)
         count = weights.sum(dim=1).clamp(min=1.0)
         return (x * weights).sum(dim=1) / count
+
+    def _pool_reactants(
+        self, r_tokens: torch.Tensor, r_mask: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Pool the reactant slots into the reactant vector, as set by
+        `reactant_pooling`.
+
+        Parameters
+        ----------
+        r_tokens : torch.Tensor
+            Reactant vectors of shape [batch_size, num_slots, emb_dim].
+        r_mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_slots], True for real slots.
+
+        Returns
+        -------
+        torch.Tensor
+            Reactant vectors of shape [batch_size, emb_dim].
+        """
+        if self.relation_pooling is None:
+            return self._masked_mean(r_tokens, r_mask)
+
+        if not self.store_attention:
+            return self.relation_pooling(r_tokens, r_mask)
+
+        pooled, pair_terms, pair_index = self.relation_pooling(
+            r_tokens, r_mask, return_pairs=True
+        )
+        # Norms of shape [batch_size, num_pairs] (zero where a pair involves a
+        # padding slot) and the (i, j) slots of every pair.
+        self.last_pair_terms = {
+            "norms": pair_terms.norm(dim=-1).detach().cpu().tolist(),
+            "pairs": pair_index.t().cpu().tolist(),
+        }
+        return pooled
 
     def _combine(self, r: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
@@ -308,8 +398,10 @@ class model(nn.Module):
                 weights if len(weights) > 1 else next(iter(weights.values()), None)
             )
 
-        # A side that does not attend keeps the plain mean of its GNN embeddings.
-        reactant_vectors = self._masked_mean(r_tokens, r_mask)
+        # A side that does not attend is pooled from its plain GNN embeddings;
+        # the reactant side as set by `reactant_pooling`, the product side by
+        # the mean.
+        reactant_vectors = self._pool_reactants(r_tokens, r_mask)
         product_vectors = self._masked_mean(p_tokens, p_mask)
 
         reaction_vectors = self._combine(reactant_vectors, product_vectors)
