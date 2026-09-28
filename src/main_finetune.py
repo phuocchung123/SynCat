@@ -3,7 +3,7 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
-from model import ATTENTION_TARGETS, REACTION_COMBINE_DIMS
+from model import ATTENTION_TARGETS, HEADS, REACTANT_POOLINGS, REACTION_COMBINE_DIMS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -74,6 +74,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="how the reactant vector r and product vector p form the reaction "
         "vector: concat [r, p]; sum r + p; sub p - r; mul r * p; "
         "concat_sub [r, p, p - r]; interaction [r, p, |p - r|, r * p]",
+    )
+    parser.add_argument(
+        "--reactant_pooling",
+        type=str,
+        default="mean",
+        choices=list(REACTANT_POOLINGS),
+        help="how the reactant slots form the reactant vector r: 'mean' (masked "
+        "mean) or 'rn' (relation network over every compound and every pair of "
+        "compounds; with --attention_on none it pools the GIN outputs directly); "
+        "the product vector is always a mean",
+    )
+    parser.add_argument(
+        "--head",
+        type=str,
+        default="linear",
+        choices=list(HEADS),
+        help="regression head on the reaction vector: 'linear' or 'mlp' "
+        "(Linear -> ReLU -> Dropout -> Linear, hidden size --emb_dim)",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

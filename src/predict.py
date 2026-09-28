@@ -24,8 +24,10 @@ def predict(
 
     Each element in `rsmi_lst` is expected to be of the form "reactant_smiles>>product_smiles".
     The model architecture (GNN layers, embedding size, attention layers and
-    heads) is rebuilt from the settings stored in the checkpoint, so any model
-    trained with `main_finetune.py` can be loaded without repeating them.
+    heads, `attention_on`, `reactant_pooling`, `head`, ...) is rebuilt from the
+    settings stored in the checkpoint, so any model trained with
+    `main_finetune.py` can be loaded without repeating them; checkpoints saved
+    before an option existed get its default.
 
     Parameters:
         rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".

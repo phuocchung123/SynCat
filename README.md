@@ -146,13 +146,15 @@ Results land in `--log_dir` (default `../logs/bh/`):
 
 ### Model options (all datasets)
 
-Each reaction becomes one vector in three steps: every compound is encoded by the shared GINE; `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GINE embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
+Each reaction becomes one vector in four steps: every compound is encoded by the shared GINE; `--attention_on` decides which compounds attend to each other; each side is then pooled into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GINE embeddings where it does not) — the reactants as set by `--reactant_pooling`, the products always by a masked mean; and `--reaction_combine` turns `r` and `p` into the reaction vector, which `--head` maps to the predicted yield.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `--attention_on` | `reactants` | which compounds attend to each other — see the table below |
 | `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
-| `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |
+| `--reactant_pooling` | `mean` | how the reactant slots form `r`: `mean` (masked mean) or `rn` (relation network, see below); `p` is always a mean |
+| `--head` | `linear` | regression head on the reaction vector: `linear`, or `mlp` (`Linear → ReLU → Dropout → Linear`, hidden size `--emb_dim`) |
+| `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection); must stay ≥ 1 even with `--attention_on none` |
 | `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
 | `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
 | `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
@@ -171,11 +173,25 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 
 Reactions in these datasets usually have a single product, and self-attention over one compound reduces to a linear projection of its embedding, so `products` and `both` mostly add capacity rather than interaction between compounds.
 
-The size of the reaction vector follows from the two options — `emb_dim` for `sum`/`sub`/`mul`, `2 × emb_dim` for `concat`, `3 ×` for `concat_sub`, `4 ×` for `interaction` — and is what `Data/monitor/embedding.json` contains.
+The size of the reaction vector follows from `--reaction_combine` and `--emb_dim` — `emb_dim` for `sum`/`sub`/`mul`, `2 × emb_dim` for `concat`, `3 ×` for `concat_sub`, `4 ×` for `interaction` — and is what `Data/monitor/embedding.json` contains. `--reactant_pooling` and `--head` do not change it.
+
+**`--reactant_pooling rn`** pools the real reactants `x_1 … x_n` into
+
+```
+r = LayerNorm( Σ_i phi(x_i) + Σ_{i<j} g([x_i + x_j, x_i * x_j]) )
+```
+
+where `phi` (`emb_dim → emb_dim → emb_dim`) and `g` (`2·emb_dim → emb_dim → emb_dim`) are two-layer MLPs with ReLU and `--dropout`, `g` shared by all pairs. Every unordered pair counts once, padding slots (which hold the non-zero embedding of a dummy graph) are zeroed first and take part in neither sum, and no slot position is used, so `r` does not depend on the order of the reactants. It pools whatever the reactant slots hold: the attended vectors with `--attention_on reactants`/`both`/`all`, the raw GINE outputs with `products`/`none`. BH reactions have 6 reactants (15 pairs), Suzuki reactions up to 14 (91 pairs).
+
+**Option A** is `--attention_on none --reactant_pooling rn`: no self-attention at all, the relation network models the reactant interactions directly on the GINE outputs.
+
+**`--head mlp`** replaces the linear regressor by `Linear(k·emb_dim, emb_dim) → ReLU → Dropout → Linear(emb_dim, 1)`.
+
+With the defaults (`--emb_dim 384`, `--layer 3`, `concat`) the model has 1,395,841 parameters; `--reactant_pooling rn` adds 739,584, `--head mlp` 294,912, and `--attention_on none` removes 444,288 (the attention layer). With `rn`, `net.store_attention = True` also keeps `net.last_pair_terms`, the norm of every pair term (`"norms"`, `[batch][pair]`, 0 for padding pairs) with its reactant slots (`"pairs"`, `[[i, j], …]`).
 
 ### Comparing configurations
 
-Both options change the architecture, so give each configuration its own `--model_name`, and reuse one `--npz_folder` per dataset (the prepared graphs do not depend on the model):
+These options change the architecture, so give each configuration its own `--model_name`, and reuse one `--npz_folder` per dataset (the prepared graphs do not depend on the model):
 
 ```bash
 for mode in reactants products both all none; do
@@ -187,7 +203,9 @@ for mode in reactants products both all none; do
 done
 ```
 
-A checkpoint records the architecture it was trained with, so reloading one into a differently configured model fails with an explicit message instead of loading silently.
+A checkpoint records the architecture it was trained with, so reloading one into a differently configured model fails with an explicit message instead of loading silently. Checkpoints saved before an option existed load with its default (`--reactant_pooling mean`, `--head linear`, …), and `predict.py` rebuilds every option from the checkpoint.
+
+To compare the attention and pooling options on BH and Suzuki in one go, use `pooling_grid.py` — see [Option A Grid](#option-a-grid-bh-and-suzuki).
 
 ### Outputs
 
@@ -248,7 +266,7 @@ python collect_split_results.py --split_ids 0 1 2
 
 Existing result files are never replaced unless `--overwrite_results` is given, and `--skip_aggregate` records per-split results without computing the mean/std across splits.
 
-**Model options** (`--attention_on`, `--reaction_combine`, `--num_heads`, …) work with `--stage` exactly as in a single-file run, and each split writes its checkpoint into its own run folder, so different configurations never collide as long as they use different `--log_dir` values.
+**Model options** (`--attention_on`, `--reaction_combine`, `--reactant_pooling`, `--head`, `--num_heads`, …) work with `--stage` exactly as in a single-file run, and each split writes its checkpoint into its own run folder, so different configurations never collide as long as they use different `--log_dir` values.
 
 **Multi-GPU training.** Add `--gpus 0 1` (or `--gpus all`) to any training command to train with DistributedDataParallel, one process per GPU. The script starts the processes itself, so you don't need `torchrun`. `--batch_size` stays the total batch size and is split evenly across the GPUs (128 → 64 per GPU on 2 GPUs). Validation, checkpointing and the final test evaluation run on the first GPU. Without `--gpus`, training uses the single GPU given by `--device`.
 
@@ -256,6 +274,43 @@ Existing result files are never replaced unless `--overwrite_results` is given, 
 python main_finetune.py --stage train --gpus 0 1 --epochs 100 --patience 10
 python run_splits_sequential.py --gpus 0 1 --epochs 100 --patience 10
 ```
+
+## Option A Grid (BH and Suzuki)
+
+`pooling_grid.py` trains the grid `--attention_on {none, reactants}` × `--reactant_pooling {mean, rn}` on the Buchwald-Hartwig and Suzuki splits, for the head chosen with `--head`:
+
+| Cell | `--attention_on` | `--reactant_pooling` | Reactant vector `r` |
+| --- | --- | --- | --- |
+| `baseline` | `reactants` | `mean` | mean of the self-attended reactants (the current model) |
+| `attn_rn` | `reactants` | `rn` | relation network over the self-attended reactants |
+| `gin_mean` | `none` | `mean` | mean of the raw GINE outputs |
+| **`option_A`** | **`none`** | **`rn`** | **relation network over the raw GINE outputs** |
+
+Within a split, all cells share the data, the seed and every other option. Seeds follow the existing pipelines: `--seed` (42) for every BH dataset, as in `train_bh.py`, and `42 + <id>` for Suzuki split `<id>`, from its `split_metadata.json`. Run all commands from `src/`; the npz folders must be prepared first (`prepare_bh.py --split_columns split_70`, `main_finetune.py --stage prepare --split_ids 0 1 2 3 4 5 6 7 8 9`).
+
+```bash
+# smoke test: 2 epochs on the first 512 reactions of one BH and one Suzuki split
+python pooling_grid.py --subset 512 --epochs 2 --cv_ids 1 --test_ids --split_ids 0 \
+  --num_workers 0 --log_dir ../logs/pooling_grid_smoke/
+# full grid: 10 BH CV (split_70) + 4 BH Test + 10 Suzuki splits, x 4 cells
+python pooling_grid.py --epochs 100 --patience 10
+# the same grid with the MLP head; its rows are added to the same result files
+python pooling_grid.py --epochs 100 --patience 10 --head mlp
+```
+
+Part of the grid: `--datasets bh` or `--datasets suzuki`, `--cv_ids`/`--test_ids`/`--split_columns` (BH), `--split_ids` (Suzuki, default `0 … 9`), and `--attention_grid`/`--pooling_grid` to restrict the cells (e.g. `--attention_grid none --pooling_grid rn` trains option A only). Every other option of `main_finetune.py` (`--epochs`, `--patience`, `--emb_dim`, `--gpus`, …) is accepted and shared by the cells; `--attention_on` and `--reactant_pooling` are replaced by the grid. A single cell can also be trained with the usual scripts, e.g. option A on BH: `python train_bh.py --attention_on none --reactant_pooling rn --log_dir ../logs/bh_option_a/ --epochs 100 --patience 10`.
+
+The script is resumable: a row is written after every run, and a run that already succeeded is skipped, so it can be stopped with Ctrl+C and re-run to continue (`--rerun_successful` retrains). Outputs land in `--log_dir` (default `../logs/pooling_grid/`):
+
+| Path | Content |
+| --- | --- |
+| `grid_results.csv` | one row per (dataset, cell, head): status, seed, best epoch, epochs run, trainable parameters, seconds per epoch, subset sizes, train/val/test R², MAE and RMSE, first/last epoch training loss |
+| `grid_summary.csv` | mean and sample std (ddof=1) of the train/test metrics, parameters and seconds per epoch over the splits of each group (`bh_cv`, `bh_test`, `suzuki`) and cell |
+| `grid.log` | one line per finished run |
+| `runs/<attention_on>_<pooling>_<head>/<dataset>/` | that run's `model.pt`, `monitor/` (with `history.json`), `images/` |
+| `subset_npz/<dataset>/` | the truncated npz copies, only with `--subset` |
+
+Train metrics are computed after training, on the selected checkpoint in eval mode over the whole training set. Seconds per epoch are the training wall time divided by the epochs run, validation included. BH metrics are in percentage points and Suzuki metrics in fractions, so the summary never mixes groups.
 
 ## Setting Up Your Development Environment
 
@@ -287,8 +342,10 @@ git pull
 
    ```bash
    ./lint.sh # Check code format
-   pytest Test # Run tests
+   pytest test # Run tests
    ```
+
+   `pytest test/test_relation_pooling.py` runs only the tests of the relation pooling, option A and the `--reactant_pooling`/`--head` options, including a check that the defaults reproduce the previous model exactly.
 
    Fix any issues or errors highlighted by these checks.
 
