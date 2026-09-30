@@ -67,9 +67,16 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 # Activate the existing environment
 conda activate "$ENV_NAME"
 
-# run_approach2_grid.py resolves its default paths (../Data/, ../logs/) from src/;
-# the repository root is found relative to this script, not the submit directory.
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Slurm copies this script to /var/spool/slurmd/<jobid>/slurm_script and runs
+# that copy, so BASH_SOURCE points into the spool directory, not your checkout.
+# Slurm exports SLURM_SUBMIT_DIR = the directory sbatch was run from; submit
+# from the repository root (`sbatch slurm/<file>.sbatch`) so it is the repo root.
+REPO_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
+if [ ! -d "$REPO_DIR/src" ]; then
+    echo "ERROR: no 'src' under $REPO_DIR. Submit from the repository root:" >&2
+    echo "       cd <repo> && sbatch slurm/approach2_grid_bh.sbatch" >&2
+    exit 1
+fi
 cd "$REPO_DIR/src"
 
 echo "Repository: $REPO_DIR"
