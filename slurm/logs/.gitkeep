@@ -1,0 +1,3 @@
+# Keeps the Slurm job-log directory in git. The sbatch scripts write their
+# stdout/stderr here (--output/--error slurm/logs/syncat-%j.out), and Slurm
+# opens those files at submit time, so this folder must exist before sbatch.

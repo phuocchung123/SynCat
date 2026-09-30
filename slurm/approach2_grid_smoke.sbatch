@@ -15,10 +15,11 @@
 # subset npz files are written under the run folder; the prepared source data is
 # never modified. Use this before approving the full runs.
 #
-# Run from the repository root (Slurm resolves the relative --output path
-# against the submit directory). The log folder must exist before submitting:
-#   mkdir -p slurm/logs
+# Run from the repository root:
 #   sbatch slurm/approach2_grid_smoke.sbatch
+# Slurm resolves the relative --output path against the submit directory, so
+# submit from the repo root. slurm/logs/ is tracked, so that folder already
+# exists; if you deleted it, recreate it first with:  mkdir -p slurm/logs
 #
 # Results:  <repo>/logs/approach2_grid_smoke/smoke/grid_results.csv
 #           <repo>/logs/approach2_grid_smoke/smoke/grid_summary.csv
@@ -35,14 +36,32 @@ echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-none}"
 echo "Started at: $(date)"
 echo "========================================"
 
-# Load Conda
-module load Miniconda3
+# Conda: use conda if it is already on PATH, otherwise load the cluster module.
+# Override the module or environment name from the submit line, e.g.
+#   ENV_NAME=syncat MODULE_NAME=Anaconda3 sbatch slurm/approach2_grid_smoke.sbatch
+ENV_NAME="${ENV_NAME:-syncat}"
+MODULE_NAME="${MODULE_NAME:-Miniconda3}"
+
+if ! command -v module >/dev/null 2>&1; then
+    for _modinit in /etc/profile.d/modules.sh /usr/share/Modules/init/bash /etc/profile.d/module.sh; do
+        if [ -r "$_modinit" ]; then . "$_modinit"; break; fi
+    done
+fi
+
+if ! command -v conda >/dev/null 2>&1 && command -v module >/dev/null 2>&1; then
+    module load "$MODULE_NAME" || true
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+    echo "ERROR: conda not found. Load it (e.g. 'module load $MODULE_NAME') or set MODULE_NAME." >&2
+    exit 1
+fi
 
 # Enable conda activate in the Slurm non-interactive shell
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
 # Activate the existing environment
-conda activate syncat
+conda activate "$ENV_NAME"
 
 # run_approach2_grid.py resolves its default paths (../Data/, ../logs/) from src/;
 # the repository root is found relative to this script, not the submit directory.
