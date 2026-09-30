@@ -7,8 +7,8 @@
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
 #SBATCH --time=3-00:00:00
-#SBATCH --output=execution/syncat_regress/app2/syncat_6/logs/syncat-%j.out
-#SBATCH --error=execution/syncat_regress/app2/syncat_6/logs/syncat-%j.err
+#SBATCH --output=slurm/logs/syncat-%j.out
+#SBATCH --error=slurm/logs/syncat-%j.err
 
 # Approach-2 grid on the Buchwald-Hartwig datasets (FullCV 1-10 at split_70 plus
 # Test1-4), always with attention_on=reactants:
@@ -19,8 +19,10 @@
 # a dataset/split/cell row that already succeeded is skipped, and an interrupted
 # one is retrained from scratch (its checkpoint is removed first).
 #
-#   mkdir -p execution/approach2/approach2_grid_bh/logs
-#   sbatch SynCat/slurm/approach2_grid_bh.sbatch
+# Run from the repository root (Slurm resolves the relative --output path
+# against the submit directory). The log folder must exist before submitting:
+#   mkdir -p slurm/logs
+#   sbatch slurm/approach2_grid_bh.sbatch
 #
 # Results:  <repo>/logs/approach2_grid_bh/e400/grid_results.csv  (per split)
 #           <repo>/logs/approach2_grid_bh/e400/grid_summary.csv  (mean/std)

@@ -7,8 +7,8 @@
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
 #SBATCH --time=3-00:00:00
-#SBATCH --output=execution/syncat_regress/app2/syncat_6/logs/syncat-%j.out
-#SBATCH --error=execution/syncat_regress/app2/syncat_6/logs/syncat-%j.err
+#SBATCH --output=slurm/logs/syncat-%j.out
+#SBATCH --error=slurm/logs/syncat-%j.err
 
 # Approach-2 grid on the 10 Suzuki-Miyaura random splits, always with
 # attention_on=reactants:
@@ -22,8 +22,10 @@
 # NOTE: comb on Suzuki expands 14 reactant slots to 105 tokens, so each comb cell
 # is markedly slower than its ind counterpart.
 #
-#   mkdir -p execution/approach2/approach2_grid_suzuki/logs
-#   sbatch SynCat/slurm/approach2_grid_suzuki.sbatch
+# Run from the repository root (Slurm resolves the relative --output path
+# against the submit directory). The log folder must exist before submitting:
+#   mkdir -p slurm/logs
+#   sbatch slurm/approach2_grid_suzuki.sbatch
 #
 # Results:  <repo>/logs/approach2_grid_suzuki/e400/grid_results.csv  (per split)
 #           <repo>/logs/approach2_grid_suzuki/e400/grid_summary.csv  (mean/std)

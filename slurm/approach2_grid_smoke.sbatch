@@ -7,16 +7,18 @@
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
 #SBATCH --time=00:30:00
-#SBATCH --output=execution/approach2/approach2_grid_smoke/logs/syncat-%j.out
-#SBATCH --error=execution/approach2/approach2_grid_smoke/logs/syncat-%j.err
+#SBATCH --output=slurm/logs/syncat-%j.out
+#SBATCH --error=slurm/logs/syncat-%j.err
 
 # One-epoch smoke test of the approach-2 grid: one BH split and one Suzuki split,
 # 96/24/24 samples, batch 8, num_workers 0, GIN depth 1, emb_dim 32. Temporary
 # subset npz files are written under the run folder; the prepared source data is
 # never modified. Use this before approving the full runs.
 #
-#   mkdir -p execution/approach2/approach2_grid_smoke/logs
-#   sbatch SynCat/slurm/approach2_grid_smoke.sbatch
+# Run from the repository root (Slurm resolves the relative --output path
+# against the submit directory). The log folder must exist before submitting:
+#   mkdir -p slurm/logs
+#   sbatch slurm/approach2_grid_smoke.sbatch
 #
 # Results:  <repo>/logs/approach2_grid_smoke/smoke/grid_results.csv
 #           <repo>/logs/approach2_grid_smoke/smoke/grid_summary.csv
