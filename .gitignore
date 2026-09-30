@@ -4,4 +4,6 @@
 /Data/npz/npz_tpl/
 dev/*
 draft.ipynb
-logs/
+/logs/
+slurm/logs/*
+!slurm/logs/.gitkeep

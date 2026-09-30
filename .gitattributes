@@ -1,0 +1,6 @@
+# Slurm batch scripts and POSIX shell scripts must use LF line endings.
+# On Windows (core.autocrlf=true) a CRLF shebang becomes "#!/bin/bash\r",
+# which the cluster rejects with "bad interpreter: /bin/bash^M".
+*.sbatch text eol=lf
+*.sh text eol=lf
+.gitattributes text eol=lf

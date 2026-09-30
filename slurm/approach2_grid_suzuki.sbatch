@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=syncat-app2-suzuki
+#SBATCH --job-name=syncat-approach2-suzuki
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -7,46 +7,59 @@
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
 #SBATCH --time=3-00:00:00
-#SBATCH --output=execution/syncat_regress/app2/syncat_9/logs/syncat-%j.out
-#SBATCH --error=execution/syncat_regress/app2/syncat_9/logs/syncat-%j.err
+#SBATCH --output=slurm/logs/syncat-%j.out
+#SBATCH --error=slurm/logs/syncat-%j.err
 
-# Approach 2 grid on the 10 Suzuki splits (split_0 to split_9):
+# Approach-2 grid on the 10 Suzuki splits (split_0 to split_9):
 #   4 cells per split:
 #     1. current_model: reactant_tokens=ind, head=linear
 #     2. approach_3:    reactant_tokens=comb, head=linear
 #     3. approach_2:    reactant_tokens=comb, head=mlp
 #     4. mlp_control:   reactant_tokens=ind, head=mlp
-#
 # 10 splits x 4 cells = 40 trainings. Resubmit to continue after a time limit (skips successful runs).
 #
-# Usage from repo root or submit dir:
-#   mkdir -p execution/draft/approach2_grid_suzuki/logs
-#   sbatch SynCat/slurm/approach2_grid_suzuki.sbatch
+# Submit from the repository root:
+#   sbatch slurm/approach2_grid_suzuki.sbatch
+#
+# Results:  <repo>/logs/suzuki_approach2_grid/approach2_per_split.csv  (per split)
+#           <repo>/logs/suzuki_approach2_grid/approach2_summary.csv    (summary)
 
 set -euo pipefail
 
-echo "========================================"
-echo "Job ID: $SLURM_JOB_ID"
-echo "Job name: $SLURM_JOB_NAME"
-echo "Compute node: $(hostname)"
-echo "Allocated node: $SLURM_JOB_NODELIST"
-echo "CPUs per task: ${SLURM_CPUS_PER_TASK:-unset}"
-echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-none}"
-echo "Started at: $(date)"
-echo "========================================"
+echo "Job $SLURM_JOB_ID on $(hostname) started $(date)"
 
-# Load Conda
-module load Miniconda3
+# --- environment (tolerant + overridable) ----------------------------------
+ENV_NAME="${ENV_NAME:-syncat}"
+MODULE_NAME="${MODULE_NAME:-Miniconda3}"
 
-# Enable conda activate in the Slurm non-interactive shell
+if ! command -v module >/dev/null 2>&1; then
+    for _modinit in /etc/profile.d/modules.sh /usr/share/Modules/init/bash /etc/profile.d/module.sh; do
+        if [ -r "$_modinit" ]; then . "$_modinit"; break; fi
+    done
+fi
+
+if ! command -v conda >/dev/null 2>&1 && command -v module >/dev/null 2>&1; then
+    module load "$MODULE_NAME" || true
+fi
+
+if ! command -v conda >/dev/null 2>&1; then
+    echo "ERROR: conda not found. Load it (e.g. 'module load $MODULE_NAME') or set MODULE_NAME." >&2
+    exit 1
+fi
+
 source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate "$ENV_NAME"
 
-# Activate the existing environment
-conda activate syncat
+# --- locate repo (submit dir, NOT the spooled script) ----------------------
+REPO_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
+if [ ! -d "$REPO_DIR/src" ]; then
+    echo "ERROR: no 'src' under $REPO_DIR. Submit from the repository root:" >&2
+    echo "       cd <repo> && sbatch slurm/approach2_grid_suzuki.sbatch" >&2
+    exit 1
+fi
+cd "$REPO_DIR/src"
 
-# run_approach2_grid.py resolves its default paths (../Data/, ../logs/) from src/
-cd "$SLURM_SUBMIT_DIR/SynCat/src"
-
+echo "Repository: $REPO_DIR"
 echo "Working directory: $(pwd)"
 echo "Conda environment: $CONDA_DEFAULT_ENV"
 echo "Conda prefix: $CONDA_PREFIX"
@@ -56,19 +69,19 @@ python --version
 echo "Git branch: $(git branch --show-current)"
 echo "Git commit: $(git rev-parse HEAD)"
 
-# Match CPU-based libraries with the Slurm allocation
+# --- thread limits match the allocation ------------------------------------
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 
-echo "OMP_NUM_THREADS=$OMP_NUM_THREADS"
-
-# Show the allocated GPU, and stop here rather than silently training on the CPU
+# --- fail loudly if no GPU --------------------------------------------------
 nvidia-smi
-python -c "import torch; assert torch.cuda.is_available(), 'CUDA is not available'; print('GPU:', torch.cuda.get_device_name(0))"
+python -c "import torch; assert torch.cuda.is_available(), 'no CUDA'; print('GPU:', torch.cuda.get_device_name(0))"
 
+# --- the actual run ---------------------------------------------------------
 python -u run_approach2_grid.py \
     --datasets suzuki \
     --split_ids 0 1 2 3 4 5 6 7 8 9 \
+    --attention_on reactants \
     --output_dir ../logs/suzuki_approach2_grid/ \
     --epochs 100 \
     --patience 10 \
@@ -78,6 +91,4 @@ python -u run_approach2_grid.py \
     --layer 3 \
     --emb_dim 384
 
-echo "========================================"
-echo "Training completed at: $(date)"
-echo "========================================"
+echo "Finished $(date)"
