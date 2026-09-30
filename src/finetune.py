@@ -39,16 +39,25 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     saved_config = checkpoint.get("model_config")
     if saved_config is not None:
         # Checkpoints saved before `reaction_combine` existed always concatenated.
+        # Missing `reactant_tokens`/`head` resolve to the constructor defaults.
         saved_config = dict(
-            {"reaction_combine": "concat", "attention_on": "reactants"},
+            {
+                "reaction_combine": "concat",
+                "attention_on": "reactants",
+                "reactant_tokens": "ind",
+                "head": "linear",
+            },
             **saved_config
         )
         # Mismatched settings do not always change the weight shapes (e.g. the
-        # number of heads), so compare the architectures explicitly.
+        # number of heads), so compare the architectures explicitly. A head
+        # mismatch is allowed: it is treated like the mismatched-regressor
+        # warm start below. A reactant_tokens mismatch is not, because it
+        # changes the attention semantics without changing any parameter shape.
         mismatched = {
             k: (saved_config.get(k), v)
             for k, v in net.config.items()
-            if k != "drop_ratio" and saved_config.get(k) != v
+            if k not in ("drop_ratio", "head") and saved_config.get(k) != v
         }
         if mismatched:
             raise RuntimeError(
@@ -84,6 +93,8 @@ def _build_model(args, node_dim, edge_dim):
         num_heads=getattr(args, "num_heads", 1),
         reaction_combine=getattr(args, "reaction_combine", "concat"),
         attention_on=getattr(args, "attention_on", "reactants"),
+        reactant_tokens=getattr(args, "reactant_tokens", "ind"),
+        head=getattr(args, "head", "linear"),
     )
 
 

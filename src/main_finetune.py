@@ -3,7 +3,7 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
-from model import ATTENTION_TARGETS, REACTION_COMBINE_DIMS
+from model import ATTENTION_TARGETS, HEADS, REACTION_COMBINE_DIMS, REACTANT_TOKENS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -74,6 +74,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="how the reactant vector r and product vector p form the reaction "
         "vector: concat [r, p]; sum r + p; sub p - r; mul r * p; "
         "concat_sub [r, p, p - r]; interaction [r, p, |p - r|, r * p]",
+    )
+    parser.add_argument(
+        "--reactant_tokens",
+        type=str,
+        default="ind",
+        choices=list(REACTANT_TOKENS),
+        help="how reactant tokens are built before attention: 'ind' one token per "
+        "reactant slot, 'comb' the individual tokens plus every pairwise sum "
+        "(r_i + r_j); only the reactants are expanded",
+    )
+    parser.add_argument(
+        "--head",
+        type=str,
+        default="linear",
+        choices=list(HEADS),
+        help="regression head on the reaction vector: 'linear' a single linear "
+        "layer, 'mlp' a two-layer perceptron with ReLU and dropout",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

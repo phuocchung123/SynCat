@@ -18,6 +18,14 @@ REACTION_COMBINE_DIMS = {
 # Which compounds take part in the self-attention.
 ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
 
+# How the reactant tokens are built before self-attention: "ind" keeps one
+# token per reactant slot, "comb" adds every pairwise sum (r_i + r_j).
+REACTANT_TOKENS = ("ind", "comb")
+
+# Which regression head turns the reaction vector into a yield: a single linear
+# layer ("linear") or a two-layer perceptron ("mlp").
+HEADS = ("linear", "mlp")
+
 
 class model(nn.Module):
     """
@@ -45,6 +53,8 @@ class model(nn.Module):
         num_heads: int = 1,
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
+        reactant_tokens: str = "ind",
+        head: str = "linear",
     ) -> None:
         """
         Initialize the model.
@@ -80,6 +90,18 @@ class model(nn.Module):
             "all" every compound of the reaction in one shared attention, and
             "none" no attention at all (the vectors are then plain means of the
             GNN embeddings). A side that does not attend is averaged directly.
+        reactant_tokens : str, optional
+            How the reactant tokens are built before self-attention
+            (default is "ind"): "ind" keeps one token per reactant slot, while
+            "comb" appends every unordered pair sum (r_i + r_j) after the
+            individual tokens, growing the sequence from S to
+            S + S * (S - 1) / 2. A pair that touches a padding slot is masked
+            out, and only the reactants are expanded (the products are left
+            untouched).
+        head : str, optional
+            Regression head applied to the reaction vector (default is
+            "linear"): "linear" is a single linear layer, "mlp" is a two-layer
+            perceptron with a ReLU and dropout between its layers.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -94,6 +116,8 @@ class model(nn.Module):
             "num_heads": int(num_heads),
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
+            "reactant_tokens": str(reactant_tokens),
+            "head": str(head),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -113,6 +137,15 @@ class model(nn.Module):
                 % (list(ATTENTION_TARGETS), attention_on)
             )
         self.attention_on = attention_on
+        if reactant_tokens not in REACTANT_TOKENS:
+            raise ValueError(
+                "reactant_tokens must be one of %s, got %r"
+                % (list(REACTANT_TOKENS), reactant_tokens)
+            )
+        if head not in HEADS:
+            raise ValueError("head must be one of %s, got %r" % (list(HEADS), head))
+        self.reactant_tokens = reactant_tokens
+        self.head = head
         # "both" runs the same layers over each side in turn, so that the weights
         # are shared and a one-compound side costs nothing extra.
         self.attention_layers = nn.ModuleList(
@@ -131,9 +164,16 @@ class model(nn.Module):
                 % (sorted(REACTION_COMBINE_DIMS), reaction_combine)
             )
         self.reaction_combine = reaction_combine
-        self.regressor = torch.nn.Linear(
-            REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
-        )
+        input_dim = REACTION_COMBINE_DIMS[reaction_combine] * emb_dim
+        if head == "linear":
+            self.regressor = nn.Linear(input_dim, 1)
+        else:
+            self.regressor = nn.Sequential(
+                nn.Linear(input_dim, emb_dim),
+                nn.ReLU(),
+                nn.Dropout(drop_ratio),
+                nn.Linear(emb_dim, 1),
+            )
 
         # Optional bookkeeping for interpretation; disabled by default so that
         # training does not accumulate attention matrices. Only the last layer's
@@ -141,6 +181,7 @@ class model(nn.Module):
         # with `attention_on="both"`.
         self.store_attention = False
         self.last_attention = None
+        self.last_token_slots = None
 
     @classmethod
     def from_config(cls, config: dict) -> "model":
@@ -245,6 +286,51 @@ class model(nn.Module):
             return torch.cat((r, p, p - r), dim=1)
         return torch.cat((r, p, torch.abs(p - r), r * p), dim=1)  # interaction
 
+    def _add_pair_tokens(
+        self,
+        tokens: torch.Tensor,
+        mask: torch.Tensor,
+    ) -> tuple:
+        """
+        Append every unordered pair sum of the reactant tokens.
+
+        The individual tokens come first, followed by the pairwise sums in the
+        order given by `torch.triu_indices(S, S, offset=1)`; a pair token is
+        masked out unless both of its slots hold a real reactant.
+
+        Parameters
+        ----------
+        tokens : torch.Tensor
+            Reactant embeddings of shape [batch_size, num_slots, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_slots], True for real slots.
+
+        Returns
+        -------
+        tuple
+            The expanded tokens of shape
+            [batch_size, S + S * (S - 1) // 2, emb_dim], the expanded mask of
+            the same length, and the slot metadata as a list of tuples:
+            (0,), (1,), ..., (S-1,), (0, 1), (0, 2), ...
+        """
+        num_slots = tokens.shape[1]
+        i, j = torch.triu_indices(
+            num_slots,
+            num_slots,
+            offset=1,
+            device=tokens.device,
+        )
+        pair_tokens = tokens[:, i] + tokens[:, j]
+        pair_mask = mask[:, i] & mask[:, j]
+
+        expanded_tokens = torch.cat((tokens, pair_tokens), dim=1)
+        expanded_mask = torch.cat((mask, pair_mask), dim=1)
+
+        token_slots = [(slot,) for slot in range(num_slots)] + list(
+            zip(i.tolist(), j.tolist())
+        )
+        return expanded_tokens, expanded_mask, token_slots
+
     def forward(
         self,
         rmols: list,
@@ -284,6 +370,15 @@ class model(nn.Module):
         # and from the averages.
         r_mask = torch.as_tensor(np.asarray(r_dummy, dtype=bool), device=device)
         p_mask = torch.as_tensor(np.asarray(p_dummy, dtype=bool), device=device)
+
+        # Optionally expand the reactants with their pairwise sums. This runs
+        # before every attention branch so that "all" records the expanded slot
+        # count as the reactant/product boundary below.
+        if self.reactant_tokens == "comb":
+            r_tokens, r_mask, token_slots = self._add_pair_tokens(r_tokens, r_mask)
+        else:
+            token_slots = [(slot,) for slot in range(r_tokens.shape[1])]
+        self.last_token_slots = token_slots if self.store_attention else None
 
         weights = {}
         if self.attention_on == "all":
