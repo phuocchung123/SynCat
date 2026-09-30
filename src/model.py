@@ -18,6 +18,12 @@ REACTION_COMBINE_DIMS = {
 # Which compounds take part in the self-attention.
 ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
 
+# Reactant token representations: individual slots or with pairwise combination tokens.
+REACTANT_TOKENS = ("ind", "comb")
+
+# Regression head architectures.
+HEADS = ("linear", "mlp")
+
 
 class model(nn.Module):
     """
@@ -45,6 +51,8 @@ class model(nn.Module):
         num_heads: int = 1,
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
+        reactant_tokens: str = "ind",
+        head: str = "linear",
     ) -> None:
         """
         Initialize the model.
@@ -80,6 +88,14 @@ class model(nn.Module):
             "all" every compound of the reaction in one shared attention, and
             "none" no attention at all (the vectors are then plain means of the
             GNN embeddings). A side that does not attend is averaged directly.
+        reactant_tokens : str, optional
+            Whether to use individual reactant tokens ("ind", default) or expand
+            reactants with unordered pairwise combination tokens ("comb") before
+            self-attention.
+        head : str, optional
+            Regression head architecture (default is "linear"):
+            "linear" for a single linear layer; "mlp" for a 2-layer MLP with
+            ReLU and dropout.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -94,6 +110,8 @@ class model(nn.Module):
             "num_heads": int(num_heads),
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
+            "reactant_tokens": str(reactant_tokens),
+            "head": str(head),
         }
         self.gnn = GIN(
             node_in_feats,
@@ -113,6 +131,19 @@ class model(nn.Module):
                 % (list(ATTENTION_TARGETS), attention_on)
             )
         self.attention_on = attention_on
+        if reactant_tokens not in REACTANT_TOKENS:
+            raise ValueError(
+                "reactant_tokens must be one of %s, got %r"
+                % (list(REACTANT_TOKENS), reactant_tokens)
+            )
+        self.reactant_tokens = reactant_tokens
+        if head not in HEADS:
+            raise ValueError(
+                "head must be one of %s, got %r"
+                % (list(HEADS), head)
+            )
+        self.head = head
+
         # "both" runs the same layers over each side in turn, so that the weights
         # are shared and a one-compound side costs nothing extra.
         self.attention_layers = nn.ModuleList(
@@ -131,9 +162,16 @@ class model(nn.Module):
                 % (sorted(REACTION_COMBINE_DIMS), reaction_combine)
             )
         self.reaction_combine = reaction_combine
-        self.regressor = torch.nn.Linear(
-            REACTION_COMBINE_DIMS[reaction_combine] * emb_dim, 1
-        )
+        input_dim = REACTION_COMBINE_DIMS[reaction_combine] * emb_dim
+        if head == "linear":
+            self.regressor = nn.Linear(input_dim, 1)
+        elif head == "mlp":
+            self.regressor = nn.Sequential(
+                nn.Linear(input_dim, emb_dim),
+                nn.ReLU(),
+                nn.Dropout(drop_ratio),
+                nn.Linear(emb_dim, 1),
+            )
 
         # Optional bookkeeping for interpretation; disabled by default so that
         # training does not accumulate attention matrices. Only the last layer's
@@ -141,6 +179,7 @@ class model(nn.Module):
         # with `attention_on="both"`.
         self.store_attention = False
         self.last_attention = None
+        self.last_token_slots = None
 
     @classmethod
     def from_config(cls, config: dict) -> "model":
@@ -245,6 +284,46 @@ class model(nn.Module):
             return torch.cat((r, p, p - r), dim=1)
         return torch.cat((r, p, torch.abs(p - r), r * p), dim=1)  # interaction
 
+    def _add_pair_tokens(
+        self,
+        tokens: torch.Tensor,
+        mask: torch.Tensor,
+    ) -> tuple:
+        """
+        Expand reactant tokens with unordered pairwise combination tokens.
+
+        Parameters
+        ----------
+        tokens : torch.Tensor
+            Compound embeddings of shape [batch_size, S, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, S], True for real slots.
+
+        Returns
+        -------
+        tuple
+            (expanded_tokens, expanded_mask, token_slots) where expanded_tokens
+            has shape [batch_size, S + S * (S - 1) // 2, emb_dim], expanded_mask
+            has shape [batch_size, S + S * (S - 1) // 2], and token_slots is a list
+            of slot index tuples: (0,), ..., (S-1,), (0, 1), (0, 2), ...
+        """
+        S = tokens.shape[1]
+        i, j = torch.triu_indices(
+            S,
+            S,
+            offset=1,
+            device=tokens.device,
+        )
+        pair_tokens = tokens[:, i] + tokens[:, j]
+        pair_mask = mask[:, i] & mask[:, j]
+
+        expanded_tokens = torch.cat((tokens, pair_tokens), dim=1)
+        expanded_mask = torch.cat((mask, pair_mask), dim=1)
+        token_slots = [(s,) for s in range(S)] + [
+            (int(u.item()), int(v.item())) for u, v in zip(i, j)
+        ]
+        return expanded_tokens, expanded_mask, token_slots
+
     def forward(
         self,
         rmols: list,
@@ -285,6 +364,11 @@ class model(nn.Module):
         r_mask = torch.as_tensor(np.asarray(r_dummy, dtype=bool), device=device)
         p_mask = torch.as_tensor(np.asarray(p_dummy, dtype=bool), device=device)
 
+        if self.reactant_tokens == "comb":
+            r_tokens, r_mask, token_slots = self._add_pair_tokens(r_tokens, r_mask)
+        else:
+            token_slots = [(s,) for s in range(r_tokens.shape[1])]
+
         weights = {}
         if self.attention_on == "all":
             # One shared attention over the whole reaction; the two sides are
@@ -307,6 +391,9 @@ class model(nn.Module):
             self.last_attention = (
                 weights if len(weights) > 1 else next(iter(weights.values()), None)
             )
+            self.last_token_slots = token_slots
+        else:
+            self.last_token_slots = None
 
         # A side that does not attend keeps the plain mean of its GNN embeddings.
         reactant_vectors = self._masked_mean(r_tokens, r_mask)

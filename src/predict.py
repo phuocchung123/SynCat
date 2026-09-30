@@ -6,11 +6,17 @@ from reaction_data import get_graph_data
 from data import GraphDataset
 from utils import collate_reaction_graphs
 from model import model
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # Architecture of checkpoints saved before the model settings were stored in
 # them ("model_config"); these were all trained with the default settings.
-LEGACY_CONFIG = {"num_layer": 3, "emb_dim": 384, "drop_ratio": 0.1}
+LEGACY_CONFIG = {
+    "num_layer": 3,
+    "emb_dim": 384,
+    "drop_ratio": 0.1,
+    "reactant_tokens": "ind",
+    "head": "linear",
+}
 
 
 def predict(
@@ -18,14 +24,17 @@ def predict(
     model_path: str = "../Data/model/",
     model_name: str = "model_yield",
     device: int = 0,
+    reactant_tokens: Optional[str] = None,
+    head: Optional[str] = None,
 ) -> List[Tuple[torch.Tensor, List, List, List]]:
     """
     Run inference on a list of reaction SMILES strings.
 
     Each element in `rsmi_lst` is expected to be of the form "reactant_smiles>>product_smiles".
-    The model architecture (GNN layers, embedding size, attention layers and
-    heads) is rebuilt from the settings stored in the checkpoint, so any model
-    trained with `main_finetune.py` can be loaded without repeating them.
+    The model architecture (GNN layers, embedding size, attention layers, heads,
+    reactant token mode, and regression head) is rebuilt from the settings stored
+    in the checkpoint, so any model trained with `main_finetune.py` can be loaded
+    without repeating them.
 
     Parameters:
         rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".
@@ -33,12 +42,13 @@ def predict(
         model_name: Checkpoint file name, with or without the ".pt" extension
             (e.g. "model_yield" or "model_yield.pt", as given to `--model_name`).
         device: GPU index to use if CUDA is available; falls back to CPU otherwise.
+        reactant_tokens: Optional assertion; if provided, must match the checkpoint.
+        head: Optional assertion; if provided, must match the checkpoint.
 
     Returns:
         A list of predictions, one per batch. Each prediction is expected to be a tuple
         (pred, emb) as returned by the model during inference, where
         `pred` holds the predicted yield values of shape [batch_size].
-
     """
 
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_lst])
@@ -80,6 +90,20 @@ def predict(
             "input reactions were featurized to %d/%d"
             % (config["node_in_feats"], config["edge_in_feats"], node_dim, edge_dim)
         )
+    if reactant_tokens is not None:
+        expected_rt = config.get("reactant_tokens", "ind")
+        if reactant_tokens != expected_rt:
+            raise ValueError(
+                "reactant_tokens assertion failed: checkpoint was configured with "
+                "%r, but %r was requested" % (expected_rt, reactant_tokens)
+            )
+    if head is not None:
+        expected_head = config.get("head", "linear")
+        if head != expected_head:
+            raise ValueError(
+                "head assertion failed: checkpoint was configured with "
+                "%r, but %r was requested" % (expected_head, head)
+            )
     net = model.from_config(config).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
 
