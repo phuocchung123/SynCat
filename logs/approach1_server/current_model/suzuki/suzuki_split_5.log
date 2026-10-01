@@ -1,0 +1,16 @@
+2026-10-01 14:36:33,976 - INFO - Command stage=train, split_ids=[5]
+2026-10-01 14:36:33,976 - INFO - ================================================================================
+2026-10-01 14:36:33,976 - INFO - STAGE 1: VALIDATE splits [5]
+2026-10-01 14:36:34,288 - INFO - Split 5: valid (../Data/processed/suzuki/npz/split_5)
+2026-10-01 14:36:34,289 - INFO - Found 3/3 subset npz files
+2026-10-01 14:36:34,289 - INFO - Preparation barrier passed: all 1 splits and 3 npz files are valid
+2026-10-01 14:36:34,299 - INFO - ================================================================================
+2026-10-01 14:36:34,299 - INFO - STAGE 2: TRAIN splits [5] (run folder ../logs/approach1_server/current_model/suzuki/runs/suzuki_split_5_20261001_143634)
+2026-10-01 14:36:34,299 - INFO - --------------------------------------------------------------------------------
+2026-10-01 14:36:34,299 - INFO - Split 5: training (seed 47, train/valid/test 3628/404/1728)
+2026-10-01 14:38:43,786 - INFO - Split 5: best epoch 37 | val MAE 0.2000 RMSE 0.2505 R2 0.2344 | test MAE 0.2033 RMSE 0.2548 R2 0.1683
+2026-10-01 14:38:43,787 - INFO - Split 5: TEST RESULT seed=47 n_train=3628 n_valid=404 n_test=1728 test_mae=0.2033 test_rmse=0.2548 test_r2=0.1683 training_runtime_sec=128.1 evaluation_runtime_sec=0.9
+2026-10-01 14:38:43,916 - INFO - ================================================================================
+2026-10-01 14:38:43,916 - INFO - Aggregate metrics skipped (--skip_aggregate)
+2026-10-01 14:38:43,916 - INFO - successful runs: 1, failed runs: 0
+2026-10-01 14:38:43,916 - INFO - Results: {'results': '../logs/approach1_server/current_model/suzuki/suzuki_split_5_results.csv', 'predictions': '../logs/approach1_server/current_model/suzuki/suzuki_split_5_test_predictions.csv'}

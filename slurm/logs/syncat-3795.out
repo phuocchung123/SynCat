@@ -1,0 +1,298 @@
+========================================
+Job ID: 3795
+Job name: syncat-approach1-bh
+Compute node: labcom05
+Allocated node: labcom05
+CPUs per task: 4
+CUDA_VISIBLE_DEVICES=0
+Started at: Thu Oct  1 11:25:55 UTC 2026
+========================================
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat6_app1
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat6_app1/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+OMP_NUM_THREADS=4
+Thu Oct  1 11:25:56 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:03:00.0 Off |                  Off |
+|  0%   32C    P8             12W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4090
+========================================
+=== cell current_model: reactant_tokens=ind reactant_pooling=mean head=linear
+========================================
+
+=== RESULTS (../logs/approach1_server/current_model/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          18     2491      277    1187 22.457050  27.123977  0.032800      0.356793               32.3    NaN
+fullcv02_split70   cv     split_70 success    42           0     2491      277    1187 22.663540  27.037412 -0.021827     -0.068454               12.2    NaN
+fullcv03_split70   cv     split_70 success    42          10     2491      277    1187 21.262217  26.216512  0.063076      0.387080               23.9    NaN
+fullcv04_split70   cv     split_70 success    42          21     2491      277    1187 21.540639  26.563458  0.041990      0.407572               36.0    NaN
+fullcv05_split70   cv     split_70 success    42          47     2491      277    1187 17.902474  22.404021  0.348053      0.595485               66.9    NaN
+fullcv06_split70   cv     split_70 success    42          76     2491      277    1187 16.173556  20.908352  0.405054      0.639841              101.4    NaN
+fullcv07_split70   cv     split_70 success    42          27     2491      277    1187 21.091023  26.128043  0.079426      0.416800               43.8    NaN
+fullcv08_split70   cv     split_70 success    42          90     2491      277    1187 15.445646  20.738818  0.408725      0.656698              114.6    NaN
+fullcv09_split70   cv     split_70 success    42          32     2491      277    1187 20.448229  24.678844  0.191743      0.477469               49.1    NaN
+fullcv10_split70   cv     split_70 success    42          57     2491      277    1187 16.396748  22.116982  0.355083      0.611886               78.0    NaN
+           test1 test        split success    42          19     2752      306     897 23.333842  29.080151 -0.137579      0.504736               35.7    NaN
+           test2 test        split success    42          12     2750      306     899 21.925798  26.482306  0.045281      0.261417               28.1    NaN
+           test3 test        split success    42          45     2753      306     896 17.685676  23.326607  0.311022      0.577847               67.4    NaN
+           test4 test        split success    42          30     2750      306     899 21.805861  25.392698  0.078191      0.339840               48.8    NaN
+
+=== SUMMARY (../logs/approach1_server/current_model/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 19.538112 2.771341      10
+  cv     split_70    test_rmse 24.391642 2.586534      10
+  cv     split_70      test_r2  0.190412 0.171966      10
+  cv     split_70 test_pearson  0.448117 0.213749      10
+test        split     test_mae 21.187794 2.435639       4
+test        split    test_rmse 26.070441 2.395548       4
+test        split      test_r2  0.074228 0.184199       4
+test        split test_pearson  0.420960 0.145678       4
+=== cell current_model: done
+========================================
+=== cell approach_3: reactant_tokens=comb reactant_pooling=mean head=linear
+========================================
+
+=== RESULTS (../logs/approach1_server/approach_3/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          14     2491      277    1187 22.748081  27.841917 -0.019079      0.334877               28.1    NaN
+fullcv02_split70   cv     split_70 success    42           3     2491      277    1187 22.532912  27.210349 -0.034941      0.214613               16.1    NaN
+fullcv03_split70   cv     split_70 success    42          20     2491      277    1187 20.656223  25.637632  0.103996      0.452977               35.6    NaN
+fullcv04_split70   cv     split_70 success    42          14     2491      277    1187 22.468056  27.623700 -0.036012      0.244933               29.1    NaN
+fullcv05_split70   cv     split_70 success    42           2     2491      277    1187 22.676366  27.340624  0.029094      0.237598               14.3    NaN
+fullcv06_split70   cv     split_70 success    42          20     2491      277    1187 20.898610  25.051952  0.145875      0.394427               36.0    NaN
+fullcv07_split70   cv     split_70 success    42          30     2491      277    1187 21.521094  25.858538  0.098319      0.400430               48.3    NaN
+fullcv08_split70   cv     split_70 success    42          25     2491      277    1187 20.420752  24.309948  0.187563      0.434770               41.1    NaN
+fullcv09_split70   cv     split_70 success    42          23     2491      277    1187 21.460037  25.319205  0.149254      0.422673               39.6    NaN
+fullcv10_split70   cv     split_70 success    42           0     2491      277    1187 23.492178  28.988263 -0.107889     -0.051420               12.6    NaN
+           test1 test        split success    42          29     2752      306     897 20.432504  24.445626  0.196121      0.485950               48.3    NaN
+           test2 test        split success    42          23     2750      306     899 20.475782  24.054892  0.212282      0.470783               42.4    NaN
+           test3 test        split success    42          15     2753      306     896 21.290269  25.097771  0.202423      0.450936               31.8    NaN
+           test4 test        split success    42          30     2750      306     899 20.558586  24.153525  0.165965      0.435980               49.1    NaN
+
+=== SUMMARY (../logs/approach1_server/approach_3/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.887431 1.035684      10
+  cv     split_70    test_rmse 26.518213 1.487183      10
+  cv     split_70      test_r2  0.051618 0.098850      10
+  cv     split_70 test_pearson  0.308588 0.154131      10
+test        split     test_mae 20.689285 0.404056       4
+test        split    test_rmse 24.437953 0.470125       4
+test        split      test_r2  0.194198 0.019962       4
+test        split test_pearson  0.460912 0.021951       4
+=== cell approach_3: done
+========================================
+=== cell approach_2: reactant_tokens=comb reactant_pooling=mean head=mlp
+========================================
+
+=== RESULTS (../logs/approach1_server/approach_2/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42           9     2491      277    1187 22.286856  26.851558  0.052130      0.357142               22.4    NaN
+fullcv02_split70   cv     split_70 success    42           9     2491      277    1187 21.475863  26.204875  0.040132      0.371896               23.1    NaN
+fullcv03_split70   cv     split_70 success    42          38     2491      277    1187 20.940599  25.809790  0.091922      0.407231               55.9    NaN
+fullcv04_split70   cv     split_70 success    42          27     2491      277    1187 19.810064  24.308895  0.197710      0.479972               44.5    NaN
+fullcv05_split70   cv     split_70 success    42           4     2491      277    1187 22.696980  27.265574  0.034417      0.245166               16.8    NaN
+fullcv06_split70   cv     split_70 success    42          25     2491      277    1187 20.421049  24.178421  0.204401      0.468077               41.7    NaN
+fullcv07_split70   cv     split_70 success    42          11     2491      277    1187 22.282669  27.117561  0.008378      0.242209               25.9    NaN
+fullcv08_split70   cv     split_70 success    42          30     2491      277    1187 19.675937  24.565751  0.170376      0.443000               47.7    NaN
+fullcv09_split70   cv     split_70 success    42          17     2491      277    1187 21.234159  25.361131  0.146435      0.409354               32.9    NaN
+fullcv10_split70   cv     split_70 success    42          27     2491      277    1187 19.735782  23.914312  0.246006      0.501926               44.5    NaN
+           test1 test        split success    42          11     2752      306     897 22.561630  28.274844 -0.075447      0.431545               27.1    NaN
+           test2 test        split success    42          43     2750      306     899 15.289996  20.188449  0.445157      0.668696               65.5    NaN
+           test3 test        split success    42          52     2753      306     896 18.410159  23.282228  0.313641      0.581030               76.8    NaN
+           test4 test        split success    42          52     2750      306     899 21.441126  25.917060  0.039727      0.358414               77.6    NaN
+
+=== SUMMARY (../logs/approach1_server/approach_2/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.055996 1.132203      10
+  cv     split_70    test_rmse 25.557787 1.277659      10
+  cv     split_70      test_r2  0.119191 0.084214      10
+  cv     split_70 test_pearson  0.392598 0.090896      10
+test        split     test_mae 19.425728 3.267587       4
+test        split    test_rmse 24.415645 3.478576       4
+test        split      test_r2  0.180770 0.240205       4
+test        split test_pearson  0.509921 0.140669       4
+=== cell approach_2: done
+========================================
+=== cell approach_1_linear: reactant_tokens=comb reactant_pooling=rn head=linear
+========================================
+
+=== RESULTS (../logs/approach1_server/approach_1_linear/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          34     2491      277    1187 20.087070  24.462606  0.213289      0.495348               54.3    NaN
+fullcv02_split70   cv     split_70 success    42          13     2491      277    1187 21.061678  24.813095  0.139385      0.390436               29.3    NaN
+fullcv03_split70   cv     split_70 success    42          37     2491      277    1187 20.624816  25.020875  0.146587      0.483865               60.1    NaN
+fullcv04_split70   cv     split_70 success    42          16     2491      277    1187 21.932180  25.447470  0.120795      0.350787               32.3    NaN
+fullcv05_split70   cv     split_70 success    42           8     2491      277    1187 21.749885  25.287545  0.169435      0.427897               23.2    NaN
+fullcv06_split70   cv     split_70 success    42          53     2491      277    1187 21.554657  25.736594  0.098553      0.395761               79.0    NaN
+fullcv07_split70   cv     split_70 success    42          18     2491      277    1187 22.783072  27.780618 -0.040707      0.331758               36.5    NaN
+fullcv08_split70   cv     split_70 success    42          18     2491      277    1187 21.214351  24.993132  0.141258      0.380724               35.7    NaN
+fullcv09_split70   cv     split_70 success    42          11     2491      277    1187 21.552472  25.198195  0.157367      0.415277               27.2    NaN
+fullcv10_split70   cv     split_70 success    42          20     2491      277    1187 21.972104  26.849007  0.049596      0.333988               38.5    NaN
+           test1 test        split success    42          65     2752      306     897 19.766361  24.260875  0.208226      0.510729               97.5    NaN
+           test2 test        split success    42          26     2750      306     899 21.280746  24.333096  0.193956      0.443175               48.1    NaN
+           test3 test        split success    42           8     2753      306     896 22.791530  26.527783  0.108946      0.340755               24.2    NaN
+           test4 test        split success    42          51     2750      306     899 21.548736  25.487801  0.071273      0.307052               81.0    NaN
+
+=== SUMMARY (../logs/approach1_server/approach_1_linear/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.453229 0.755593      10
+  cv     split_70    test_rmse 25.558914 1.011917      10
+  cv     split_70      test_r2  0.119556 0.070961      10
+  cv     split_70 test_pearson  0.400584 0.056814      10
+test        split     test_mae 21.346843 1.242333       4
+test        split    test_rmse 25.152389 1.075523       4
+test        split      test_r2  0.145600 0.066152       4
+test        split test_pearson  0.400428 0.093584       4
+=== cell approach_1_linear: done
+========================================
+=== cell approach_1_mlp: reactant_tokens=comb reactant_pooling=rn head=mlp
+========================================
+
+=== RESULTS (../logs/approach1_server/approach_1_mlp/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42           2     2491      277    1187 23.751444  29.745006 -0.163156      0.243244               15.9    NaN
+fullcv02_split70   cv     split_70 success    42           7     2491      277    1187 22.697632  27.841359 -0.083498      0.258451               21.7    NaN
+fullcv03_split70   cv     split_70 success    42          29     2491      277    1187 21.722425  26.310489  0.056347      0.356649               49.5    NaN
+fullcv04_split70   cv     split_70 success    42          20     2491      277    1187 19.814511  24.739145  0.169059      0.481387               38.2    NaN
+fullcv05_split70   cv     split_70 success    42           4     2491      277    1187 22.922327  26.991835  0.053708      0.253255               18.2    NaN
+fullcv06_split70   cv     split_70 success    42          29     2491      277    1187 21.190292  25.527751  0.113123      0.433505               49.8    NaN
+fullcv07_split70   cv     split_70 success    42           9     2491      277    1187 22.356768  27.102671  0.009467      0.259112               24.8    NaN
+fullcv08_split70   cv     split_70 success    42          32     2491      277    1187 20.810381  24.502953  0.174612      0.423247               53.3    NaN
+fullcv09_split70   cv     split_70 success    42          19     2491      277    1187 21.037108  24.691225  0.190932      0.455512               36.7    NaN
+fullcv10_split70   cv     split_70 success    42          24     2491      277    1187 21.397797  25.298143  0.156220      0.403863               43.0    NaN
+           test1 test        split success    42          38     2752      306     897 18.937463  24.259350  0.208325      0.527741               63.6    NaN
+           test2 test        split success    42          47     2750      306     899 18.717075  23.710312  0.234688      0.514109               76.3    NaN
+           test3 test        split success    42          31     2753      306     896 22.030789  25.953358  0.147117      0.427654               55.2    NaN
+           test4 test        split success    42           4     2750      306     899 22.346935  26.959364 -0.039065      0.164432               19.3    NaN
+
+=== SUMMARY (../logs/approach1_server/approach_1_mlp/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.770069 1.165121      10
+  cv     split_70    test_rmse 26.275058 1.673803      10
+  cv     split_70      test_r2  0.067681 0.118631      10
+  cv     split_70 test_pearson  0.356823 0.094641      10
+test        split     test_mae 20.508066 1.947183       4
+test        split    test_rmse 25.220596 1.501689       4
+test        split      test_r2  0.137766 0.123463       4
+test        split test_pearson  0.408484 0.168629       4
+=== cell approach_1_mlp: done
+========================================
+=== cell option_b_linear: reactant_tokens=ind reactant_pooling=rn head=linear
+========================================
+
+=== RESULTS (../logs/approach1_server/option_b_linear/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          44     2491      277    1187 21.251773  25.583360  0.139552      0.445596               63.8    NaN
+fullcv02_split70   cv     split_70 success    42          14     2491      277    1187 21.965791  25.955527  0.058312      0.312312               28.8    NaN
+fullcv03_split70   cv     split_70 success    42          15     2491      277    1187 22.099012  26.844097  0.017682      0.362936               30.1    NaN
+fullcv04_split70   cv     split_70 success    42          15     2491      277    1187 21.948430  25.553128  0.113479      0.360144               30.2    NaN
+fullcv05_split70   cv     split_70 success    42          10     2491      277    1187 22.500404  26.193998  0.108823      0.364207               24.3    NaN
+fullcv06_split70   cv     split_70 success    42          27     2491      277    1187 21.950428  25.636235  0.105569      0.372319               45.1    NaN
+fullcv07_split70   cv     split_70 success    42          16     2491      277    1187 21.144073  25.279323  0.138261      0.452473               32.8    NaN
+fullcv08_split70   cv     split_70 success    42           6     2491      277    1187 21.852202  24.940307  0.144884      0.422192               20.6    NaN
+fullcv09_split70   cv     split_70 success    42          13     2491      277    1187 22.065239  26.128635  0.093990      0.347878               28.4    NaN
+fullcv10_split70   cv     split_70 success    42          15     2491      277    1187 22.041942  25.692595  0.129702      0.374084               31.1    NaN
+           test1 test        split success    42          18     2752      306     897 22.300780  27.606479 -0.025204      0.350295               36.2    NaN
+           test2 test        split success    42           9     2750      306     899 22.128644  25.724070  0.099169      0.340734               24.9    NaN
+           test3 test        split success    42          12     2753      306     896 22.456703  25.872518  0.152422      0.397624               28.9    NaN
+           test4 test        split success    42           9     2750      306     899 22.551772  27.214165 -0.058799      0.111169               24.9    NaN
+
+=== SUMMARY (../logs/approach1_server/option_b_linear/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.881930 0.401027      10
+  cv     split_70    test_rmse 25.780721 0.530226      10
+  cv     split_70      test_r2  0.105025 0.040157      10
+  cv     split_70 test_pearson  0.381414 0.044669      10
+test        split     test_mae 22.359475 0.185436       4
+test        split    test_rmse 26.604308 0.946327       4
+test        split      test_r2  0.041897 0.100230       4
+test        split test_pearson  0.299956 0.128292       4
+=== cell option_b_linear: done
+========================================
+=== cell option_b_mlp: reactant_tokens=ind reactant_pooling=rn head=mlp
+========================================
+
+=== RESULTS (../logs/approach1_server/option_b_mlp/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse  test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          47     2491      277    1187 19.640814  26.010651 0.110569      0.485925               64.9    NaN
+fullcv02_split70   cv     split_70 success    42          34     2491      277    1187 21.321342  25.674536 0.078591      0.361658               48.7    NaN
+fullcv03_split70   cv     split_70 success    42           8     2491      277    1187 22.118813  26.397533 0.050093      0.331922               21.2    NaN
+fullcv04_split70   cv     split_70 success    42          26     2491      277    1187 20.780654  25.309735 0.130287      0.412178               41.4    NaN
+fullcv05_split70   cv     split_70 success    42          41     2491      277    1187 19.451435  24.750602 0.204332      0.510001               58.8    NaN
+fullcv06_split70   cv     split_70 success    42          37     2491      277    1187 19.654873  24.269249 0.198413      0.474909               53.8    NaN
+fullcv07_split70   cv     split_70 success    42          42     2491      277    1187 20.824938  25.696313 0.109597      0.431739               60.4    NaN
+fullcv08_split70   cv     split_70 success    42          12     2491      277    1187 21.710869  25.376895 0.114684      0.370643               26.1    NaN
+fullcv09_split70   cv     split_70 success    42          30     2491      277    1187 20.212185  24.280667 0.217614      0.482316               46.3    NaN
+fullcv10_split70   cv     split_70 success    42          32     2491      277    1187 21.393648  25.211705 0.161976      0.406170               48.3    NaN
+           test1 test        split success    42          18     2752      306     897 21.984345  26.544348 0.052165      0.350869               34.2    NaN
+           test2 test        split success    42          13     2750      306     899 20.492351  24.294475 0.196513      0.456983               28.2    NaN
+           test3 test        split success    42          11     2753      306     896 20.148843  24.466376 0.242048      0.502284               26.7    NaN
+           test4 test        split success    42          28     2750      306     899 20.512640  25.123240 0.097651      0.422852               45.9    NaN
+
+=== SUMMARY (../logs/approach1_server/option_b_mlp/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 20.710957 0.938915      10
+  cv     split_70    test_rmse 25.297789 0.701112      10
+  cv     split_70      test_r2  0.137616 0.056155      10
+  cv     split_70 test_pearson  0.426746 0.060441      10
+test        split     test_mae 20.784545 0.817098       4
+test        split    test_rmse 25.107110 1.022551       4
+test        split      test_r2  0.147094 0.087397       4
+test        split test_pearson  0.433247 0.063832       4
+=== cell option_b_mlp: done
+========================================
+=== cell ind_mean_mlp: reactant_tokens=ind reactant_pooling=mean head=mlp
+========================================
+
+=== RESULTS (../logs/approach1_server/ind_mean_mlp/bh/bh_results.csv)
+         dataset kind split_column  status  seed  best_epoch  n_train  n_valid  n_test  test_mae  test_rmse   test_r2  test_pearson  train_runtime_sec  error
+fullcv01_split70   cv     split_70 success    42          15     2491      277    1187 21.711035  25.192221  0.165661      0.419686               28.2    NaN
+fullcv02_split70   cv     split_70 success    42           0     2491      277    1187 22.860877  28.126497 -0.105805     -0.297679               11.6    NaN
+fullcv03_split70   cv     split_70 success    42          16     2491      277    1187 21.069641  25.306051  0.127022      0.396158               28.8    NaN
+fullcv04_split70   cv     split_70 success    42          26     2491      277    1187 20.717179  25.563215  0.112779      0.421672               40.3    NaN
+fullcv05_split70   cv     split_70 success    42           4     2491      277    1187 22.646612  27.314058  0.030980      0.243704               16.4    NaN
+fullcv06_split70   cv     split_70 success    42          24     2491      277    1187 18.413896  22.770379  0.294367      0.551129               37.9    NaN
+fullcv07_split70   cv     split_70 success    42          44     2491      277    1187 20.504369  25.341293  0.134031      0.423743               59.8    NaN
+fullcv08_split70   cv     split_70 success    42           8     2491      277    1187 21.887303  27.021085 -0.003753      0.226388               20.7    NaN
+fullcv09_split70   cv     split_70 success    42          29     2491      277    1187 20.634080  25.965805  0.105247      0.446145               44.6    NaN
+fullcv10_split70   cv     split_70 success    42          18     2491      277    1187 20.597520  24.514391  0.207692      0.487851               32.1    NaN
+           test1 test        split success    42          17     2752      306     897 20.728025  25.303448  0.138713      0.484342               32.0    NaN
+           test2 test        split success    42          30     2750      306     899 20.314158  24.173060  0.204524      0.467957               46.8    NaN
+           test3 test        split success    42          17     2753      306     896 20.790574  24.964552  0.210868      0.477324               32.6    NaN
+           test4 test        split success    42           6     2750      306     899 23.194228  26.843383 -0.030144      0.088369               19.2    NaN
+
+=== SUMMARY (../logs/approach1_server/ind_mean_mlp/bh/bh_summary.csv)
+kind split_column       metric      mean      std  n_runs
+  cv     split_70     test_mae 21.104251 1.276832      10
+  cv     split_70    test_rmse 25.711500 1.522295      10
+  cv     split_70      test_r2  0.106822 0.112143      10
+  cv     split_70 test_pearson  0.331880 0.242452      10
+test        split     test_mae 21.256747 1.308838       4
+test        split    test_rmse 25.321111 1.119937       4
+test        split      test_r2  0.130990 0.112267       4
+test        split test_pearson  0.379498 0.194202       4
+=== cell ind_mean_mlp: done
+========================================
+Training completed at: Thu Oct  1 12:43:53 UTC 2026
+========================================

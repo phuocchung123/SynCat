@@ -1,0 +1,378 @@
+========================================
+Job ID: 3806
+Job name: syncat-approach1-suzuki
+Compute node: labcom02
+Allocated node: labcom02
+CPUs per task: 4
+CUDA_VISIBLE_DEVICES=0
+Started at: Thu Oct  1 14:19:30 UTC 2026
+========================================
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat6_app1
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat6_app1/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+OMP_NUM_THREADS=4
+Thu Oct  1 14:19:34 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4070 ...    On  |   00000000:01:00.0 Off |                  N/A |
+|  0%   42C    P8             15W /  285W |       2MiB /  16376MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+========================================
+=== cell current_model: reactant_tokens=ind reactant_pooling=mean head=linear
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 4.0 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 3.8 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 3.8 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 3.8 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 1.5 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 2.2 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 1.5 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 4.6 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 1.9 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/current_model/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 3.3 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          78    1728    0.1434     0.1855   0.5550        0.7452              236.5623
+        1    43 success          73    1728    0.1413     0.1863   0.5615        0.7536              224.9091
+        2    44 success          71    1728    0.1425     0.1838   0.5727        0.7614              219.3256
+        3    45 success          71    1728    0.1505     0.1983   0.4981        0.7094              220.6224
+        4    46 success          20    1728    0.1650     0.2087   0.4416        0.6664               82.6867
+        5    47 success          37    1728    0.2033     0.2548   0.1683        0.5416              128.0612
+        6    48 success          20    1728    0.2221     0.2673   0.1277        0.3788               81.7604
+        7    49 success          98    1728    0.1366     0.1746   0.6054        0.7792              267.6775
+        8    50 success          29    1728    0.1643     0.2041   0.4818        0.6953              106.3483
+        9    51 success          61    1728    0.1560     0.2028   0.4781        0.7091              192.4418
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1625 0.0285                 10              0
+test_rmse 0.2066 0.0307                 10              0
+  test_r2 0.4490 0.1667                 10              0
+=== cell current_model: done
+========================================
+=== cell approach_3: reactant_tokens=comb reactant_pooling=mean head=linear
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 4.4 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 2.3 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 2.8 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 1.6 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 3.9 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 4.6 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 1.7 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 3.8 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 2.2 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/approach_3/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 4.6 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          85    1728    0.1360     0.1777   0.5917        0.7694              260.0241
+        1    43 success          38    1728    0.1683     0.2110   0.4372        0.6630              132.0382
+        2    44 success          50    1728    0.1535     0.1980   0.5039        0.7186              165.0109
+        3    45 success          22    1728    0.2112     0.2499   0.2030        0.4642               88.3373
+        4    46 success          75    1728    0.1313     0.1707   0.6262        0.7927              231.3688
+        5    47 success          95    1728    0.1506     0.1913   0.5311        0.7316              271.0182
+        6    48 success          24    1728    0.2146     0.2589   0.1813        0.4343               93.3836
+        7    49 success          72    1728    0.1398     0.1822   0.5703        0.7621              223.1643
+        8    50 success          37    1728    0.1502     0.1902   0.5498        0.7422              128.6937
+        9    51 success          99    1728    0.1365     0.1767   0.6036        0.7780              271.8662
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1592 0.0303                 10              0
+test_rmse 0.2007 0.0307                 10              0
+  test_r2 0.4798 0.1609                 10              0
+=== cell approach_3: done
+========================================
+=== cell approach_2: reactant_tokens=comb reactant_pooling=mean head=mlp
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 2.0 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 3.9 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 4.6 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 2.1 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 2.2 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 2.2 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 2.6 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 1.9 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 3.6 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/approach_2/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 4.6 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          32    1728    0.1612     0.2066   0.4485        0.6724              114.8421
+        1    43 success          73    1728    0.1399     0.1818   0.5822        0.7632              226.5029
+        2    44 success          99    1728    0.1285     0.1721   0.6253        0.7998              271.4027
+        3    45 success          34    1728    0.2085     0.2535   0.1799        0.4357              121.8260
+        4    46 success          36    1728    0.1342     0.1800   0.5844        0.7692              126.6608
+        5    47 success          36    1728    0.2060     0.2511   0.1921        0.4872              127.0412
+        6    48 success          44    1728    0.1946     0.2413   0.2892        0.5473              147.8217
+        7    49 success          29    1728    0.1522     0.1983   0.4912        0.7094              107.3526
+        8    50 success          68    1728    0.1399     0.1811   0.5918        0.7701              212.4103
+        9    51 success          97    1728    0.1331     0.1741   0.6155        0.7855              270.6926
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1598 0.0315                 10              0
+test_rmse 0.2040 0.0327                 10              0
+  test_r2 0.4600 0.1763                 10              0
+=== cell approach_2: done
+========================================
+=== cell approach_1_linear: reactant_tokens=comb reactant_pooling=rn head=linear
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 10.4 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 3.0 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 1.6 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 6.3 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 3.7 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 10.4 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 6.5 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 10.5 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 1.3 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/approach_1_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 4.0 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          98    1728    0.1377     0.1774   0.5930        0.7779              618.1300
+        1    43 success          17    1728    0.2340     0.2713   0.0700        0.2879              172.6954
+        2    44 success           4    1728    0.2425     0.2812  -0.0001        0.1929               92.2826
+        3    45 success          49    1728    0.1700     0.2191   0.3876        0.6326              371.6668
+        4    46 success          24    1728    0.2217     0.2636   0.1090        0.3326              215.9814
+        5    47 success          99    1728    0.1794     0.2316   0.3127        0.6594              620.2239
+        6    48 success          51    1728    0.1631     0.1994   0.5144        0.7291              383.8215
+        7    49 success          98    1728    0.1423     0.1798   0.5817        0.7670              622.1956
+        8    50 success           1    1728    0.2475     0.2837  -0.0015        0.1124               73.6371
+        9    51 success          27    1728    0.2362     0.2715   0.0643        0.2679              234.8394
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1974 0.0432                 10              0
+test_rmse 0.2379 0.0419                 10              0
+  test_r2 0.2631 0.2430                 10              0
+=== cell approach_1_linear: done
+========================================
+=== cell approach_1_mlp: reactant_tokens=comb reactant_pooling=rn head=mlp
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 7.7 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 2.2 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 9.5 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 5.2 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 9.1 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 7.8 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 3.0 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 8.5 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 1.6 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/approach_1_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 3.6 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          63    1728    0.1536     0.1998   0.4839        0.6994              458.8507
+        1    43 success           9    1728    0.2394     0.2751   0.0438        0.2289              123.4476
+        2    44 success          80    1728    0.1327     0.1733   0.6199        0.7944              564.5669
+        3    45 success          38    1728    0.1677     0.2127   0.4229        0.6507              303.4266
+        4    46 success          76    1728    0.1313     0.1735   0.6140        0.7840              540.5739
+        5    47 success          63    1728    0.1494     0.1929   0.5235        0.7252              458.7447
+        6    48 success          17    1728    0.2060     0.2531   0.2177        0.4774              173.0627
+        7    49 success          70    1728    0.1282     0.1700   0.6259        0.7929              502.3823
+        8    50 success           4    1728    0.2445     0.2843  -0.0059        0.1208               92.3172
+        9    51 success          23    1728    0.1781     0.2204   0.3834        0.6208              209.6312
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1731 0.0434                 10              0
+test_rmse 0.2155 0.0423                 10              0
+  test_r2 0.3929 0.2340                 10              0
+=== cell approach_1_mlp: done
+========================================
+=== cell option_b_linear: reactant_tokens=ind reactant_pooling=rn head=linear
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 1.8 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 0.6 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 0.6 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 4.6 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 1.4 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 1.8 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 4.6 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 1.8 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 0.6 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/option_b_linear/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 4.6 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          27    1728    0.2343     0.2705   0.0540        0.2403              101.7041
+        1    43 success           1    1728    0.2426     0.2812   0.0004        0.0326               31.8883
+        2    44 success           1    1728    0.2430     0.2812  -0.0006       -0.0579               31.6499
+        3    45 success          98    1728    0.1433     0.1876   0.5509        0.7424              272.3847
+        4    46 success          18    1728    0.2321     0.2716   0.0537        0.2351               78.0270
+        5    47 success          28    1728    0.2396     0.2787   0.0051        0.1531              105.2685
+        6    48 success          93    1728    0.1470     0.1892   0.5627        0.7520              270.8825
+        7    49 success          28    1728    0.2393     0.2741   0.0277        0.2068              105.0691
+        8    50 success           1    1728    0.2460     0.2835   0.0001        0.1133               32.0089
+        9    51 success          93    1728    0.1466     0.1875   0.5540        0.7494              273.4532
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.2114 0.0455                 10              0
+test_rmse 0.2505 0.0433                 10              0
+  test_r2 0.1808 0.2597                 10              0
+=== cell option_b_linear: done
+========================================
+=== cell option_b_mlp: reactant_tokens=ind reactant_pooling=rn head=mlp
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 4.2 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 2.1 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 3.8 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 4.6 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 2.2 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 4.0 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 3.1 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 3.1 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 0.6 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/option_b_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 1.3 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          80    1728    0.1446     0.1915   0.5261        0.7261              246.2916
+        1    43 success          33    1728    0.1728     0.2223   0.3753        0.6159              119.0664
+        2    44 success          70    1728    0.1403     0.1834   0.5744        0.7615              221.2703
+        3    45 success          89    1728    0.1375     0.1791   0.5905        0.7726              271.7152
+        4    46 success          36    1728    0.1523     0.1992   0.4912        0.7150              127.3924
+        5    47 success          75    1728    0.1521     0.1997   0.4889        0.7098              235.4903
+        6    48 success          55    1728    0.1521     0.1949   0.5362        0.7336              178.9360
+        7    49 success          55    1728    0.1637     0.2132   0.4119        0.6484              181.5282
+        8    50 success           1    1728    0.2456     0.2834   0.0007        0.1087               32.3077
+        9    51 success          17    1728    0.2200     0.2627   0.1243        0.3546               76.0928
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1681 0.0361                 10              0
+test_rmse 0.2129 0.0345                 10              0
+  test_r2 0.4119 0.1978                 10              0
+=== cell option_b_mlp: done
+========================================
+=== cell ind_mean_mlp: reactant_tokens=ind reactant_pooling=mean head=mlp
+========================================
+=== split 0: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 0 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 0: exit code 0 after 2.4 min
+=== split 1: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 1 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 1: exit code 0 after 4.4 min
+=== split 2: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 2 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 2: exit code 0 after 3.4 min
+=== split 3: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 3 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 3: exit code 0 after 3.0 min
+=== split 4: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 4 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 4: exit code 0 after 2.3 min
+=== split 5: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 5 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 5: exit code 0 after 4.1 min
+=== split 6: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 6 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 6: exit code 0 after 2.5 min
+=== split 7: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 7 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 7: exit code 0 after 0.8 min
+=== split 8: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 8 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 8: exit code 0 after 0.6 min
+=== split 9: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python main_finetune.py --stage train --split_ids 9 --log_dir ../logs/approach1_server/ind_mean_mlp/suzuki/ --skip_aggregate --attention_on reactants --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --num_workers 2
+=== split 9: exit code 0 after 2.0 min
+
+=== TEST RESULTS PER SPLIT
+ split_id  seed  status  best_epoch  n_test  test_mae  test_rmse  test_r2  test_pearson  training_runtime_sec
+        0    42 success          42    1728    0.1555     0.1976   0.4953        0.7062              140.3191
+        1    43 success          86    1728    0.1421     0.1856   0.5644        0.7513              260.0862
+        2    44 success          64    1728    0.1378     0.1817   0.5824        0.7648              201.0197
+        3    45 success          54    1728    0.1957     0.2403   0.2635        0.5150              173.8542
+        4    46 success          38    1728    0.1456     0.1945   0.5150        0.7319              131.1514
+        5    47 success          78    1728    0.1575     0.2022   0.4765        0.6938              238.0053
+        6    48 success          42    1728    0.1617     0.2063   0.4805        0.6957              141.5531
+        7    49 success           4    1728    0.2309     0.2685   0.0671        0.2661               39.7220
+        8    50 success           1    1728    0.2439     0.2814   0.0149        0.1469               31.2512
+        9    51 success          32    1728    0.1686     0.2152   0.4122        0.6516              114.8321
+
+   metric   mean    std  n_successful_runs  n_failed_runs
+ test_mae 0.1739 0.0373                 10              0
+test_rmse 0.2173 0.0346                 10              0
+  test_r2 0.3872 0.2031                 10              0
+=== cell ind_mean_mlp: done
+========================================
+Training completed at: Thu Oct  1 19:05:18 UTC 2026
+========================================
