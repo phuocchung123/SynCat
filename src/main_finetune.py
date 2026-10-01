@@ -3,7 +3,13 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
-from model import ATTENTION_TARGETS, HEADS, REACTANT_TOKENS, REACTION_COMBINE_DIMS
+from model import (
+    ATTENTION_TARGETS,
+    HEADS,
+    REACTANT_POOLINGS,
+    REACTANT_TOKENS,
+    REACTION_COMBINE_DIMS,
+)
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -82,6 +88,14 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(REACTANT_TOKENS),
         help="reactant token representation: 'ind' individual compound slots only; "
         "'comb' individual tokens plus unordered pairwise combination tokens",
+    )
+    parser.add_argument(
+        "--reactant_pooling",
+        type=str,
+        default="mean",
+        choices=list(REACTANT_POOLINGS),
+        help="reactant pooling method: 'mean' masked average; "
+        "'rn' relation-network pooling with main and pairwise effects",
     )
     parser.add_argument(
         "--head",

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import torch
@@ -106,7 +107,8 @@ def train(
         labels = []
         preds = []
 
-        for batchdata in tqdm(train_loader, desc="Training", disable=not is_main):
+        disable_tqdm = (not is_main) or bool(os.environ.get("TQDM_DISABLE"))
+        for batchdata in tqdm(train_loader, desc="Training", disable=disable_tqdm):
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
             inputs_pmol = [

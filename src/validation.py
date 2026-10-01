@@ -1,7 +1,26 @@
+import os
 import numpy as np
 import torch
 from tqdm import tqdm
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+try:
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+except (ImportError, Exception):
+    def mean_absolute_error(y_true, y_pred):
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    def mean_squared_error(y_true, y_pred):
+        return float(np.mean((np.asarray(y_true) - np.asarray(y_pred)) ** 2))
+
+    def r2_score(y_true, y_pred):
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
+        ss_res = np.sum((y_true - y_pred) ** 2)
+        ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+        if ss_tot == 0.0:
+            return float("nan")
+        return float(1.0 - (ss_res / ss_tot))
+
 from scipy.stats import pearsonr
 
 
@@ -89,7 +108,8 @@ def validation(args, net, test_loader, device, loss_fn=None):
         name_process = "Internal_validation"
 
     with torch.no_grad():
-        for batchdata in tqdm(test_loader, desc=name_process):
+        disable_tqdm = bool(os.environ.get("TQDM_DISABLE"))
+        for batchdata in tqdm(test_loader, desc=name_process, disable=disable_tqdm):
             inputs_rmol = [b.to(device) for b in batchdata[:rmol_max_cnt]]
             # fmt: off
             inputs_pmol = [

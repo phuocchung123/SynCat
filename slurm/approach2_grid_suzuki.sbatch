@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=syncat-approach2-suzuki
+#SBATCH --job-name=syncat-approach1-suzuki
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -10,19 +10,24 @@
 #SBATCH --output=slurm/logs/syncat-%j.out
 #SBATCH --error=slurm/logs/syncat-%j.err
 
-# Approach-2 grid on the 10 Suzuki splits (split_0 to split_9):
-#   4 cells per split:
-#     1. current_model: reactant_tokens=ind, head=linear
-#     2. approach_3:    reactant_tokens=comb, head=linear
-#     3. approach_2:    reactant_tokens=comb, head=mlp
-#     4. mlp_control:   reactant_tokens=ind, head=mlp
-# 10 splits x 4 cells = 40 trainings. Resubmit to continue after a time limit (skips successful runs).
+# Approach-1 grid on the 10 Suzuki splits (split_0 to split_9):
+#   8 cells per split:
+#     1. current_model:      reactant_tokens=ind,  reactant_pooling=mean, head=linear
+#     2. approach_3:         reactant_tokens=comb, reactant_pooling=mean, head=linear
+#     3. approach_2:         reactant_tokens=comb, reactant_pooling=mean, head=mlp
+#     4. approach_1_linear:  reactant_tokens=comb, reactant_pooling=rn,   head=linear
+#     5. approach_1_mlp:     reactant_tokens=comb, reactant_pooling=rn,   head=mlp
+#     6. option_b_linear:    reactant_tokens=ind,  reactant_pooling=rn,   head=linear
+#     7. option_b_mlp:       reactant_tokens=ind,  reactant_pooling=rn,   head=mlp
+#     8. ind_mean_mlp:       reactant_tokens=ind,  reactant_pooling=mean, head=mlp
+# 10 splits x 8 cells = 80 trainings. Resubmit to continue after a time limit (skips successful runs).
 #
 # Submit from the repository root:
-#   sbatch slurm/approach2_grid_suzuki.sbatch
+#   sbatch slurm/approach1_grid_suzuki.sbatch
+# (Note: slurm/approach2_grid_suzuki.sbatch is kept as an alias to approach1_grid_suzuki.sbatch)
 #
-# Results:  <repo>/logs/suzuki_approach2_grid/approach2_per_split.csv  (per split)
-#           <repo>/logs/suzuki_approach2_grid/approach2_summary.csv    (summary)
+# Results:  <repo>/logs/suzuki_approach1_grid/approach1_per_split.csv  (per split)
+#           <repo>/logs/suzuki_approach1_grid/approach1_summary.csv    (summary)
 
 set -euo pipefail
 
@@ -54,7 +59,7 @@ conda activate "$ENV_NAME"
 REPO_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
 if [ ! -d "$REPO_DIR/src" ]; then
     echo "ERROR: no 'src' under $REPO_DIR. Submit from the repository root:" >&2
-    echo "       cd <repo> && sbatch slurm/approach2_grid_suzuki.sbatch" >&2
+    echo "       cd <repo> && sbatch slurm/approach1_grid_suzuki.sbatch" >&2
     exit 1
 fi
 cd "$REPO_DIR/src"
@@ -77,12 +82,15 @@ export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 nvidia-smi
 python -c "import torch; assert torch.cuda.is_available(), 'no CUDA'; print('GPU:', torch.cuda.get_device_name(0))"
 
+# Clean progress logging for cluster output
+export TQDM_DISABLE=1
+
 # --- the actual run ---------------------------------------------------------
-python -u run_approach2_grid.py \
+python -u run_approach1_grid.py \
     --datasets suzuki \
     --split_ids 0 1 2 3 4 5 6 7 8 9 \
     --attention_on reactants \
-    --output_dir ../logs/suzuki_approach2_grid/ \
+    --output_dir ../logs/suzuki_approach1_grid/ \
     --epochs 100 \
     --patience 10 \
     --num_workers 2 \

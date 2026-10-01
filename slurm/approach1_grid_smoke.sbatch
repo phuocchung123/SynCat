@@ -15,7 +15,6 @@
 #
 # Submit from the repository root:
 #   sbatch slurm/approach1_grid_smoke.sbatch
-# (Note: slurm/approach2_grid_smoke.sbatch is kept as an alias to approach1_grid_smoke.sbatch)
 #
 # Results:  <repo>/logs/smoke_approach1/approach1_per_split.csv
 #           <repo>/logs/smoke_approach1/approach1_summary.csv

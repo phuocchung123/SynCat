@@ -1,24 +1,32 @@
 #!/bin/bash
-#SBATCH --job-name=syncat-approach1-smoke
+#SBATCH --job-name=syncat-approach1-suzuki
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --mem=16G
 #SBATCH --gres=gpu:1
-#SBATCH --time=00:30:00
+#SBATCH --time=3-00:00:00
 #SBATCH --output=slurm/logs/syncat-%j.out
 #SBATCH --error=slurm/logs/syncat-%j.err
 
-# Fast 1-epoch smoke test across all 8 cells on small subsets of BH and Suzuki (~2 min).
-# Verifies environment, GPU access, CUDA, and grid runner pipeline before long jobs.
+# Approach-1 grid on the 10 Suzuki splits (split_0 to split_9):
+#   8 cells per split:
+#     1. current_model:      reactant_tokens=ind,  reactant_pooling=mean, head=linear
+#     2. approach_3:         reactant_tokens=comb, reactant_pooling=mean, head=linear
+#     3. approach_2:         reactant_tokens=comb, reactant_pooling=mean, head=mlp
+#     4. approach_1_linear:  reactant_tokens=comb, reactant_pooling=rn,   head=linear
+#     5. approach_1_mlp:     reactant_tokens=comb, reactant_pooling=rn,   head=mlp
+#     6. option_b_linear:    reactant_tokens=ind,  reactant_pooling=rn,   head=linear
+#     7. option_b_mlp:       reactant_tokens=ind,  reactant_pooling=rn,   head=mlp
+#     8. ind_mean_mlp:       reactant_tokens=ind,  reactant_pooling=mean, head=mlp
+# 10 splits x 8 cells = 80 trainings. Resubmit to continue after a time limit (skips successful runs).
 #
 # Submit from the repository root:
-#   sbatch slurm/approach1_grid_smoke.sbatch
-# (Note: slurm/approach2_grid_smoke.sbatch is kept as an alias to approach1_grid_smoke.sbatch)
+#   sbatch slurm/approach1_grid_suzuki.sbatch
 #
-# Results:  <repo>/logs/smoke_approach1/approach1_per_split.csv
-#           <repo>/logs/smoke_approach1/approach1_summary.csv
+# Results:  <repo>/logs/suzuki_approach1_grid/approach1_per_split.csv  (per split)
+#           <repo>/logs/suzuki_approach1_grid/approach1_summary.csv    (summary)
 
 set -euo pipefail
 
@@ -50,7 +58,7 @@ conda activate "$ENV_NAME"
 REPO_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
 if [ ! -d "$REPO_DIR/src" ]; then
     echo "ERROR: no 'src' under $REPO_DIR. Submit from the repository root:" >&2
-    echo "       cd <repo> && sbatch slurm/approach1_grid_smoke.sbatch" >&2
+    echo "       cd <repo> && sbatch slurm/approach1_grid_suzuki.sbatch" >&2
     exit 1
 fi
 cd "$REPO_DIR/src"
@@ -78,8 +86,16 @@ export TQDM_DISABLE=1
 
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py \
-    --smoke \
+    --datasets suzuki \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 \
     --attention_on reactants \
-    --output_dir ../logs/smoke_approach1/
+    --output_dir ../logs/suzuki_approach1_grid/ \
+    --epochs 100 \
+    --patience 10 \
+    --num_workers 2 \
+    --attention_layer 1 \
+    --num_heads 1 \
+    --layer 3 \
+    --emb_dim 384
 
 echo "Finished $(date)"
