@@ -1,0 +1,38 @@
+Job 3773 on labcom05 started Wed Sep 30 22:20:44 UTC 2026
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_9
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_9/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+Wed Sep 30 22:20:46 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:02:00.0 Off |                  Off |
+|  0%   47C    P8             19W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4090
+
+Summary Results:
+   dataset          label reactant_tokens    head attention_on  n_successful  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  trainable_parameters_mean  trainable_parameters_std  epochs_ran_mean  epochs_ran_std  train_runtime_sec_mean  train_runtime_sec_std  seconds_per_epoch_mean  seconds_per_epoch_std
+0      bh     approach_2            comb     mlp    reactants            14       0.185313      0.109608       19.998017       1.921342        24.550591        1.728270      0.176898     0.096627      20.164910      1.689752       24.677391       1.530780                  1690753.0                       0.0        38.428571       21.356729               42.463284              23.337192                1.106963               0.024026
+1      bh     approach_3            comb  linear    reactants            14       0.126778      0.137072       20.898824       1.910118        25.398144        2.070373      0.117158     0.127722      21.015955      1.928867       25.538482       1.978385                  1395841.0                       0.0        32.214286       15.095484               35.124026              16.769063                1.084073               0.036180
+2      bh  current_model             ind  linear    reactants            14       0.134674      0.099305       20.985112       1.556336        25.318901        1.509814      0.123803     0.098517      21.115763      1.486430       25.468855       1.520213                  1395841.0                       0.0        34.285714       13.129114               37.447721              14.999955                1.085467               0.032132
+3      bh    mlp_control             ind     mlp    reactants            14       0.151780      0.121210       20.316829       1.984970        25.052985        1.836342      0.159444     0.130579      20.270297      2.080709       24.901919       1.858412                  1690753.0                       0.0        42.428571       18.744083               46.554322              20.782974                1.092785               0.031706
+Finished Wed Sep 30 22:59:50 UTC 2026

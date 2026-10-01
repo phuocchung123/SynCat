@@ -1,0 +1,38 @@
+Job 3779 on labcom02 started Thu Oct  1 06:18:36 UTC 2026
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_9
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_9/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+Thu Oct  1 06:18:37 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4070 ...    On  |   00000000:01:00.0 Off |                  N/A |
+|  0%   42C    P5             17W /  285W |       2MiB /  16376MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+
+Summary Results:
+   dataset          label reactant_tokens    head attention_on  n_successful  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  trainable_parameters_mean  trainable_parameters_std  epochs_ran_mean  epochs_ran_std  train_runtime_sec_mean  train_runtime_sec_std  seconds_per_epoch_mean  seconds_per_epoch_std
+0  suzuki     approach_2            comb     mlp    reactants            10       0.605901      0.039539        0.134458       0.007659         0.176251        0.008971      0.592131     0.040954       0.136359      0.007291        0.179087       0.008667                  1690753.0                       0.0             77.0       18.190352              210.251425              49.506145                2.731114               0.012025
+1  suzuki     approach_3            comb  linear    reactants            10       0.438652      0.211268        0.165670       0.036482         0.207284        0.038581      0.426626     0.207628       0.167050      0.035031        0.209487       0.037181                  1395841.0                       0.0             66.2       25.711217              181.536665              71.247284                2.736867               0.021977
+2  suzuki  current_model             ind  linear    reactants            10       0.408768      0.219305        0.170825       0.038574         0.212801        0.038595      0.394922     0.220668       0.172505      0.040212        0.215316       0.039521                  1395841.0                       0.0             60.3       30.166390              163.146147              81.795224                2.703389               0.028735
+3  suzuki    mlp_control             ind     mlp    reactants            10       0.541176      0.051986        0.147258       0.011483         0.190098        0.010830      0.526223     0.051704       0.149009      0.010123        0.192934       0.009604                  1690753.0                       0.0             62.0       22.842456              167.071773              61.912245                2.693131               0.011281
+Finished Thu Oct  1 08:21:27 UTC 2026
