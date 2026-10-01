@@ -1,0 +1,42 @@
+Job 3796 on labcom02 started Thu Oct  1 11:28:34 UTC 2026
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat9_app1
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat9_app1/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+Thu Oct  1 11:28:35 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4070 ...    On  |   00000000:01:00.0 Off |                  N/A |
+|  0%   41C    P8             15W /  285W |       2MiB /  16376MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+
+Summary Results:
+   dataset               cell       approach reactant_tokens reactant_pooling    head attention_on  n_successful  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  trainable_parameters_mean  trainable_parameters_std  epochs_ran_mean  epochs_ran_std  train_runtime_sec_mean  train_runtime_sec_std  seconds_per_epoch_mean  seconds_per_epoch_std
+0      bh  approach_1_linear     approach 1            comb               rn  linear    reactants            14       0.084112      0.075661       21.880285       0.599446        26.071278        1.105533      0.071365     0.082610      22.093989      0.568737       26.229401       1.031193                  2135425.0                       0.0        27.000000       12.961481               41.177901              19.744646                1.525097               0.055670
+1      bh     approach_1_mlp     approach 1            comb               rn     mlp    reactants            14       0.127891      0.075261       21.055142       1.167521        25.436814        1.092401      0.129267     0.078279      21.085393      1.133788       25.403095       1.179981                  2430337.0                       0.0        30.785714       10.562478               47.365539              16.647512                1.537199               0.049994
+2      bh         approach_2     approach 2            comb             mean     mlp    reactants            14       0.172317      0.055355       20.226109       1.091704        24.787661        0.832084      0.158654     0.102578      20.340266      1.286355       24.948622       1.434060                  1690753.0                       0.0        44.714286       16.936209               64.339017              23.799057                1.444408               0.042922
+3      bh         approach_3     approach 3            comb             mean  linear    reactants            14       0.159494      0.122482       20.603044       1.798152        24.931934        1.913967      0.153490     0.120574      20.686384      1.657551       24.999663       1.750497                  1395841.0                       0.0        36.500000       18.400460               52.328824              26.975658                1.425715               0.048664
+4      bh      current_model  current model             ind             mean  linear    reactants            14       0.146641      0.121548       20.544504       2.065309        25.125235        1.881784      0.149093     0.125249      20.509935      1.995663       25.059282       1.782323                  1395841.0                       0.0        39.642857       18.449962               56.656232              26.670934                1.422236               0.049255
+5      bh       ind_mean_mlp       option B             ind             mean     mlp    reactants            14       0.143917      0.179573       20.395787       2.795114        25.078818        2.798697      0.137026     0.158094      20.576226      2.492582       25.209087       2.459785                  1690753.0                       0.0        35.500000       20.444108               50.819659              29.624943                1.416866               0.058754
+6      bh    option_b_linear       option B             ind               rn  linear    reactants            14       0.102021      0.067734       21.742019       0.810794        25.819756        1.024501      0.091566     0.082066      21.921903      0.936040       25.943279       1.105682                  2135425.0                       0.0        29.642857        8.544968               42.813521              12.505270                1.443319               0.049156
+7      bh       option_b_mlp       option B             ind               rn     mlp    reactants            14       0.113726      0.096389       21.214660       1.293204        25.631716        1.417186      0.092899     0.119561      21.489904      1.460823       25.891449       1.570672                  2430337.0                       0.0        31.071429       15.228840               45.054169              22.053958                1.447291               0.052337
+Finished Thu Oct  1 13:05:38 UTC 2026

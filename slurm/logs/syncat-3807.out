@@ -1,0 +1,42 @@
+Job 3807 on labcom05 started Thu Oct  1 14:19:57 UTC 2026
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat9_app1
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat9_app1/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+Thu Oct  1 14:20:02 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:02:00.0 Off |                  Off |
+|  0%   49C    P8             18W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4090
+
+Summary Results:
+   dataset               cell       approach reactant_tokens reactant_pooling    head attention_on  n_successful  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  trainable_parameters_mean  trainable_parameters_std  epochs_ran_mean  epochs_ran_std  train_runtime_sec_mean  train_runtime_sec_std  seconds_per_epoch_mean  seconds_per_epoch_std
+0  suzuki  approach_1_linear     approach 1            comb               rn  linear    reactants            10       0.511537      0.118759        0.154236       0.023437         0.195122        0.023428      0.504359     0.116530       0.155787      0.023747        0.196519       0.023444                  2135425.0                       0.0             64.5       23.707711              282.550664             104.125237                4.378565               0.011259
+1  suzuki     approach_1_mlp     approach 1            comb               rn     mlp    reactants            10       0.472964      0.181186        0.158050       0.033994         0.201592        0.033609      0.460892     0.169563       0.159350      0.031224        0.203953       0.030353                  2430337.0                       0.0             59.1       27.294485              259.456428             119.900101                4.388164               0.015072
+2  suzuki         approach_2     approach 2            comb             mean     mlp    reactants            10       0.582510      0.040200        0.138827       0.007983         0.181409        0.008619      0.573554     0.044588       0.139743      0.008881        0.183125       0.009744                  1690753.0                       0.0             67.5       19.990275              134.832896              39.649357                1.998882               0.012854
+3  suzuki         approach_3     approach 3            comb             mean  linear    reactants            10       0.435756      0.191712        0.165724       0.031031         0.208531        0.034801      0.420192     0.190481       0.167952      0.031450        0.211412       0.034946                  1395841.0                       0.0             59.4       26.391076              119.196546              53.131837                2.004928               0.014772
+4  suzuki      current_model  current model             ind             mean  linear    reactants            10       0.537981      0.136613        0.148866       0.022970         0.189572        0.024697      0.522521     0.122194       0.150889      0.020934        0.192897       0.022326                  1395841.0                       0.0             74.3       25.372995              145.168616              49.472385                1.953730               0.015622
+5  suzuki       ind_mean_mlp       option B             ind             mean     mlp    reactants            10       0.536309      0.049627        0.149079       0.010294         0.191110        0.010088      0.524588     0.043264       0.150135      0.010035        0.193402       0.008909                  1690753.0                       0.0             57.7       18.505555              112.256815              36.213342                1.945557               0.017101
+6  suzuki    option_b_linear       option B             ind               rn  linear    reactants            10       0.038870      0.066029        0.237805       0.012320         0.275369        0.009755      0.037218     0.063013       0.237739      0.012523        0.275336       0.009525                  2135425.0                       0.0             33.2       25.654976               65.699827              51.888236                1.964551               0.025544
+7  suzuki       option_b_mlp       option B             ind               rn     mlp    reactants            10       0.490038      0.187237        0.155203       0.034030         0.198138        0.033632      0.473181     0.188954       0.157608      0.034288        0.201313       0.033600                  2430337.0                       0.0             76.1       32.343469              151.039993              64.227498                1.984196               0.015832
+Finished Thu Oct  1 17:55:54 UTC 2026

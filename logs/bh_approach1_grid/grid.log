@@ -1,0 +1,2 @@
+2026-10-01 11:28:40,024 - INFO - Starting Approach 1 Grid Runner (smoke=False, datasets=bh)
+2026-10-01 11:28:40,029 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 cell=current_model (tokens=ind, pooling=mean, head=linear) ===

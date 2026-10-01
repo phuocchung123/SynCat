@@ -1,0 +1,66 @@
+2026-10-01 11:55:55,755 - INFO - device is	cuda:0
+2026-10-01 11:55:55,845 - INFO - -- CONFIGURATIONS
+2026-10-01 11:55:55,845 - INFO - --- train/valid/test: 2491/277/1187
+2026-10-01 11:55:55,845 - INFO - --- max no. reactants_train, valid, test respectively: 6, 6, 6
+2026-10-01 11:55:55,845 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-10-01 11:55:55,845 - INFO - --- model_path: ../logs/bh_approach1_grid/runs/bh/fullcv05_split70/approach_3/model.pt
+2026-10-01 11:55:55,853 - INFO - -- TRAINING
+2026-10-01 11:55:56,559 - INFO - --- training epoch 0, loss 24.1640, mae 24.6594, rmse 30.4199, time elapsed(min) 0.01---
+2026-10-01 11:55:56,725 - INFO - --- validation at epoch 0, val_loss 24.6924, val_mae 23.2064, val_rmse 28.4264, val_r2 -0.1247, val_pearson -0.0227, lr 1.00e-03 ---
+2026-10-01 11:55:56,725 - INFO - 
+****************************************************************************************************
+2026-10-01 11:55:57,838 - INFO - --- training epoch 1, loss 22.4218, mae 22.9177, rmse 27.9048, time elapsed(min) 0.01---
+2026-10-01 11:55:58,000 - INFO - --- validation at epoch 1, val_loss 24.1174, val_mae 22.4448, val_rmse 27.0041, val_r2 -0.0150, val_pearson 0.2030, lr 1.00e-03 ---
+2026-10-01 11:55:58,000 - INFO - 
+****************************************************************************************************
+2026-10-01 11:55:59,217 - INFO - --- training epoch 2, loss 21.8247, mae 22.3198, rmse 27.1268, time elapsed(min) 0.01---
+2026-10-01 11:55:59,379 - INFO - --- validation at epoch 2, val_loss 23.6439, val_mae 21.8941, val_rmse 26.3902, val_r2 0.0307, val_pearson 0.2183, lr 1.00e-03 ---
+2026-10-01 11:55:59,379 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:00,651 - INFO - --- training epoch 3, loss 21.6519, mae 22.1472, rmse 27.0437, time elapsed(min) 0.01---
+2026-10-01 11:56:00,817 - INFO - --- validation at epoch 3, val_loss 23.7190, val_mae 21.8404, val_rmse 26.1885, val_r2 0.0454, val_pearson 0.2397, lr 1.00e-03 ---
+2026-10-01 11:56:00,818 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:02,028 - INFO - --- training epoch 4, loss 21.9056, mae 22.4008, rmse 27.4652, time elapsed(min) 0.01---
+2026-10-01 11:56:02,193 - INFO - --- validation at epoch 4, val_loss 23.7305, val_mae 22.1718, val_rmse 26.2699, val_r2 0.0395, val_pearson 0.2235, lr 1.00e-03 ---
+2026-10-01 11:56:02,193 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:03,425 - INFO - --- training epoch 5, loss 21.8734, mae 22.3693, rmse 27.2616, time elapsed(min) 0.01---
+2026-10-01 11:56:03,769 - INFO - --- validation at epoch 5, val_loss 23.7629, val_mae 21.9086, val_rmse 26.4911, val_r2 0.0232, val_pearson 0.2302, lr 1.00e-03 ---
+2026-10-01 11:56:03,769 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:04,969 - INFO - --- training epoch 6, loss 21.7363, mae 22.2321, rmse 26.8578, time elapsed(min) 0.01---
+2026-10-01 11:56:05,139 - INFO - --- validation at epoch 6, val_loss 23.9750, val_mae 22.0211, val_rmse 26.8642, val_r2 -0.0045, val_pearson 0.2362, lr 1.00e-03 ---
+2026-10-01 11:56:05,139 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:06,192 - INFO - --- training epoch 7, loss 21.6509, mae 22.1467, rmse 27.0981, time elapsed(min) 0.01---
+2026-10-01 11:56:06,364 - INFO - --- validation at epoch 7, val_loss 23.6791, val_mae 21.7990, val_rmse 26.5289, val_r2 0.0204, val_pearson 0.2318, lr 1.00e-03 ---
+2026-10-01 11:56:06,364 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:07,438 - INFO - --- training epoch 8, loss 21.5190, mae 22.0150, rmse 26.7480, time elapsed(min) 0.01---
+2026-10-01 11:56:07,598 - INFO - --- validation at epoch 8, val_loss 23.7842, val_mae 21.7920, val_rmse 26.8328, val_r2 -0.0021, val_pearson 0.2418, lr 1.00e-03 ---
+2026-10-01 11:56:07,598 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:08,861 - INFO - --- training epoch 9, loss 21.5664, mae 22.0624, rmse 26.7847, time elapsed(min) 0.01---
+2026-10-01 11:56:09,028 - INFO - --- validation at epoch 9, val_loss 23.8020, val_mae 21.9263, val_rmse 26.2060, val_r2 0.0441, val_pearson 0.2567, lr 1.00e-03 ---
+2026-10-01 11:56:09,028 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:10,294 - INFO - --- training epoch 10, loss 21.3486, mae 21.8436, rmse 26.3009, time elapsed(min) 0.01---
+2026-10-01 11:56:10,459 - INFO - --- validation at epoch 10, val_loss 23.7927, val_mae 21.7525, val_rmse 26.6991, val_r2 0.0078, val_pearson 0.2462, lr 1.00e-03 ---
+2026-10-01 11:56:10,459 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:11,729 - INFO - --- training epoch 11, loss 21.7316, mae 22.2260, rmse 27.1005, time elapsed(min) 0.02---
+2026-10-01 11:56:12,126 - INFO - --- validation at epoch 11, val_loss 23.7366, val_mae 21.9397, val_rmse 25.9100, val_r2 0.0656, val_pearson 0.2611, lr 1.00e-03 ---
+2026-10-01 11:56:12,126 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:13,324 - INFO - --- training epoch 12, loss 21.5229, mae 22.0191, rmse 26.4242, time elapsed(min) 0.01---
+2026-10-01 11:56:13,492 - INFO - --- validation at epoch 12, val_loss 24.0081, val_mae 21.9431, val_rmse 27.0761, val_r2 -0.0204, val_pearson 0.2530, lr 1.00e-03 ---
+2026-10-01 11:56:13,492 - INFO - 
+****************************************************************************************************
+2026-10-01 11:56:13,861 - INFO - --- early stopping at epoch 12: val_loss did not improve for 10 epochs ---
+2026-10-01 11:56:14,072 - INFO - --- selected checkpoint from epoch 2, val_loss 23.6439, val_mae 21.8941, val_rmse 26.3902
+2026-10-01 11:56:14,533 - INFO - -- RESULT
+2026-10-01 11:56:14,533 - INFO - --- test size: 1187
+2026-10-01 11:56:14,533 - INFO - --- MAE: 22.6082 pp, RMSE: 27.2816 pp, R2: 0.0333, Pearson: 0.2527
+2026-10-01 11:56:15,372 - INFO - --- Cell approach_3 DONE: test MAE=22.6082 RMSE=27.2816 R2=0.0333 | sec/epoch=1.39
+2026-10-01 11:56:15,385 - INFO - === RUNNING: dataset=bh split=fullcv05_split70 cell=approach_2 (tokens=comb, pooling=mean, head=mlp) ===

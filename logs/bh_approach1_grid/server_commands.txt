@@ -1,0 +1,47 @@
+# ============================================================================
+# Server Commands for Approach 1 Evaluation Grid
+# ============================================================================
+# Sizing notes (measured at full settings: emb_dim 384, batch_size 128 on CPU):
+# - Buchwald-Hartwig: 6 reactant slots -> T = 21 tokens, 210 pair terms.
+#   Forward+backward: ~1.2 s/batch. 14 splits run via slurm/approach1_grid_bh.sbatch.
+# - Suzuki-Miyaura: 14 reactant slots -> T = 105 tokens, 5460 pair terms.
+#   Forward+backward: ~70 s/batch on CPU with 2.15 GB pair tensor.
+#   Real training runs on GPU server via slurm/approach1_grid_suzuki.sbatch.
+# ============================================================================
+
+# Submit SLURM batch jobs from repo root:
+#   sbatch slurm/approach1_grid_smoke.sbatch
+#   sbatch slurm/approach1_grid_bh.sbatch
+#   sbatch slurm/approach1_grid_suzuki.sbatch
+
+# Cell: current_model (current model)
+# BH: python train_bh.py --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens ind --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: approach_3 (approach 3)
+# BH: python train_bh.py --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens comb --reactant_pooling mean --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: approach_2 (approach 2)
+# BH: python train_bh.py --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens comb --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: approach_1_linear (approach 1)
+# BH: python train_bh.py --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens comb --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: approach_1_mlp (approach 1)
+# BH: python train_bh.py --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens comb --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: option_b_linear (option B)
+# BH: python train_bh.py --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens ind --reactant_pooling rn --head linear --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: option_b_mlp (option B)
+# BH: python train_bh.py --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens ind --reactant_pooling rn --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
+
+# Cell: ind_mean_mlp (option B)
+# BH: python train_bh.py --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70
+# Suzuki: python run_splits_sequential.py --reactant_tokens ind --reactant_pooling mean --head mlp --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 --split_ids 0 1 2 3 4 5 6 7 8 9
