@@ -1,0 +1,4 @@
+2026-09-30 20:44:11,112 - INFO - ================================================================================
+2026-09-30 20:44:11,112 - INFO - Approach-2 grid (full): 14 dataset splits x 4 cells, attention_on=reactants
+2026-09-30 20:44:11,127 - INFO - --- device: cuda:0
+2026-09-30 20:44:11,132 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | current model (ind/linear) (ind/linear)

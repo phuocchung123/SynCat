@@ -1,0 +1,92 @@
+========================================
+Job ID: 3780
+Job name: syncat-approach2-suzuki
+Compute node: labcom05
+Allocated node: labcom05
+CPUs per task: 4
+CUDA_VISIBLE_DEVICES=0
+Started at: Thu Oct  1 06:18:57 UTC 2026
+========================================
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_6
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_6/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+OMP_NUM_THREADS=4
+Thu Oct  1 06:18:59 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:02:00.0 Off |                  Off |
+|  0%   47C    P8             18W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4090
+
+=== RESULTS (../logs/approach2_grid_suzuki/e400/grid_results.csv)
+       dataset   split  seed         label reactant_tokens   head attention_on  train_r2  train_mae  train_rmse  test_r2  test_mae  test_rmse  trainable_parameters  epochs_ran  train_runtime_sec  seconds_per_epoch  status error
+Suzuki-Miyaura split_0    42 current_model             ind linear    reactants  0.811615   0.089662    0.121430 0.776646  0.097178   0.131453               1840129         246         468.925469           1.906201 success      
+Suzuki-Miyaura split_0    42    approach_3            comb linear    reactants  0.824777   0.086051    0.117112 0.775170  0.097438   0.131886               1840129         272         573.465432           2.108329 success      
+Suzuki-Miyaura split_0    42    approach_2            comb    mlp    reactants  0.834457   0.080505    0.113831 0.790415  0.090582   0.127337               2135041         187         391.456176           2.093349 success      
+Suzuki-Miyaura split_0    42       ind_mlp             ind    mlp    reactants  0.795713   0.092412    0.126452 0.765029  0.098193   0.134828               2135041         248         477.623221           1.925900 success      
+Suzuki-Miyaura split_1    43 current_model             ind linear    reactants  0.864768   0.075381    0.103510 0.829051  0.085569   0.116300               1840129         184         353.513324           1.921268 success      
+Suzuki-Miyaura split_1    43    approach_3            comb linear    reactants  0.870384   0.072652    0.101338 0.832357  0.083406   0.115170               1840129         188         393.531236           2.093251 success      
+Suzuki-Miyaura split_1    43    approach_2            comb    mlp    reactants  0.848008   0.078708    0.109737 0.811704  0.088574   0.122059               2135041         400         837.960653           2.094902 success      
+Suzuki-Miyaura split_1    43       ind_mlp             ind    mlp    reactants  0.854468   0.076370    0.107380 0.825853  0.085030   0.117383               2135041         244         469.488009           1.924131 success      
+Suzuki-Miyaura split_2    44 current_model             ind linear    reactants  0.868821   0.072695    0.101700 0.839642  0.082936   0.112587               1840129         263         505.559970           1.922281 success      
+Suzuki-Miyaura split_2    44    approach_3            comb linear    reactants  0.871004   0.071984    0.100850 0.836747  0.082375   0.113598               1840129         275         575.881593           2.094115 success      
+Suzuki-Miyaura split_2    44    approach_2            comb    mlp    reactants  0.792905   0.091878    0.127783 0.789575  0.094312   0.128971               2135041         161         337.390303           2.095592 success      
+Suzuki-Miyaura split_2    44       ind_mlp             ind    mlp    reactants  0.772320   0.096757    0.133983 0.766892  0.100083   0.135744               2135041         258         498.160663           1.930855 success      
+Suzuki-Miyaura split_3    45 current_model             ind linear    reactants  0.855920   0.077105    0.106620 0.801855  0.089096   0.124611               1840129         267         514.824295           1.928181 success      
+Suzuki-Miyaura split_3    45    approach_3            comb linear    reactants  0.889498   0.068291    0.093373 0.817285  0.086573   0.119661               1840129         289         607.241952           2.101183 success      
+Suzuki-Miyaura split_3    45    approach_2            comb    mlp    reactants  0.792162   0.094970    0.128056 0.739427  0.104368   0.142899               2135041         355         750.950582           2.115354 success      
+Suzuki-Miyaura split_3    45       ind_mlp             ind    mlp    reactants  0.815009   0.088261    0.120813 0.770105  0.096674   0.134224               2135041         303         584.935249           1.930479 success      
+Suzuki-Miyaura split_4    46 current_model             ind linear    reactants  0.840150   0.082762    0.112851 0.805013  0.091313   0.123304               1840129         358         697.634102           1.948699 success      
+Suzuki-Miyaura split_4    46    approach_3            comb linear    reactants  0.851291   0.080325    0.108848 0.809217  0.090427   0.121967               1840129         225         510.841956           2.270409 success      
+Suzuki-Miyaura split_4    46    approach_2            comb    mlp    reactants  0.810859   0.090351    0.122756 0.787391  0.093620   0.128755               2135041         192         435.019282           2.265725 success      
+Suzuki-Miyaura split_4    46       ind_mlp             ind    mlp    reactants  0.833015   0.082761    0.115342 0.816792  0.086461   0.119521               2135041         400         833.558091           2.083895 success      
+Suzuki-Miyaura split_5    47 current_model             ind linear    reactants  0.848859   0.079793    0.109173 0.812346  0.089461   0.121035               1840129         245         510.124766           2.082142 success      
+Suzuki-Miyaura split_5    47    approach_3            comb linear    reactants  0.893852   0.065807    0.091491 0.825701  0.083067   0.116648               1840129         244         551.350886           2.259635 success      
+Suzuki-Miyaura split_5    47    approach_2            comb    mlp    reactants  0.791027   0.094390    0.128371 0.743171  0.105359   0.141597               2135041         348         789.761184           2.269429 success      
+Suzuki-Miyaura split_5    47       ind_mlp             ind    mlp    reactants  0.814552   0.087062    0.120930 0.775085  0.096250   0.132508               2135041         277         578.742067           2.089322 success      
+Suzuki-Miyaura split_6    48 current_model             ind linear    reactants  0.838495   0.082302    0.112242 0.777148  0.097471   0.135092               1840129         175         365.778424           2.090162 success      
+Suzuki-Miyaura split_6    48    approach_3            comb linear    reactants  0.899325   0.063687    0.088619 0.819485  0.086139   0.121584               1840129         251         568.133536           2.263480 success      
+Suzuki-Miyaura split_6    48    approach_2            comb    mlp    reactants  0.842633   0.079068    0.110795 0.788192  0.092766   0.131702               2135041         307         693.387525           2.258591 success      
+Suzuki-Miyaura split_6    48       ind_mlp             ind    mlp    reactants  0.841238   0.080524    0.111285 0.786804  0.092526   0.132133               2135041         228         473.800080           2.078071 success      
+Suzuki-Miyaura split_7    49 current_model             ind linear    reactants  0.868487   0.074132    0.102867 0.813017  0.087417   0.120196               1840129         400         837.738314           2.094346 success      
+Suzuki-Miyaura split_7    49    approach_3            comb linear    reactants  0.894772   0.066326    0.092014 0.830514  0.082759   0.114434               1840129         266         602.293689           2.264262 success      
+Suzuki-Miyaura split_7    49    approach_2            comb    mlp    reactants  0.746078   0.105585    0.142935 0.710781  0.110253   0.149486               2135041         153         346.796689           2.266645 success      
+Suzuki-Miyaura split_7    49       ind_mlp             ind    mlp    reactants  0.853689   0.077076    0.108499 0.820806  0.084698   0.117665               2135041         269         563.161750           2.093538 success      
+Suzuki-Miyaura split_8    50 current_model             ind linear    reactants  0.866854   0.074043    0.102051 0.805240  0.086809   0.125119               1840129         342         708.832703           2.072610 success      
+Suzuki-Miyaura split_8    50    approach_3            comb linear    reactants  0.884245   0.069918    0.095153 0.811284  0.087479   0.123162               1840129         221         494.895243           2.239345 success      
+Suzuki-Miyaura split_8    50    approach_2            comb    mlp    reactants  0.805036   0.090059    0.123490 0.743469  0.102600   0.143596               2135041         271         607.827463           2.242906 success      
+Suzuki-Miyaura split_8    50       ind_mlp             ind    mlp    reactants  0.855045   0.076169    0.106481 0.786099  0.090633   0.131123               2135041         316         649.086978           2.054073 success      
+Suzuki-Miyaura split_9    51 current_model             ind linear    reactants  0.808022   0.092998    0.123458 0.761093  0.100787   0.137201               1840129         152         312.847404           2.058207 success      
+Suzuki-Miyaura split_9    51    approach_3            comb linear    reactants  0.880144   0.071384    0.097549 0.798063  0.088279   0.126139               1840129         212         474.171611           2.236659 success      
+Suzuki-Miyaura split_9    51    approach_2            comb    mlp    reactants  0.862028   0.075920    0.104662 0.792827  0.088312   0.127764               2135041         227         505.714033           2.227815 success      
+Suzuki-Miyaura split_9    51       ind_mlp             ind    mlp    reactants  0.797272   0.093393    0.126867 0.756184  0.099871   0.138603               2135041         209         430.375285           2.059212 success      
+
+=== SUMMARY (../logs/approach2_grid_suzuki/e400/grid_summary.csv)
+       dataset         label reactant_tokens   head attention_on  trainable_parameters  n_runs  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  seconds_per_epoch_mean  seconds_per_epoch_std
+Suzuki-Miyaura current_model             ind linear    reactants               1840129      10       0.847199      0.022659        0.080087       0.006898         0.109590        0.007891      0.802105     0.024337       0.090804      0.005835        0.124690       0.007909                2.002410               0.082467
+Suzuki-Miyaura    approach_3            comb linear    reactants               1840129      10       0.875929      0.023030        0.071643       0.006864         0.098635        0.008782      0.815582     0.018475       0.086794      0.004605        0.120425       0.005775                2.193067               0.081554
+Suzuki-Miyaura    approach_2            comb    mlp    reactants               2135041      10       0.812519      0.034694        0.088143       0.009378         0.121242        0.011495      0.769695     0.032588       0.097075      0.007855        0.134416       0.009135                2.193031               0.081397
+Suzuki-Miyaura       ind_mlp             ind    mlp    reactants               2135041      10       0.823232      0.028871        0.085079       0.007592         0.117803        0.009484      0.786965     0.025397       0.093042      0.006050        0.129373       0.008010                2.016948               0.077660
+========================================
+Training completed at: Thu Oct  1 12:26:10 UTC 2026
+========================================

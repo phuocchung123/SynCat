@@ -1,0 +1,108 @@
+========================================
+Job ID: 3772
+Job name: syncat-approach2-bh
+Compute node: labcom02
+Allocated node: labcom02
+CPUs per task: 4
+CUDA_VISIBLE_DEVICES=0
+Started at: Wed Sep 30 20:44:03 UTC 2026
+========================================
+Repository: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_6
+Working directory: /medai/members/2902fded-e6d4-4d60-a742-a5107f65ee68/workspace/syncat_6/src
+Conda environment: syncat
+Conda prefix: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat
+Python executable: /home/chungnvp197@auth.medai.vn/.conda/envs/syncat/bin/python
+Python 3.11.16
+Git branch: 
+Git commit: 
+OMP_NUM_THREADS=4
+Wed Sep 30 20:44:05 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 615.71.09              KMD Version: 615.71.09     CUDA UMD Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4070 ...    On  |   00000000:01:00.0 Off |                  N/A |
+|  0%   46C    P8             15W /  285W |       2MiB /  16376MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+
+=== RESULTS (../logs/approach2_grid_bh/e400/grid_results.csv)
+         dataset            split  seed         label reactant_tokens   head attention_on  train_r2  train_mae  train_rmse  test_r2  test_mae  test_rmse  trainable_parameters  epochs_ran  train_runtime_sec  seconds_per_epoch  status error
+Buchwald-Hartwig fullcv01_split70    42 current_model             ind linear    reactants  0.714584  10.141313   14.496314 0.740250  9.831433  14.056362               1840129         101         189.598491           1.877213 success      
+Buchwald-Hartwig fullcv01_split70    42    approach_3            comb linear    reactants  0.810023   7.488241   11.826848 0.811394  7.974616  11.977675               1840129         257         504.588873           1.963381 success      
+Buchwald-Hartwig fullcv01_split70    42    approach_2            comb    mlp    reactants  0.902663   5.114879    8.465608 0.887369  5.977460   9.256023               2135041         207         409.331755           1.977448 success      
+Buchwald-Hartwig fullcv01_split70    42       ind_mlp             ind    mlp    reactants  0.840965   7.191112   10.820939 0.837217  7.540058  11.127558               2135041         185         365.248955           1.974319 success      
+Buchwald-Hartwig fullcv02_split70    42 current_model             ind linear    reactants  0.794369   8.344757   12.480203 0.718957  9.748434  14.179557               1840129         285         555.493030           1.949098 success      
+Buchwald-Hartwig fullcv02_split70    42    approach_3            comb linear    reactants  0.873847   6.273928    9.775217 0.795774  7.763070  12.087359               1840129         199         393.109347           1.975424 success      
+Buchwald-Hartwig fullcv02_split70    42    approach_2            comb    mlp    reactants  0.885899   5.458321    9.296573 0.812148  6.897827  11.592700               2135041         196         386.159925           1.970204 success      
+Buchwald-Hartwig fullcv02_split70    42       ind_mlp             ind    mlp    reactants  0.865761   6.236547   10.083640 0.800077  7.376885  11.959361               2135041         224         441.953009           1.973005 success      
+Buchwald-Hartwig fullcv03_split70    42 current_model             ind linear    reactants  0.756209   9.037375   13.528011 0.748759  9.409490  13.575875               1840129         193         379.186610           1.964697 success      
+Buchwald-Hartwig fullcv03_split70    42    approach_3            comb linear    reactants  0.852250   6.334707   10.531472 0.821129  7.289194  11.454938               1840129         257         506.252498           1.969854 success      
+Buchwald-Hartwig fullcv03_split70    42    approach_2            comb    mlp    reactants  0.784463   8.768640   12.719953 0.781794  9.235354  12.651926               2135041         269         535.827549           1.991924 success      
+Buchwald-Hartwig fullcv03_split70    42       ind_mlp             ind    mlp    reactants  0.236518  19.037564   23.939998 0.190467 19.444603  24.369135               2135041          72         142.489269           1.979018 success      
+Buchwald-Hartwig fullcv04_split70    42 current_model             ind linear    reactants  0.787068   8.842461   12.641211 0.772562  9.115386  12.942883               1840129         261         512.645590           1.964159 success      
+Buchwald-Hartwig fullcv04_split70    42    approach_3            comb linear    reactants  0.844019   7.171314   10.819417 0.813480  7.967664  11.720939               1840129         166         326.258819           1.965415 success      
+Buchwald-Hartwig fullcv04_split70    42    approach_2            comb    mlp    reactants  0.886538   5.712125    9.227676 0.861834  6.337105  10.087887               2135041         255         396.591941           1.555263 success      
+Buchwald-Hartwig fullcv04_split70    42       ind_mlp             ind    mlp    reactants  0.867124   6.389839    9.985992 0.847784  6.850939  10.588390               2135041         194         275.654281           1.420898 success      
+Buchwald-Hartwig fullcv05_split70    42 current_model             ind linear    reactants  0.821570   7.205702   11.450947 0.820713  7.756058  11.748819               1840129         250         355.051849           1.420207 success      
+Buchwald-Hartwig fullcv05_split70    42    approach_3            comb linear    reactants  0.792473   8.366047   12.349384 0.789026  8.868679  12.744846               1840129         262         375.597322           1.433578 success      
+Buchwald-Hartwig fullcv05_split70    42    approach_2            comb    mlp    reactants  0.774524   8.738489   12.872343 0.754765  9.520096  13.740765               2135041         258         369.907808           1.433751 success      
+Buchwald-Hartwig fullcv05_split70    42       ind_mlp             ind    mlp    reactants  0.526747  13.532577   18.648962 0.537481 13.583338  18.870553               2135041         146         205.699323           1.408899 success      
+Buchwald-Hartwig fullcv06_split70    42 current_model             ind linear    reactants  0.799682   8.423184   12.286047 0.787458  8.447463  12.496936               1840129         185         260.963563           1.410614 success      
+Buchwald-Hartwig fullcv06_split70    42    approach_3            comb linear    reactants  0.837067   7.397993   11.080437 0.815345  7.688548  11.648278               1840129         138         198.214852           1.436340 success      
+Buchwald-Hartwig fullcv06_split70    42    approach_2            comb    mlp    reactants  0.914247   4.884181    8.038551 0.877432  5.872366   9.490052               2135041         219         314.683833           1.436912 success      
+Buchwald-Hartwig fullcv06_split70    42       ind_mlp             ind    mlp    reactants  0.464987  14.136538   20.078642 0.393302 14.917166  21.113840               2135041         230         323.576637           1.406855 success      
+Buchwald-Hartwig fullcv07_split70    42 current_model             ind linear    reactants  0.807356   7.878820   11.961893 0.821488  7.938707  11.505648               1840129         193         273.404215           1.416602 success      
+Buchwald-Hartwig fullcv07_split70    42    approach_3            comb linear    reactants  0.823878   6.878394   11.437455 0.841561  7.014650  10.839498               1840129         228         329.655768           1.445859 success      
+Buchwald-Hartwig fullcv07_split70    42    approach_2            comb    mlp    reactants  0.874159   5.694782    9.667924 0.880180  6.101275   9.426318               2135041         246         352.143642           1.431478 success      
+Buchwald-Hartwig fullcv07_split70    42       ind_mlp             ind    mlp    reactants  0.266679  18.233040   23.338320 0.258310 18.490874  23.452490               2135041         217         305.102475           1.406002 success      
+Buchwald-Hartwig fullcv08_split70    42 current_model             ind linear    reactants  0.833582   7.041515   11.126495 0.818130  7.473017  11.501894               1840129         229         323.109890           1.410960 success      
+Buchwald-Hartwig fullcv08_split70    42    approach_3            comb linear    reactants  0.902558   5.385868    8.513946 0.879239  6.213601   9.372446               1840129         237         337.764551           1.425167 success      
+Buchwald-Hartwig fullcv08_split70    42    approach_2            comb    mlp    reactants  0.887376   5.251502    9.153229 0.866443  6.035586   9.856509               2135041         192         275.122193           1.432928 success      
+Buchwald-Hartwig fullcv08_split70    42       ind_mlp             ind    mlp    reactants  0.888464   5.626126    9.108895 0.871908  6.232690   9.652748               2135041         267         378.416899           1.417292 success      
+Buchwald-Hartwig fullcv09_split70    42 current_model             ind linear    reactants  0.843914   7.118234   10.743860 0.822835  7.807052  11.554178               1840129         256         361.408087           1.411750 success      
+Buchwald-Hartwig fullcv09_split70    42    approach_3            comb linear    reactants  0.807197   7.688350   11.940852 0.797826  8.300606  12.342767               1840129         237         340.209836           1.435485 success      
+Buchwald-Hartwig fullcv09_split70    42    approach_2            comb    mlp    reactants  0.890193   5.690857    9.011416 0.856208  6.687330  10.409200               2135041         255         366.875563           1.438728 success      
+Buchwald-Hartwig fullcv09_split70    42       ind_mlp             ind    mlp    reactants  0.530910  14.222541   18.625424 0.483353 15.128965  19.730906               2135041         400         561.886773           1.404717 success      
+Buchwald-Hartwig fullcv10_split70    42 current_model             ind linear    reactants  0.437742  16.507641   20.380083 0.440278 16.724647  20.604414               1840129          87         122.416649           1.407088 success      
+Buchwald-Hartwig fullcv10_split70    42    approach_3            comb linear    reactants  0.887419   5.836007    9.119509 0.869436  6.583221   9.951444               1840129         212         303.566756           1.431919 success      
+Buchwald-Hartwig fullcv10_split70    42    approach_2            comb    mlp    reactants  0.894372   5.459121    8.833386 0.864784  6.419645  10.127161               2135041         294         420.706955           1.430976 success      
+Buchwald-Hartwig fullcv10_split70    42       ind_mlp             ind    mlp    reactants  0.303336  17.980754   22.685580 0.391525 17.068788  21.483031               2135041          77         108.862151           1.413794 success      
+Buchwald-Hartwig            test1    42 current_model             ind linear    reactants  0.815391   7.315352   11.639447 0.749066  9.888335  13.657937               1840129         213         313.772603           1.473111 success      
+Buchwald-Hartwig            test1    42    approach_3            comb linear    reactants  0.948465   3.764069    6.149743 0.659415 10.995524  15.911770               1840129         351         525.723100           1.497787 success      
+Buchwald-Hartwig            test1    42    approach_2            comb    mlp    reactants  0.883556   6.063196    9.244093 0.761794  8.778660  13.307049               2135041         239         357.171232           1.494440 success      
+Buchwald-Hartwig            test1    42       ind_mlp             ind    mlp    reactants  0.840977   7.036404   10.802786 0.802908  8.000228  12.104311               2135041         206         302.728949           1.469558 success      
+Buchwald-Hartwig            test2    42 current_model             ind linear    reactants  0.740181  10.125406   13.926519 0.790164  9.129096  12.415319               1840129         145         214.810493           1.481452 success      
+Buchwald-Hartwig            test2    42    approach_3            comb linear    reactants  0.892817   5.400824    8.944772 0.751986  8.546631  13.497595               1840129         259         390.564945           1.507973 success      
+Buchwald-Hartwig            test2    42    approach_2            comb    mlp    reactants  0.878031   5.785655    9.541824 0.819185  7.666665  11.524834               2135041         386         583.014123           1.510399 success      
+Buchwald-Hartwig            test2    42       ind_mlp             ind    mlp    reactants  0.829614   7.257553   11.277787 0.745468  9.453970  13.673793               2135041         210         311.995347           1.485692 success      
+Buchwald-Hartwig            test3    42 current_model             ind linear    reactants  0.900093   5.790472    8.537688 0.639495 10.364595  16.873477               1840129         274         403.578889           1.472916 success      
+Buchwald-Hartwig            test3    42    approach_3            comb linear    reactants  0.904480   5.252679    8.348112 0.732737  9.350083  14.528411               1840129         256         381.363966           1.489703 success      
+Buchwald-Hartwig            test3    42    approach_2            comb    mlp    reactants  0.883764   5.902776    9.208995 0.667634 10.183258  16.201562               2135041         194         290.102085           1.495372 success      
+Buchwald-Hartwig            test3    42       ind_mlp             ind    mlp    reactants  0.908622   5.099031    8.165141 0.404932 14.198966  21.678649               2135041         239         353.727841           1.480033 success      
+Buchwald-Hartwig            test4    42 current_model             ind linear    reactants  0.852601   6.670551   10.496903 0.392334 14.443143  20.616775               1840129         238         350.568576           1.472977 success      
+Buchwald-Hartwig            test4    42    approach_3            comb linear    reactants  0.892763   5.343686    8.953343 0.326524 15.489598  21.704479               1840129         215         321.039699           1.493208 success      
+Buchwald-Hartwig            test4    42    approach_2            comb    mlp    reactants  0.907781   4.636102    8.302797 0.464798 13.349397  19.348488               2135041         227         338.432245           1.490891 success      
+Buchwald-Hartwig            test4    42       ind_mlp             ind    mlp    reactants  0.866290   6.033302    9.997613 0.396334 14.765743  20.548815               2135041         261         386.507147           1.480870 success      
+
+=== SUMMARY (../logs/approach2_grid_bh/e400/grid_summary.csv)
+         dataset         label reactant_tokens   head attention_on  trainable_parameters  n_runs  train_r2_mean  train_r2_std  train_mae_mean  train_mae_std  train_rmse_mean  train_rmse_std  test_r2_mean  test_r2_std  test_mae_mean  test_mae_std  test_rmse_mean  test_rmse_std  seconds_per_epoch_mean  seconds_per_epoch_std
+Buchwald-Hartwig current_model             ind linear    reactants               1840129      14       0.778882      0.109043        8.603056       2.600812        12.549687        2.717716      0.718749     0.137850       9.862633      2.626994       14.123577       3.103044                1.580918               0.237275
+Buchwald-Hartwig    approach_3            comb linear    reactants               1840129      14       0.862090      0.045269        6.327293       1.246551         9.985036        1.745426      0.764634     0.137904       8.574692      2.324442       12.841603       3.061232                1.605078               0.240121
+Buchwald-Hartwig    approach_2            comb    mlp    reactants               2135041      14       0.874826      0.041918        5.940045       1.255152         9.541740        1.453233      0.796884     0.114270       7.790144      2.176845       11.930034       2.933653                1.577908               0.221088
+Buchwald-Hartwig       ind_mlp             ind    mlp    reactants               2135041      14       0.659785      0.258661       10.572352       5.307920        14.825694        5.980972      0.568647     0.239857      12.360944      4.626293       17.168113       5.320649                1.551497               0.231775
+========================================
+Training completed at: Thu Oct  1 02:14:55 UTC 2026
+========================================
