@@ -26,6 +26,112 @@ REACTANT_TOKENS = ("ind", "comb")
 # layer ("linear") or a two-layer perceptron ("mlp").
 HEADS = ("linear", "mlp")
 
+# How the attended reactant tokens are pooled into the reactant vector: a plain
+# masked mean ("mean") or a relation network over all token pairs ("rn").
+REACTANT_POOLINGS = ("mean", "rn")
+
+
+class RelationPooling(nn.Module):
+    """
+    Relation-network pooling of a set of tokens.
+
+    A plain masked mean treats the tokens as independent. This module also models
+    every unordered token pair: a shared network scores the concatenation of the
+    pair's sum and element-wise product, the pair vectors are summed, and the
+    result is added to the summed per-token (main) effects and normalised. The
+    module is permutation-invariant, ignores masked tokens and pairs that touch
+    them, and works for a single token (where the pair set is empty).
+    """
+
+    def __init__(self, emb_dim: int, dropout: float) -> None:
+        """
+        Initialize the RelationPooling module.
+
+        Parameters
+        ----------
+        emb_dim : int
+            Dimension of the token vectors.
+        dropout : float
+            Dropout rate inside the per-token and per-pair networks.
+        """
+        super(RelationPooling, self).__init__()
+        self.emb_dim = emb_dim
+        # Per-token main effect.
+        self.phi = nn.Sequential(
+            nn.Linear(emb_dim, emb_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(emb_dim, emb_dim),
+        )
+        # Per-pair relation, shared across all pairs.
+        self.g = nn.Sequential(
+            nn.Linear(2 * emb_dim, emb_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(emb_dim, emb_dim),
+        )
+        self.norm = nn.LayerNorm(emb_dim)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        mask: torch.Tensor,
+        return_pairs: bool = False,
+    ) -> tuple:
+        """
+        Pool a batch of token sets into one vector per set.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Token vectors of shape [batch_size, num_tokens, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_tokens], True for real
+            tokens. Masked tokens, and pairs touching a masked token, do not
+            contribute.
+        return_pairs : bool, optional
+            Whether to also return the per-pair outputs and the pair indices
+            (default is False).
+
+        Returns
+        -------
+        torch.Tensor or tuple
+            Pooled vectors of shape [batch_size, emb_dim] and, when
+            `return_pairs` is True, the per-pair outputs of shape
+            [batch_size, num_pairs, emb_dim] together with the
+            (a, b) index tensors used to build them.
+        """
+        weights = mask.unsqueeze(-1).to(x.dtype)
+        # Masked tokens must not leak through their biases.
+        x = x * weights
+
+        # Main effects, summed over the real tokens only.
+        main = self.phi(x)
+        main_sum = (main * weights).sum(dim=1)
+
+        num_tokens = x.shape[1]
+        a, b = torch.triu_indices(
+            num_tokens, num_tokens, offset=1, device=x.device
+        )
+        if a.numel() > 0:
+            x_a = x[:, a]
+            x_b = x[:, b]
+            # Symmetric in a and b; concat[x_a + x_b, x_a * x_b].
+            pair_desc = torch.cat((x_a + x_b, x_a * x_b), dim=-1)
+            pair_out = self.g(pair_desc)
+            pair_mask = mask[:, a] & mask[:, b]
+            pair_out = pair_out * pair_mask.unsqueeze(-1).to(pair_out.dtype)
+            pair_sum = pair_out.sum(dim=1)
+        else:
+            # No pairs (num_tokens == 1): avoid summing over an empty dimension.
+            pair_out = x.new_zeros((x.shape[0], 0, self.emb_dim))
+            pair_sum = x.new_zeros((x.shape[0], self.emb_dim))
+
+        pooled = self.norm(main_sum + pair_sum)
+        if return_pairs:
+            return pooled, pair_out, (a, b)
+        return pooled
+
 
 class model(nn.Module):
     """
@@ -54,6 +160,7 @@ class model(nn.Module):
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
         reactant_tokens: str = "ind",
+        reactant_pooling: str = "mean",
         head: str = "linear",
     ) -> None:
         """
@@ -98,6 +205,12 @@ class model(nn.Module):
             S + S * (S - 1) / 2. A pair that touches a padding slot is masked
             out, and only the reactants are expanded (the products are left
             untouched).
+        reactant_pooling : str, optional
+            How the attended reactant tokens are pooled into the reactant
+            vector (default is "mean"): "mean" is the masked mean of the
+            token vectors, while "rn" runs a shared relation network over every
+            unordered pair of tokens (individual and pair tokens alike) and adds
+            the summed per-pair outputs to the summed per-token main effects.
         head : str, optional
             Regression head applied to the reaction vector (default is
             "linear"): "linear" is a single linear layer, "mlp" is a two-layer
@@ -117,6 +230,7 @@ class model(nn.Module):
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
             "reactant_tokens": str(reactant_tokens),
+            "reactant_pooling": str(reactant_pooling),
             "head": str(head),
         }
         self.gnn = GIN(
@@ -144,7 +258,13 @@ class model(nn.Module):
             )
         if head not in HEADS:
             raise ValueError("head must be one of %s, got %r" % (list(HEADS), head))
+        if reactant_pooling not in REACTANT_POOLINGS:
+            raise ValueError(
+                "reactant_pooling must be one of %s, got %r"
+                % (list(REACTANT_POOLINGS), reactant_pooling)
+            )
         self.reactant_tokens = reactant_tokens
+        self.reactant_pooling = reactant_pooling
         self.head = head
         # "both" runs the same layers over each side in turn, so that the weights
         # are shared and a one-compound side costs nothing extra.
@@ -154,6 +274,10 @@ class model(nn.Module):
                 for _ in range(num_attention_layer if attention_on != "none" else 0)
             ]
         )
+        # Only built for the relation-network pooling, so the default "mean"
+        # state dict is unchanged and old checkpoints keep loading.
+        if reactant_pooling == "rn":
+            self.reactant_pool = RelationPooling(emb_dim, drop_ratio)
 
         # The reaction is summarised by combining the reactant vector (mean of
         # the self-attended reactant value vectors) with the product vector
@@ -182,6 +306,7 @@ class model(nn.Module):
         self.store_attention = False
         self.last_attention = None
         self.last_token_slots = None
+        self.last_pair_terms = None
 
     @classmethod
     def from_config(cls, config: dict) -> "model":
@@ -255,6 +380,48 @@ class model(nn.Module):
         weights = mask.unsqueeze(-1).to(x.dtype)
         count = weights.sum(dim=1).clamp(min=1.0)
         return (x * weights).sum(dim=1) / count
+
+    def _pool_reactants(
+        self,
+        tokens: torch.Tensor,
+        mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Pool the attended reactant tokens into one reactant vector.
+
+        Dispatches between the masked mean and the relation network as set by
+        `reactant_pooling`. The relation network runs over all attended reactant
+        tokens, individual and pair alike; when `store_attention` is set, the
+        per-pair output norms and their token indices are kept in
+        `last_pair_terms`.
+
+        Parameters
+        ----------
+        tokens : torch.Tensor
+            Attended reactant tokens of shape [batch_size, num_tokens, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_tokens], True for real tokens.
+
+        Returns
+        -------
+        torch.Tensor
+            Reactant vectors of shape [batch_size, emb_dim].
+        """
+        self.last_pair_terms = None
+        if self.reactant_pooling == "rn":
+            pooled, pair_out, (a, b) = self.reactant_pool(
+                tokens, mask, return_pairs=True
+            )
+            if self.store_attention:
+                # Per-pair output norm, averaged over the batch, one entry per
+                # pair; the indices are the token slots the pair was built from.
+                norms = pair_out.detach().norm(dim=-1).mean(dim=0).cpu().tolist()
+                self.last_pair_terms = [
+                    (int(i), int(j), float(norm))
+                    for i, j, norm in zip(a.tolist(), b.tolist(), norms)
+                ]
+            return pooled
+        return self._masked_mean(tokens, mask)
 
     def _combine(self, r: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
         """
@@ -404,7 +571,7 @@ class model(nn.Module):
             )
 
         # A side that does not attend keeps the plain mean of its GNN embeddings.
-        reactant_vectors = self._masked_mean(r_tokens, r_mask)
+        reactant_vectors = self._pool_reactants(r_tokens, r_mask)
         product_vectors = self._masked_mean(p_tokens, p_mask)
 
         reaction_vectors = self._combine(reactant_vectors, product_vectors)

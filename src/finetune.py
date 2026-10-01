@@ -39,12 +39,14 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     saved_config = checkpoint.get("model_config")
     if saved_config is not None:
         # Checkpoints saved before `reaction_combine` existed always concatenated.
-        # Missing `reactant_tokens`/`head` resolve to the constructor defaults.
+        # Missing `reactant_tokens`/`reactant_pooling`/`head` resolve to the
+        # constructor defaults.
         saved_config = dict(
             {
                 "reaction_combine": "concat",
                 "attention_on": "reactants",
                 "reactant_tokens": "ind",
+                "reactant_pooling": "mean",
                 "head": "linear",
             },
             **saved_config
@@ -94,6 +96,7 @@ def _build_model(args, node_dim, edge_dim):
         reaction_combine=getattr(args, "reaction_combine", "concat"),
         attention_on=getattr(args, "attention_on", "reactants"),
         reactant_tokens=getattr(args, "reactant_tokens", "ind"),
+        reactant_pooling=getattr(args, "reactant_pooling", "mean"),
         head=getattr(args, "head", "linear"),
     )
 

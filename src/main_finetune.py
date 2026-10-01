@@ -3,7 +3,13 @@ import os
 import sys
 from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
-from model import ATTENTION_TARGETS, HEADS, REACTION_COMBINE_DIMS, REACTANT_TOKENS
+from model import (
+    ATTENTION_TARGETS,
+    HEADS,
+    REACTION_COMBINE_DIMS,
+    REACTANT_POOLINGS,
+    REACTANT_TOKENS,
+)
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -83,6 +89,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="how reactant tokens are built before attention: 'ind' one token per "
         "reactant slot, 'comb' the individual tokens plus every pairwise sum "
         "(r_i + r_j); only the reactants are expanded",
+    )
+    parser.add_argument(
+        "--reactant_pooling",
+        type=str,
+        default="mean",
+        choices=list(REACTANT_POOLINGS),
+        help="how attended reactant tokens are pooled into the reactant vector: "
+        "'mean' the masked mean of the token vectors, 'rn' a shared relation "
+        "network over every unordered token pair added to the per-token effects",
     )
     parser.add_argument(
         "--head",
