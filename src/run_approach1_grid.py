@@ -286,9 +286,11 @@ def run_cell(
     )
 
     if device.type == "cuda":
-        # torch.cuda's device arguments want an int index (or None for the
-        # current device) in the cluster's older PyTorch, not a torch.device.
-        torch.cuda.reset_peak_memory_stats(device.index)
+        # PyTorch <= 2.0 only knows a device's peak stats once the caching
+        # allocator has been initialised for it; a tiny allocation does that
+        # (otherwise reset_peak_memory_stats raises "did you call init?").
+        torch.empty(1, device=device)
+        torch.cuda.reset_peak_memory_stats(device)
 
     try:
         try:
@@ -330,7 +332,7 @@ def run_cell(
         train_metrics = train_res[0] if isinstance(train_res, tuple) else train_res
 
         peak_gpu_memory_mb = (
-            torch.cuda.max_memory_allocated(device.index) / 2**20
+            torch.cuda.max_memory_allocated(device) / 2**20
             if device.type == "cuda"
             else None
         )
