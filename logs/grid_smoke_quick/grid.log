@@ -1,0 +1,11 @@
+2026-10-07 17:27:57,611 - INFO - ================================================================================
+2026-10-07 17:27:57,612 - INFO - Ablation grid runner: profile=smoke, planned=3 trainings
+2026-10-07 17:27:57,872 - INFO - --- smoke subsets for Buchwald-Hartwig/fullcv01_split70 -> ../logs/grid_smoke_quick/smoke_npz\bh_fullcv01_split70
+2026-10-07 17:27:58,119 - INFO - --- smoke subsets for Buchwald-Hartwig/test1 -> ../logs/grid_smoke_quick/smoke_npz\bh_test1
+2026-10-07 17:27:58,598 - INFO - --- smoke subsets for Suzuki-Miyaura/split_0 -> ../logs/grid_smoke_quick/smoke_npz\suzuki_split_0
+2026-10-07 17:28:10,058 - INFO - --- Suzuki-Miyaura | split_0 | baseline: test R2 -3.4085 MAE 0.4148 RMSE 0.4742 | 2.2s (2.2s/epoch)
+2026-10-07 17:28:22,350 - INFO - --- Suzuki-Miyaura | split_0 | approach1_mlp: test R2 -0.4885 MAE 0.2433 RMSE 0.2756 | 3.2s (3.2s/epoch)
+2026-10-07 17:28:32,238 - INFO - --- Suzuki-Miyaura | split_0 | A_mlp: test R2 -0.1111 MAE 0.1800 RMSE 0.2381 | 1.6s (1.6s/epoch)
+2026-10-07 17:28:32,287 - INFO - ================================================================================
+2026-10-07 17:28:32,287 - INFO - Results table: ../logs/grid_smoke_quick/grid_results.csv
+2026-10-07 17:28:32,287 - INFO - Summary table: ../logs/grid_smoke_quick/grid_summary.csv

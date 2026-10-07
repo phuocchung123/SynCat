@@ -257,6 +257,61 @@ python main_finetune.py --stage train --gpus 0 1 --epochs 100 --patience 10
 python run_splits_sequential.py --gpus 0 1 --epochs 100 --patience 10
 ```
 
+## Ablation Grid
+
+A full factorial ablation grid evaluates 16 architectures crossing `reactant_tokens` {ind, comb} × `attention_on` {reactants, none} × `reactant_pooling` {mean, rn} × `head` {linear, mlp} across Buchwald–Hartwig (FullCV 01–10 at split_70, plus Test1–4) and Suzuki–Miyaura (split_0–9):
+
+| idx | tokens/attention/pooling/head | label |
+|---|---|---|
+| 0 | ind/reactants/mean/linear | baseline |
+| 1 | ind/reactants/mean/mlp | baseline_mlp |
+| 2 | ind/reactants/rn/linear | B_linear |
+| 3 | ind/reactants/rn/mlp | B_mlp |
+| 4 | ind/none/mean/linear | control_linear |
+| 5 | ind/none/mean/mlp | control_mlp |
+| 6 | ind/none/rn/linear | A_linear |
+| 7 | ind/none/rn/mlp | A_mlp |
+| 8 | comb/reactants/mean/linear | approach3 |
+| 9 | comb/reactants/mean/mlp | approach2 |
+| 10 | comb/reactants/rn/linear | approach1_linear |
+| 11 | comb/reactants/rn/mlp | approach1_mlp |
+| 12 | comb/none/mean/linear | comb_none_mean_linear |
+| 13 | comb/none/mean/mlp | comb_none_mean_mlp |
+| 14 | comb/none/rn/linear | comb_none_rn_linear |
+| 15 | comb/none/rn/mlp | comb_none_rn_mlp |
+
+### Laptop Smoke Run
+
+Run a single-epoch correctness check across 3 splits (BH fullcv01 + test1, Suzuki split_0) on tiny subsets:
+
+```bash
+python run_grid.py --profile smoke --log_dir ../logs/grid_smoke/
+```
+
+### Server Slurm Submission
+
+Submit the smoke verification or the full array (32 tasks, 384 trainings):
+
+```bash
+# Smoke test (single GPU, 1 h cap)
+sbatch slurm/grid_smoke.sbatch
+
+# Full ablation grid (Slurm job array 0-31, 4 concurrent tasks by default)
+sbatch slurm/grid_full.sbatch
+
+# Re-run or resume a single task (e.g. task 17)
+sbatch --array=17 slurm/grid_full.sbatch
+
+# Collect / aggregate merged CSVs
+python run_grid.py --collect --log_dir ../logs/grid/e400_p50/
+```
+
+### Output Files
+
+- Per-task results: `logs/grid/<run_name>/<dataset_slug>/<label>/results.csv`
+- Merged per-split results: `logs/grid/<run_name>/grid_results.csv`
+- Summarized means & standard deviations: `logs/grid/<run_name>/grid_summary.csv`
+
 ## Setting Up Your Development Environment
 
 Before you start, ensure your local development environment is set up correctly. Pull the latest version of the `main` branch to start with the most recent stable code.

@@ -1,0 +1,112 @@
+2026-10-07 17:28:45,891 - INFO - ================================================================================
+2026-10-07 17:28:45,891 - INFO - Ablation grid runner: profile=smoke, planned=48 trainings
+2026-10-07 17:28:46,129 - INFO - --- smoke subsets for Buchwald-Hartwig/fullcv01_split70 -> ../logs/grid_smoke/smoke_npz\bh_fullcv01_split70
+2026-10-07 17:28:46,305 - INFO - --- smoke subsets for Buchwald-Hartwig/test1 -> ../logs/grid_smoke/smoke_npz\bh_test1
+2026-10-07 17:28:46,574 - INFO - --- smoke subsets for Suzuki-Miyaura/split_0 -> ../logs/grid_smoke/smoke_npz\suzuki_split_0
+2026-10-07 17:28:57,421 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | baseline: test R2 -1.3202 MAE 32.4561 RMSE 41.3257 | 1.6s (1.6s/epoch)
+2026-10-07 17:29:07,287 - INFO - --- Buchwald-Hartwig | test1 | baseline: test R2 -1.2456 MAE 27.0695 RMSE 35.4655 | 1.5s (1.5s/epoch)
+2026-10-07 17:29:16,555 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | baseline_mlp: test R2 -1.4415 MAE 33.2683 RMSE 42.3920 | 1.4s (1.4s/epoch)
+2026-10-07 17:29:25,403 - INFO - --- Buchwald-Hartwig | test1 | baseline_mlp: test R2 -1.3609 MAE 27.9233 RMSE 36.3647 | 1.3s (1.3s/epoch)
+2026-10-07 17:29:35,071 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | B_linear: test R2 -0.9245 MAE 29.8725 RMSE 37.6373 | 1.7s (1.7s/epoch)
+2026-10-07 17:29:44,117 - INFO - --- Buchwald-Hartwig | test1 | B_linear: test R2 -0.8147 MAE 24.2555 RMSE 31.8815 | 1.5s (1.5s/epoch)
+2026-10-07 17:29:53,601 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | B_mlp: test R2 -1.2534 MAE 32.0453 RMSE 40.7268 | 1.5s (1.5s/epoch)
+2026-10-07 17:30:02,846 - INFO - --- Buchwald-Hartwig | test1 | B_mlp: test R2 -1.1463 MAE 26.4027 RMSE 34.6725 | 1.6s (1.6s/epoch)
+2026-10-07 17:30:12,530 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | control_linear: test R2 -0.9481 MAE 30.1225 RMSE 37.8673 | 1.6s (1.6s/epoch)
+2026-10-07 17:30:22,400 - INFO - --- Buchwald-Hartwig | test1 | control_linear: test R2 -0.8165 MAE 24.2191 RMSE 31.8978 | 1.4s (1.4s/epoch)
+2026-10-07 17:30:30,886 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | control_mlp: test R2 -1.2171 MAE 31.8594 RMSE 40.3974 | 1.3s (1.3s/epoch)
+2026-10-07 17:30:40,537 - INFO - --- Buchwald-Hartwig | test1 | control_mlp: test R2 -1.1708 MAE 26.5582 RMSE 34.8696 | 1.3s (1.3s/epoch)
+2026-10-07 17:30:56,367 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | A_linear: test R2 -1.0107 MAE 30.4778 RMSE 38.4707 | 1.9s (1.9s/epoch)
+2026-10-07 17:31:09,818 - INFO - --- Buchwald-Hartwig | test1 | A_linear: test R2 -0.9061 MAE 24.8349 RMSE 32.6745 | 2.5s (2.5s/epoch)
+2026-10-07 17:31:19,597 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | A_mlp: test R2 -1.4705 MAE 33.4564 RMSE 42.6432 | 1.7s (1.7s/epoch)
+2026-10-07 17:31:28,243 - INFO - --- Buchwald-Hartwig | test1 | A_mlp: test R2 -1.4112 MAE 28.3417 RMSE 36.7499 | 1.3s (1.3s/epoch)
+2026-10-07 17:31:36,997 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach3: test R2 -1.3202 MAE 32.4561 RMSE 41.3254 | 1.3s (1.3s/epoch)
+2026-10-07 17:31:46,041 - INFO - --- Buchwald-Hartwig | test1 | approach3: test R2 -1.2426 MAE 27.0498 RMSE 35.4418 | 1.4s (1.4s/epoch)
+2026-10-07 17:31:54,782 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach2: test R2 -1.4276 MAE 33.1797 RMSE 42.2715 | 1.4s (1.4s/epoch)
+2026-10-07 17:32:04,255 - INFO - --- Buchwald-Hartwig | test1 | approach2: test R2 -1.3751 MAE 28.0412 RMSE 36.4737 | 1.5s (1.5s/epoch)
+2026-10-07 17:32:13,788 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach1_linear: test R2 -0.9402 MAE 29.9848 RMSE 37.7908 | 1.5s (1.5s/epoch)
+2026-10-07 17:32:23,045 - INFO - --- Buchwald-Hartwig | test1 | approach1_linear: test R2 -0.8147 MAE 24.2560 RMSE 31.8822 | 1.7s (1.7s/epoch)
+2026-10-07 17:32:31,987 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach1_mlp: test R2 -1.2474 MAE 32.0079 RMSE 40.6723 | 1.4s (1.4s/epoch)
+2026-10-07 17:32:40,426 - INFO - --- Buchwald-Hartwig | test1 | approach1_mlp: test R2 -1.1577 MAE 26.4810 RMSE 34.7647 | 1.4s (1.4s/epoch)
+2026-10-07 17:32:48,964 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_mean_linear: test R2 -0.7526 MAE 28.9012 RMSE 35.9168 | 1.3s (1.3s/epoch)
+2026-10-07 17:32:57,609 - INFO - --- Buchwald-Hartwig | test1 | comb_none_mean_linear: test R2 -0.5643 MAE 22.3916 RMSE 29.6006 | 1.3s (1.3s/epoch)
+2026-10-07 17:33:06,141 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_mean_mlp: test R2 -1.0919 MAE 31.0914 RMSE 39.2404 | 1.3s (1.3s/epoch)
+2026-10-07 17:33:14,578 - INFO - --- Buchwald-Hartwig | test1 | comb_none_mean_mlp: test R2 -1.0548 MAE 25.7341 RMSE 33.9252 | 1.3s (1.3s/epoch)
+2026-10-07 17:33:23,720 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_rn_linear: test R2 -1.0172 MAE 30.5225 RMSE 38.5331 | 1.4s (1.4s/epoch)
+2026-10-07 17:33:32,362 - INFO - --- Buchwald-Hartwig | test1 | comb_none_rn_linear: test R2 -0.9105 MAE 24.8628 RMSE 32.7125 | 1.4s (1.4s/epoch)
+2026-10-07 17:33:40,947 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_rn_mlp: test R2 -1.4597 MAE 33.3856 RMSE 42.5497 | 1.4s (1.4s/epoch)
+2026-10-07 17:33:49,596 - INFO - --- Buchwald-Hartwig | test1 | comb_none_rn_mlp: test R2 -1.4091 MAE 28.3227 RMSE 36.7340 | 1.3s (1.3s/epoch)
+2026-10-07 17:33:59,383 - INFO - --- Suzuki-Miyaura | split_0 | baseline: test R2 -3.4085 MAE 0.4148 RMSE 0.4742 | 1.6s (1.6s/epoch)
+2026-10-07 17:34:08,934 - INFO - --- Suzuki-Miyaura | split_0 | baseline_mlp: test R2 -0.3600 MAE 0.2345 RMSE 0.2634 | 1.7s (1.7s/epoch)
+2026-10-07 17:34:19,135 - INFO - --- Suzuki-Miyaura | split_0 | B_linear: test R2 -0.0261 MAE 0.1966 RMSE 0.2288 | 1.8s (1.8s/epoch)
+2026-10-07 17:34:30,584 - INFO - --- Suzuki-Miyaura | split_0 | B_mlp: test R2 -0.0114 MAE 0.1906 RMSE 0.2271 | 1.8s (1.8s/epoch)
+2026-10-07 17:34:41,764 - INFO - --- Suzuki-Miyaura | split_0 | control_linear: test R2 -3.7648 MAE 0.4388 RMSE 0.4930 | 1.7s (1.7s/epoch)
+2026-10-07 17:34:51,376 - INFO - --- Suzuki-Miyaura | split_0 | control_mlp: test R2 -0.7389 MAE 0.2643 RMSE 0.2978 | 1.7s (1.7s/epoch)
+2026-10-07 17:35:01,592 - INFO - --- Suzuki-Miyaura | split_0 | A_linear: test R2 -0.9234 MAE 0.2782 RMSE 0.3132 | 1.9s (1.9s/epoch)
+2026-10-07 17:35:11,683 - INFO - --- Suzuki-Miyaura | split_0 | A_mlp: test R2 -0.1111 MAE 0.1800 RMSE 0.2381 | 1.6s (1.6s/epoch)
+2026-10-07 17:35:26,129 - INFO - --- Suzuki-Miyaura | split_0 | approach3: test R2 -2.8445 MAE 0.3773 RMSE 0.4429 | 3.6s (3.6s/epoch)
+2026-10-07 17:35:36,583 - INFO - --- Suzuki-Miyaura | split_0 | approach2: test R2 0.0240 MAE 0.1831 RMSE 0.2231 | 1.8s (1.8s/epoch)
+2026-10-07 17:35:48,240 - INFO - --- Suzuki-Miyaura | split_0 | approach1_linear: test R2 -0.0565 MAE 0.2013 RMSE 0.2322 | 2.7s (2.7s/epoch)
+2026-10-07 17:35:59,860 - INFO - --- Suzuki-Miyaura | split_0 | approach1_mlp: test R2 -0.4885 MAE 0.2433 RMSE 0.2756 | 3.2s (3.2s/epoch)
+2026-10-07 17:36:10,335 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_mean_linear: test R2 -2.8012 MAE 0.3764 RMSE 0.4404 | 1.8s (1.8s/epoch)
+2026-10-07 17:36:21,427 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_mean_mlp: test R2 -2.4022 MAE 0.3767 RMSE 0.4166 | 2.1s (2.1s/epoch)
+2026-10-07 17:36:32,445 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_rn_linear: test R2 -2.2080 MAE 0.3580 RMSE 0.4045 | 2.4s (2.4s/epoch)
+2026-10-07 17:36:44,107 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_rn_mlp: test R2 -0.0176 MAE 0.1805 RMSE 0.2279 | 2.8s (2.8s/epoch)
+2026-10-07 17:36:44,519 - INFO - ================================================================================
+2026-10-07 17:36:44,519 - INFO - Results table: ../logs/grid_smoke/grid_results.csv
+2026-10-07 17:36:44,519 - INFO - Summary table: ../logs/grid_smoke/grid_summary.csv
+2026-10-07 17:37:03,468 - INFO - ================================================================================
+2026-10-07 17:37:03,468 - INFO - Ablation grid runner: profile=smoke, planned=48 trainings
+2026-10-07 17:37:03,471 - INFO - --- smoke subsets for Buchwald-Hartwig/fullcv01_split70 -> ../logs/grid_smoke/smoke_npz\bh_fullcv01_split70
+2026-10-07 17:37:03,472 - INFO - --- smoke subsets for Buchwald-Hartwig/test1 -> ../logs/grid_smoke/smoke_npz\bh_test1
+2026-10-07 17:37:03,474 - INFO - --- smoke subsets for Suzuki-Miyaura/split_0 -> ../logs/grid_smoke/smoke_npz\suzuki_split_0
+2026-10-07 17:37:03,478 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | baseline already succeeded; skipping
+2026-10-07 17:37:03,478 - INFO - --- Buchwald-Hartwig | test1 | baseline already succeeded; skipping
+2026-10-07 17:37:03,703 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | baseline_mlp already succeeded; skipping
+2026-10-07 17:37:03,703 - INFO - --- Buchwald-Hartwig | test1 | baseline_mlp already succeeded; skipping
+2026-10-07 17:37:03,934 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | B_linear already succeeded; skipping
+2026-10-07 17:37:03,935 - INFO - --- Buchwald-Hartwig | test1 | B_linear already succeeded; skipping
+2026-10-07 17:37:04,140 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | B_mlp already succeeded; skipping
+2026-10-07 17:37:04,140 - INFO - --- Buchwald-Hartwig | test1 | B_mlp already succeeded; skipping
+2026-10-07 17:37:04,413 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | control_linear already succeeded; skipping
+2026-10-07 17:37:04,413 - INFO - --- Buchwald-Hartwig | test1 | control_linear already succeeded; skipping
+2026-10-07 17:37:04,705 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | control_mlp already succeeded; skipping
+2026-10-07 17:37:04,705 - INFO - --- Buchwald-Hartwig | test1 | control_mlp already succeeded; skipping
+2026-10-07 17:37:04,968 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | A_linear already succeeded; skipping
+2026-10-07 17:37:04,968 - INFO - --- Buchwald-Hartwig | test1 | A_linear already succeeded; skipping
+2026-10-07 17:37:05,261 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | A_mlp already succeeded; skipping
+2026-10-07 17:37:05,261 - INFO - --- Buchwald-Hartwig | test1 | A_mlp already succeeded; skipping
+2026-10-07 17:37:05,520 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach3 already succeeded; skipping
+2026-10-07 17:37:05,520 - INFO - --- Buchwald-Hartwig | test1 | approach3 already succeeded; skipping
+2026-10-07 17:37:05,784 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach2 already succeeded; skipping
+2026-10-07 17:37:05,784 - INFO - --- Buchwald-Hartwig | test1 | approach2 already succeeded; skipping
+2026-10-07 17:37:06,077 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach1_linear already succeeded; skipping
+2026-10-07 17:37:06,078 - INFO - --- Buchwald-Hartwig | test1 | approach1_linear already succeeded; skipping
+2026-10-07 17:37:06,326 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | approach1_mlp already succeeded; skipping
+2026-10-07 17:37:06,326 - INFO - --- Buchwald-Hartwig | test1 | approach1_mlp already succeeded; skipping
+2026-10-07 17:37:06,556 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_mean_linear already succeeded; skipping
+2026-10-07 17:37:06,556 - INFO - --- Buchwald-Hartwig | test1 | comb_none_mean_linear already succeeded; skipping
+2026-10-07 17:37:06,843 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_mean_mlp already succeeded; skipping
+2026-10-07 17:37:06,843 - INFO - --- Buchwald-Hartwig | test1 | comb_none_mean_mlp already succeeded; skipping
+2026-10-07 17:37:07,107 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_rn_linear already succeeded; skipping
+2026-10-07 17:37:07,107 - INFO - --- Buchwald-Hartwig | test1 | comb_none_rn_linear already succeeded; skipping
+2026-10-07 17:37:07,344 - INFO - --- Buchwald-Hartwig | fullcv01_split70 | comb_none_rn_mlp already succeeded; skipping
+2026-10-07 17:37:07,344 - INFO - --- Buchwald-Hartwig | test1 | comb_none_rn_mlp already succeeded; skipping
+2026-10-07 17:37:07,587 - INFO - --- Suzuki-Miyaura | split_0 | baseline already succeeded; skipping
+2026-10-07 17:37:07,799 - INFO - --- Suzuki-Miyaura | split_0 | baseline_mlp already succeeded; skipping
+2026-10-07 17:37:08,028 - INFO - --- Suzuki-Miyaura | split_0 | B_linear already succeeded; skipping
+2026-10-07 17:37:08,241 - INFO - --- Suzuki-Miyaura | split_0 | B_mlp already succeeded; skipping
+2026-10-07 17:37:08,468 - INFO - --- Suzuki-Miyaura | split_0 | control_linear already succeeded; skipping
+2026-10-07 17:37:08,736 - INFO - --- Suzuki-Miyaura | split_0 | control_mlp already succeeded; skipping
+2026-10-07 17:37:08,988 - INFO - --- Suzuki-Miyaura | split_0 | A_linear already succeeded; skipping
+2026-10-07 17:37:09,234 - INFO - --- Suzuki-Miyaura | split_0 | A_mlp already succeeded; skipping
+2026-10-07 17:37:09,448 - INFO - --- Suzuki-Miyaura | split_0 | approach3 already succeeded; skipping
+2026-10-07 17:37:09,664 - INFO - --- Suzuki-Miyaura | split_0 | approach2 already succeeded; skipping
+2026-10-07 17:37:09,886 - INFO - --- Suzuki-Miyaura | split_0 | approach1_linear already succeeded; skipping
+2026-10-07 17:37:10,098 - INFO - --- Suzuki-Miyaura | split_0 | approach1_mlp already succeeded; skipping
+2026-10-07 17:37:10,290 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_mean_linear already succeeded; skipping
+2026-10-07 17:37:10,504 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_mean_mlp already succeeded; skipping
+2026-10-07 17:37:10,712 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_rn_linear already succeeded; skipping
+2026-10-07 17:37:10,947 - INFO - --- Suzuki-Miyaura | split_0 | comb_none_rn_mlp already succeeded; skipping
+2026-10-07 17:37:11,713 - INFO - ================================================================================
+2026-10-07 17:37:11,713 - INFO - Results table: ../logs/grid_smoke/grid_results.csv
+2026-10-07 17:37:11,713 - INFO - Summary table: ../logs/grid_smoke/grid_summary.csv

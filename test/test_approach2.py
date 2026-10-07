@@ -37,6 +37,13 @@ try:  # pragma: no cover - environment dependent
 except Exception:  # pragma: no cover - environment dependent
     HAS_RDKIT = False
 
+try:  # pragma: no cover - environment dependent
+    from rdkit import Chem as _real_Chem  # noqa: F401
+
+    HAS_RDKIT_CHEM = True
+except Exception:  # pragma: no cover - environment dependent
+    HAS_RDKIT_CHEM = False
+
 from data import GraphDataset  # noqa: E402
 from model import HEADS, REACTANT_TOKENS, model  # noqa: E402
 
@@ -496,9 +503,9 @@ _TINY_REACTIONS = [
 
 
 def test_real_featurization_comb_mlp_invariance():
-    if not HAS_RDKIT:
+    if not HAS_RDKIT_CHEM:
         pytest.skip(
-            "rdkit native library is blocked by the Windows Application Control "
+            "rdkit chemistry is blocked by the Windows Application Control "
             "policy; run this test where rdkit loads"
         )
     from reaction_data import get_graph_data
@@ -644,7 +651,7 @@ def test_old_config_loads_through_from_config():
 
 
 def test_cli_defaults_and_explicit_choices():
-    if not HAS_RDKIT:
+    if not HAS_RDKIT_CHEM:
         pytest.skip(
             "main_finetune imports rdkit chemistry (prepare_data/reaction_data), "
             "blocked by the Windows Application Control policy"

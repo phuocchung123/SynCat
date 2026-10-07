@@ -1,0 +1,3 @@
+Profile: laptop_smoke_correctness_only
+These metrics are a correctness check on tiny subsets,
+NOT results. Do not report R2/MAE/RMSE from this directory.

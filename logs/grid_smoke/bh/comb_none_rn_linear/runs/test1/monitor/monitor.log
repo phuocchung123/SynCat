@@ -1,0 +1,15 @@
+2026-10-07 17:33:29,223 - INFO - device is	cpu
+2026-10-07 17:33:29,231 - INFO - -- CONFIGURATIONS
+2026-10-07 17:33:29,232 - INFO - --- train/valid/test: 64/32/32
+2026-10-07 17:33:29,232 - INFO - --- max no. reactants_train, valid, test respectively: 6, 6, 6
+2026-10-07 17:33:29,232 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-10-07 17:33:29,232 - INFO - --- model_path: ../logs/grid_smoke/bh\comb_none_rn_linear\runs\test1\model.pt
+2026-10-07 17:33:29,283 - INFO - -- TRAINING
+2026-10-07 17:33:29,616 - INFO - --- training epoch 0, loss 32.6608, mae 33.1584, rmse 42.2687, time elapsed(min) 0.01---
+2026-10-07 17:33:29,708 - INFO - --- validation at epoch 0, val_loss 32.5980, val_mae 33.0831, val_rmse 42.9002, val_r2 -1.1721, val_pearson -0.4505, lr 1.00e-03 ---
+2026-10-07 17:33:29,714 - INFO - 
+****************************************************************************************************
+2026-10-07 17:33:30,760 - INFO - --- selected checkpoint from epoch 0, val_loss 32.5980, val_mae 33.0831, val_rmse 42.9002
+2026-10-07 17:33:31,049 - INFO - -- RESULT
+2026-10-07 17:33:31,050 - INFO - --- test size: 32
+2026-10-07 17:33:31,050 - INFO - --- MAE: 24.8628 pp, RMSE: 32.7125 pp, R2: -0.9105, Pearson: -0.2024

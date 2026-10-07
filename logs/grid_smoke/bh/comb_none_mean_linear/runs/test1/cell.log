@@ -1,0 +1,3 @@
+C:\Users\chung\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\torch\jit\_script.py:1485: FutureWarning: `torch.jit.script` is not supported in Python 3.14+ and may break. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Training:   0%|          | 0/8 [00:00<?, ?it/s]Training:  50%|#####     | 4/8 [00:00<00:00, 32.55it/s]Training: 100%|##########| 8/8 [00:00<00:00, 33.63it/s]Training: 100%|##########| 8/8 [00:00<00:00, 33.42it/s]
