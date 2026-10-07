@@ -303,7 +303,7 @@ sbatch slurm/grid_full.sbatch
 sbatch --array=17 slurm/grid_full.sbatch
 
 # Collect / aggregate merged CSVs
-python run_grid.py --collect --log_dir ../logs/grid/e400_p50/
+python run_grid.py --collect --log_dir ../logs/grid/e400_p100/
 ```
 
 ### Output Files

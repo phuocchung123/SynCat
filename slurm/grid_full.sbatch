@@ -7,11 +7,12 @@
 #SBATCH --mem=16G
 #SBATCH --gres=gpu:1
 #SBATCH --time=1-00:00:00
-#SBATCH --array=0-31%4
-#SBATCH --output=slurm/logs/grid-%A_%a.out
-#SBATCH --error=slurm/logs/grid-%A_%a.err
+#SBATCH --output=slurm/logs/grid-%j.out
+#SBATCH --error=slurm/logs/grid-%j.err
 
 # Full factorial ablation grid across Buchwald-Hartwig and Suzuki-Miyaura.
+# Runs BH then Suzuki on 1 GPU (about 13-20 h), writing one per-split CSV
+# (grid_results.csv) and one summary CSV (grid_summary.csv).
 #
 # Cells (tok / att / pool / head):
 #   0  ind/reactants/mean/linear   baseline
@@ -31,32 +32,31 @@
 #   14 comb/none/rn/linear         comb_none_rn_linear
 #   15 comb/none/rn/mlp            comb_none_rn_mlp
 #
-# Slurm array task ID mapping (task_id 0-31):
-#   task_id 0-15:  Buchwald-Hartwig (10 CV splits + Test1-4 = 14 splits per task)
-#   task_id 16-31: Suzuki-Miyaura   (10 random splits = 10 splits per task)
-#   Dataset = task_id // 16, Cell = task_id % 16.
-#   Total: 384 planned trainings across all 32 tasks.
+# Datasets and splits:
+#   - Buchwald-Hartwig (10 CV splits + Test1-4 = 14 splits per cell)
+#   - Suzuki-Miyaura   (10 random splits = 10 splits per cell)
+#   Total: 16 cells x 24 splits = 384 trainings on 1 GPU.
 #
-# Resumption & Individual Tasks:
-#   - Resubmitting the same command resumes without re-running finished splits.
-#   - Rerun a single task (e.g. task 17):
-#       sbatch --array=17 slurm/grid_full.sbatch
-#   - Override concurrent throttle (e.g. up to 8 parallel tasks):
-#       sbatch --array=0-31%8 slurm/grid_full.sbatch
+# Resumption:
+#   Resubmitting the same command resumes without re-running finished splits.
+#   Splits with status "success" in results.csv are skipped automatically.
+#
+# Optional Array / Task Mode:
+#   - To run as a Slurm array: sbatch --array=0-31%4 slurm/grid_full.sbatch
+#   - To run a single task:    TASK_ID=17 sbatch slurm/grid_full.sbatch
 #
 # Results & Collection:
-#   Results land in:  <repo>/logs/grid/${RUN_NAME}/<dataset_slug>/<label>/results.csv
+#   Results land in:  <repo>/logs/grid/${RUN_NAME}/
 #   Rebuild/collect merged CSVs:
-#       python run_grid.py --collect --log_dir ../logs/grid/e400_p50/
+#       python run_grid.py --collect --log_dir ../logs/grid/e400_p100/
 #   Merged files:
-#       <repo>/logs/grid/${RUN_NAME}/grid_results.csv
-#       <repo>/logs/grid/${RUN_NAME}/grid_summary.csv
+#       <repo>/logs/grid/${RUN_NAME}/grid_results.csv   (per-split CSV)
+#       <repo>/logs/grid/${RUN_NAME}/grid_summary.csv   (summary CSV)
 
 set -euo pipefail
 
 echo "========================================"
 echo "Job ID: $SLURM_JOB_ID"
-echo "Array Task ID: $SLURM_ARRAY_TASK_ID"
 echo "Job name: $SLURM_JOB_NAME"
 echo "Compute node: $(hostname)"
 echo "Allocated node: $SLURM_NODELIST"
@@ -115,39 +115,67 @@ python -c "import torch; assert torch.cuda.is_available(), 'CUDA is not availabl
 
 # Hyperparameters (configurable via environment variables)
 EPOCHS="${EPOCHS:-400}"
-PATIENCE="${PATIENCE:-50}"
-EMB_DIM="${EMB_DIM:-384}"
+PATIENCE="${PATIENCE:-100}"
 BATCH_SIZE="${BATCH_SIZE:-128}"
-NUM_WORKERS="${NUM_WORKERS:-2}"
+LR="${LR:-1e-3}"
+WEIGHT_DECAY="${WEIGHT_DECAY:-1e-4}"
+DROPOUT="${DROPOUT:-0.1}"
+EMB_DIM="${EMB_DIM:-384}"
+LAYER="${LAYER:-2}"
+ATTENTION_LAYER="${ATTENTION_LAYER:-2}"
+NUM_HEADS="${NUM_HEADS:-16}"
+REACTION_COMBINE="${REACTION_COMBINE:-concat}"
 SEED="${SEED:-42}"
-RUN_NAME="${RUN_NAME:-e400_p50}"
+NUM_WORKERS="${NUM_WORKERS:-2}"
+RUN_NAME="${RUN_NAME:-e400_p100}"
 LOG_DIR="../logs/grid/${RUN_NAME}/"
+
+EXTRA_ARGS=()
+if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
+    EXTRA_ARGS+=(--task_id "$SLURM_ARRAY_TASK_ID")
+elif [ -n "${TASK_ID:-}" ]; then
+    EXTRA_ARGS+=(--task_id "$TASK_ID")
+fi
 
 # 1. Print the task's plan first with dry run
 python -u run_grid.py \
     --profile full \
-    --task_id "$SLURM_ARRAY_TASK_ID" \
+    "${EXTRA_ARGS[@]}" \
     --epochs "$EPOCHS" \
     --patience "$PATIENCE" \
-    --emb_dim "$EMB_DIM" \
     --batch_size "$BATCH_SIZE" \
-    --num_workers "$NUM_WORKERS" \
+    --lr "$LR" \
+    --weight_decay "$WEIGHT_DECAY" \
+    --dropout "$DROPOUT" \
+    --emb_dim "$EMB_DIM" \
+    --layer "$LAYER" \
+    --attention_layer "$ATTENTION_LAYER" \
+    --num_heads "$NUM_HEADS" \
+    --reaction_combine "$REACTION_COMBINE" \
     --seed "$SEED" \
+    --num_workers "$NUM_WORKERS" \
     --log_dir "$LOG_DIR" \
     --dry_run
 
-# 2. Run the task
+# 2. Run the task (BH then Suzuki across all 16 cells)
 python -u run_grid.py \
     --profile full \
-    --task_id "$SLURM_ARRAY_TASK_ID" \
+    "${EXTRA_ARGS[@]}" \
     --epochs "$EPOCHS" \
     --patience "$PATIENCE" \
-    --emb_dim "$EMB_DIM" \
     --batch_size "$BATCH_SIZE" \
-    --num_workers "$NUM_WORKERS" \
+    --lr "$LR" \
+    --weight_decay "$WEIGHT_DECAY" \
+    --dropout "$DROPOUT" \
+    --emb_dim "$EMB_DIM" \
+    --layer "$LAYER" \
+    --attention_layer "$ATTENTION_LAYER" \
+    --num_heads "$NUM_HEADS" \
+    --reaction_combine "$REACTION_COMBINE" \
     --seed "$SEED" \
+    --num_workers "$NUM_WORKERS" \
     --log_dir "$LOG_DIR"
 
 echo "========================================"
-echo "Task $SLURM_ARRAY_TASK_ID completed at: $(date)"
+echo "Grid run completed at: $(date)"
 echo "========================================"
