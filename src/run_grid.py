@@ -560,6 +560,34 @@ def _evaluate_checkpoint(args, device):
     return metrics["train"], metrics["test"], int(trainable)
 
 
+def _reset_peak_gpu_memory(device: torch.device) -> None:
+    if device.type == "cuda":
+        try:
+            torch.cuda.set_device(device)
+            # PyTorch requires an allocation to initialise the caching allocator
+            # for the device before resetting peak memory stats, otherwise it raises
+            # RuntimeError: Invalid device argument.
+            torch.empty(1, device=device)
+            torch.cuda.reset_peak_memory_stats(device)
+        except Exception:
+            try:
+                torch.cuda.reset_peak_memory_stats(device.index)
+            except Exception:
+                pass
+
+
+def _get_peak_gpu_memory_mb(device: torch.device):
+    if device.type != "cuda":
+        return None
+    try:
+        return round(float(torch.cuda.max_memory_allocated(device)) / (1024.0 * 1024.0), 2)
+    except Exception:
+        try:
+            return round(float(torch.cuda.max_memory_allocated(device.index)) / (1024.0 * 1024.0), 2)
+        except Exception:
+            return None
+
+
 def _run_one_cell(spec_path: str) -> None:
     with open(spec_path) as handle:
         spec = json.load(handle)
@@ -594,8 +622,7 @@ def _run_one_cell(spec_path: str) -> None:
     set_seed(args.seed)
     gpus = resolve_gpu_ids(args)
     device = torch.device("cuda:%d" % gpus[0]) if gpus else torch.device("cpu")
-    if device.type == "cuda":
-        torch.cuda.reset_peak_memory_stats(device)
+    _reset_peak_gpu_memory(device)
 
     result = finetune(args, save_embedding=False)
     train_metrics, test_metrics, trainable = _evaluate_checkpoint(args, device)
@@ -603,9 +630,7 @@ def _run_one_cell(spec_path: str) -> None:
     runtime = float(result["train_runtime_sec"])
     seconds_per_epoch = runtime / epochs_ran if epochs_ran > 0 else None
 
-    peak_gpu = None
-    if device.type == "cuda":
-        peak_gpu = round(float(torch.cuda.max_memory_allocated(device)) / (1024.0 * 1024.0), 2)
+    peak_gpu = _get_peak_gpu_memory_mb(device)
 
     if not spec.get("keep_checkpoints", False) and os.path.isfile(checkpoint_path):
         os.remove(checkpoint_path)

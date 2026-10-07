@@ -24,6 +24,8 @@ for _p in (SRC_DIR, TEST_DIR):
 from model import model  # noqa: E402
 from run_grid import (  # noqa: E402
     CELLS,
+    _get_peak_gpu_memory_mb,
+    _reset_peak_gpu_memory,
     summarize,
     task_id_to_dataset_and_cell,
     tasks,
@@ -383,3 +385,26 @@ def test_summarize_toy_frame():
     assert row2["test_r2_mean"] == pytest.approx(0.75)
     assert np.isnan(row2["test_r2_std"])
     assert row2["test_r2_pm"] == "0.7500 ± nan"
+
+
+def test_gpu_memory_helpers_safe_on_cpu_and_cuda_handling(monkeypatch):
+    cpu_device = torch.device("cpu")
+    # Safe no-op on CPU
+    _reset_peak_gpu_memory(cpu_device)
+    assert _get_peak_gpu_memory_mb(cpu_device) is None
+
+    # Test error resilience when cuda raises invalid device argument
+    cuda_device = torch.device("cuda:0")
+    monkeypatch.setattr(torch.cuda, "set_device", lambda d: None)
+
+    def mock_empty(*args, **kwargs):
+        raise RuntimeError("Invalid device argument")
+
+    monkeypatch.setattr(torch, "empty", mock_empty)
+    # Should not raise exception
+    _reset_peak_gpu_memory(cuda_device)
+
+    # Test safe get_peak_gpu_memory_mb fallback
+    monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda d: 1024 * 1024 * 100)
+    assert _get_peak_gpu_memory_mb(cuda_device) == 100.0
+
