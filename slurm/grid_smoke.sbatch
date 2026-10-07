@@ -82,6 +82,9 @@ python -c "import torch; assert torch.cuda.is_available(), 'no CUDA'; print('GPU
 export TQDM_DISABLE=1
 
 # --- the actual run ---------------------------------------------------------
+# pytest is not part of the training environment; install it if missing.
+python -m pip install pytest
+
 (cd "$REPO_DIR" && python -m pytest test -q)
 
 python -u run_approach1_grid.py --smoke --datasets all --output_dir ../logs/grid_smoke/
