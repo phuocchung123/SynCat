@@ -1,0 +1,19 @@
+2026-10-07 17:20:20,480 - INFO - device is	cpu
+2026-10-07 17:20:20,507 - INFO - -- CONFIGURATIONS
+2026-10-07 17:20:20,508 - INFO - --- train/valid/test: 64/32/32
+2026-10-07 17:20:20,508 - INFO - --- max no. reactants_train, valid, test respectively: 14, 14, 14
+2026-10-07 17:20:20,508 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-10-07 17:20:20,508 - INFO - --- model_path: ../logs/grid_smoke_laptop/runs\suzuki\split_0\ind-reactants-rn-mlp\model.pt
+2026-10-07 17:20:20,514 - INFO - -- TRAINING
+2026-10-07 17:20:21,369 - INFO - --- training epoch 0, loss 0.0756, mae 0.3189, rmse 0.3898, time elapsed(min) 0.01---
+2026-10-07 17:20:21,716 - INFO - --- validation at epoch 0, val_loss 0.0578, val_mae 0.2965, val_rmse 0.3400, val_r2 -0.0203, val_pearson -0.3047, lr 1.00e-03 ---
+2026-10-07 17:20:21,716 - INFO - 
+****************************************************************************************************
+2026-10-07 17:20:24,214 - INFO - --- training epoch 1, loss 0.0472, mae 0.2599, rmse 0.3074, time elapsed(min) 0.01---
+2026-10-07 17:20:24,533 - INFO - --- validation at epoch 1, val_loss 0.0652, val_mae 0.3428, val_rmse 0.3610, val_r2 -0.1505, val_pearson -0.2300, lr 1.00e-03 ---
+2026-10-07 17:20:24,534 - INFO - 
+****************************************************************************************************
+2026-10-07 17:20:26,401 - INFO - --- selected checkpoint from epoch 0, val_loss 0.0578, val_mae 0.2965, val_rmse 0.3400
+2026-10-07 17:20:27,102 - INFO - -- RESULT
+2026-10-07 17:20:27,102 - INFO - --- test size: 32
+2026-10-07 17:20:27,102 - INFO - --- MAE: 0.2692 (26.92 pp), RMSE: 0.3116 (31.16 pp), R2: -0.0953, Pearson: -0.2911

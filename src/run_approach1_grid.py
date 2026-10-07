@@ -1,23 +1,32 @@
 """
-Standalone experiment runner for Approach 1 grid evaluation.
+Standalone experiment runner for the full Approach 1 ablation grid.
 
-Runs the 8-cell comparison across reactant_tokens, reactant_pooling, and head:
-  1. current_model:      reactant_tokens=ind,  reactant_pooling=mean, head=linear
-  2. approach_3:         reactant_tokens=comb, reactant_pooling=mean, head=linear
-  3. approach_2:         reactant_tokens=comb, reactant_pooling=mean, head=mlp
-  4. approach_1_linear:  reactant_tokens=comb, reactant_pooling=rn,   head=linear
-  5. approach_1_mlp:     reactant_tokens=comb, reactant_pooling=rn,   head=mlp
-  6. option_b_linear:    reactant_tokens=ind,  reactant_pooling=rn,   head=linear
-  7. option_b_mlp:       reactant_tokens=ind,  reactant_pooling=rn,   head=mlp
-  8. ind_mean_mlp:       reactant_tokens=ind,  reactant_pooling=mean, head=mlp
+Runs the 16-cell comparison over
+    reactant_tokens   {ind, comb}
+    x attention_on    {reactants, none}
+    x reactant_pooling {mean, rn}
+    x head            {linear, mlp}
+on Buchwald-Hartwig (10 FullCV 1-10 split_70 and the 4 out-of-sample Test1-4
+sets) and Suzuki-Miyaura (split_0..split_9), always with the same seed and
+hyperparameters. Cells are labelled "<tokens>-<attention>-<pooling>-<head>" and
+grouped into named approaches:
 
-Evaluated on Buchwald-Hartwig and Suzuki-Miyaura splits.
+    baseline   ind/reactants/mean/linear
+    control    ind/none/mean/{linear,mlp}
+    A          ind/none/rn/{linear,mlp}
+    B          ind/reactants/rn/{linear,mlp}
+    approach_1 comb/reactants/rn/{linear,mlp}
+    approach_2 comb/reactants/mean/mlp
+    approach_3 comb/reactants/mean/linear
+    unlabeled  the remaining cells (still run)
+
 Supports both fast smoke testing and full cluster execution with resumption.
 """
 
 import argparse
 import copy
 import gc
+import itertools
 import json
 import logging
 import os
@@ -32,68 +41,51 @@ from torch.utils.data import DataLoader
 
 from data import GraphDataset
 from finetune import _build_model, finetune
-from model import model
+from main_finetune import build_parser
+from model import HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
+from multi_gpu import resolve_gpu_ids
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from validation import validation
 
-CELLS = [
-    {
-        "label": "current_model",
-        "approach": "current model",
-        "reactant_tokens": "ind",
-        "reactant_pooling": "mean",
-        "head": "linear",
-    },
-    {
-        "label": "approach_3",
-        "approach": "approach 3",
-        "reactant_tokens": "comb",
-        "reactant_pooling": "mean",
-        "head": "linear",
-    },
-    {
-        "label": "approach_2",
-        "approach": "approach 2",
-        "reactant_tokens": "comb",
-        "reactant_pooling": "mean",
-        "head": "mlp",
-    },
-    {
-        "label": "approach_1_linear",
-        "approach": "approach 1",
-        "reactant_tokens": "comb",
-        "reactant_pooling": "rn",
-        "head": "linear",
-    },
-    {
-        "label": "approach_1_mlp",
-        "approach": "approach 1",
-        "reactant_tokens": "comb",
-        "reactant_pooling": "rn",
-        "head": "mlp",
-    },
-    {
-        "label": "option_b_linear",
-        "approach": "option B",
-        "reactant_tokens": "ind",
-        "reactant_pooling": "rn",
-        "head": "linear",
-    },
-    {
-        "label": "option_b_mlp",
-        "approach": "option B",
-        "reactant_tokens": "ind",
-        "reactant_pooling": "rn",
-        "head": "mlp",
-    },
-    {
-        "label": "ind_mean_mlp",
-        "approach": "option B",
-        "reactant_tokens": "ind",
-        "reactant_pooling": "mean",
-        "head": "mlp",
-    },
-]
+# Named approaches of the grid, keyed by (tokens, attention, pooling, head).
+# Any combination not listed here is "unlabeled".
+APPROACHES = {
+    ("ind", "reactants", "mean", "linear"): "baseline",
+    ("ind", "none", "mean", "linear"): "control",
+    ("ind", "none", "mean", "mlp"): "control",
+    ("ind", "none", "rn", "linear"): "A",
+    ("ind", "none", "rn", "mlp"): "A",
+    ("ind", "reactants", "rn", "linear"): "B",
+    ("ind", "reactants", "rn", "mlp"): "B",
+    ("comb", "reactants", "rn", "linear"): "approach_1",
+    ("comb", "reactants", "rn", "mlp"): "approach_1",
+    ("comb", "reactants", "mean", "mlp"): "approach_2",
+    ("comb", "reactants", "mean", "linear"): "approach_3",
+}
+
+
+def _build_cells() -> List[dict]:
+    """Builds the 16 cells of the grid from the model constants."""
+    cells = []
+    for tokens, attention_on, pooling, head in itertools.product(
+        REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS
+    ):
+        cells.append(
+            {
+                "label": "%s-%s-%s-%s" % (tokens, attention_on, pooling, head),
+                "approach": APPROACHES.get(
+                    (tokens, attention_on, pooling, head), "unlabeled"
+                ),
+                "reactant_tokens": tokens,
+                "attention_on": attention_on,
+                "reactant_pooling": pooling,
+                "head": head,
+            }
+        )
+    return cells
+
+
+CELLS = _build_cells()
 
 METRICS = [
     "train_r2",
@@ -106,18 +98,8 @@ METRICS = [
     "epochs_ran",
     "train_runtime_sec",
     "seconds_per_epoch",
+    "peak_gpu_memory_mb",
 ]
-
-
-def _get_peak_memory_mb() -> Optional[float]:
-    """Get peak process RSS in megabytes if psutil is available."""
-    try:
-        import psutil
-
-        process = psutil.Process()
-        return round(process.memory_info().rss / (1024 * 1024), 2)
-    except Exception:
-        return None
 
 
 def _slice_npz(src_path: str, dst_path: str, n_samples: int) -> None:
@@ -193,17 +175,30 @@ def _prepare_smoke_data(
     temp_dir: str,
     datasets: str = "all",
 ) -> Dict[str, str]:
-    """Slices small smoke datasets for BH and Suzuki."""
+    """Slices small smoke datasets for BH (CV split and test1) and Suzuki."""
     splits = {}
 
     if datasets in ("bh", "all"):
-        bh_src = os.path.join(base_data_folder, "npz", "bh", bh_split)
-        bh_dst = os.path.join(temp_dir, "bh", bh_split)
-        os.makedirs(bh_dst, exist_ok=True)
-        _slice_npz(os.path.join(bh_src, "train.npz"), os.path.join(bh_dst, "train.npz"), 64)
-        _slice_npz(os.path.join(bh_src, "valid.npz"), os.path.join(bh_dst, "valid.npz"), 32)
-        _slice_npz(os.path.join(bh_src, "test.npz"), os.path.join(bh_dst, "test.npz"), 32)
-        splits["bh"] = bh_dst
+        for key, split in (("bh", bh_split), ("bh_test", "test1")):
+            src_dir = os.path.join(base_data_folder, "npz", "bh", split)
+            dst_dir = os.path.join(temp_dir, "bh", split)
+            os.makedirs(dst_dir, exist_ok=True)
+            _slice_npz(
+                os.path.join(src_dir, "train.npz"),
+                os.path.join(dst_dir, "train.npz"),
+                64,
+            )
+            _slice_npz(
+                os.path.join(src_dir, "valid.npz"),
+                os.path.join(dst_dir, "valid.npz"),
+                32,
+            )
+            _slice_npz(
+                os.path.join(src_dir, "test.npz"),
+                os.path.join(dst_dir, "test.npz"),
+                32,
+            )
+            splits[key] = dst_dir
 
     if datasets in ("suzuki", "all"):
         suz_src = os.path.join(base_data_folder, "processed", "suzuki", "npz", suzuki_split)
@@ -221,6 +216,7 @@ def run_cell(
     base_args: argparse.Namespace,
     dataset_name: str,
     split_name: str,
+    split_kind: str,
     cell: dict,
     npz_dir: str,
     run_dir: str,
@@ -231,15 +227,13 @@ def run_cell(
     row = {
         "dataset": dataset_name,
         "split": split_name,
+        "split_kind": split_kind,
         "cell": cell["label"],
-        "label": cell["label"],
         "approach": cell.get("approach", ""),
-        "tokens": cell["reactant_tokens"],
         "reactant_tokens": cell["reactant_tokens"],
-        "pooling": cell["reactant_pooling"],
+        "attention_on": cell["attention_on"],
         "reactant_pooling": cell["reactant_pooling"],
         "head": cell["head"],
-        "attention_on": getattr(base_args, "attention_on", "reactants"),
         "seed": base_args.seed,
         "train_r2": None,
         "train_mae": None,
@@ -251,7 +245,7 @@ def run_cell(
         "epochs_ran": None,
         "train_runtime_sec": None,
         "seconds_per_epoch": None,
-        "peak_memory_mb": None,
+        "peak_gpu_memory_mb": None,
         "status": "failed",
         "error": "",
     }
@@ -264,7 +258,7 @@ def run_cell(
     run_opts.reactant_tokens = cell["reactant_tokens"]
     run_opts.reactant_pooling = cell["reactant_pooling"]
     run_opts.head = cell["head"]
-    run_opts.attention_on = getattr(base_args, "attention_on", "reactants")
+    run_opts.attention_on = cell["attention_on"]
     run_opts.model_path = os.path.join(run_dir, "")
     run_opts.model_name = "model.pt"
     run_opts.monitor_folder = os.path.join(run_dir, "monitor", "")
@@ -277,19 +271,32 @@ def run_cell(
 
     set_seed(run_opts.seed)
     logger.info(
-        "=== RUNNING: dataset=%s split=%s cell=%s (tokens=%s, pooling=%s, head=%s) ==="
+        "=== RUNNING: dataset=%s split=%s kind=%s cell=%s "
+        "(tokens=%s, attention_on=%s, pooling=%s, head=%s) ==="
         % (
             dataset_name,
             split_name,
+            split_kind,
             cell["label"],
             cell["reactant_tokens"],
+            cell["attention_on"],
             cell["reactant_pooling"],
             cell["head"],
         )
     )
 
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+
     try:
-        result = finetune(run_opts, save_embedding=False)
+        try:
+            result = finetune(run_opts, save_embedding=False)
+        finally:
+            # finetune() reconfigures the root logger to the cell's monitor.log;
+            # point it back at the grid log so later cells keep logging here.
+            setup_logging(
+                log_filename=os.path.join(base_args.output_dir, "grid.log")
+            )
 
         train_set = GraphDataset(os.path.join(npz_dir, "train.npz"))
         node_dim = train_set.rmol_node_attr[0].shape[1]
@@ -319,6 +326,12 @@ def run_cell(
             run_opts, eval_net, train_loader, device, loss_fn=None
         )
         train_metrics = train_res[0] if isinstance(train_res, tuple) else train_res
+
+        peak_gpu_memory_mb = (
+            torch.cuda.max_memory_allocated(device) / 2**20
+            if device.type == "cuda"
+            else None
+        )
 
         del eval_net
         if torch.cuda.is_available():
@@ -351,7 +364,7 @@ def run_cell(
                 "epochs_ran": epochs_ran,
                 "train_runtime_sec": train_runtime,
                 "seconds_per_epoch": sec_per_epoch,
-                "peak_memory_mb": _get_peak_memory_mb(),
+                "peak_gpu_memory_mb": peak_gpu_memory_mb,
             }
         )
         logger.info(
@@ -373,17 +386,18 @@ def run_cell(
 
 
 def summarize_grid(df: pd.DataFrame) -> pd.DataFrame:
-    """Group by dataset and cell to produce mean and sample std (ddof=1)."""
+    """Group by dataset, split kind and cell to produce mean and sample std (ddof=1)."""
     success = df[df["status"] == "success"]
     rows = []
     group_cols = [
         "dataset",
+        "split_kind",
         "cell",
         "approach",
         "reactant_tokens",
+        "attention_on",
         "reactant_pooling",
         "head",
-        "attention_on",
     ]
     actual_cols = [c for c in group_cols if c in success.columns]
     for keys, group in success.groupby(actual_cols):
@@ -400,49 +414,6 @@ def summarize_grid(df: pd.DataFrame) -> pd.DataFrame:
                 )
         rows.append(entry)
     return pd.DataFrame(rows)
-
-
-def _emit_server_commands(output_dir: str) -> None:
-    """Write server_commands.txt with exact production commands and sizing notes."""
-    filepath = os.path.join(output_dir, "server_commands.txt")
-    lines = [
-        "# ============================================================================",
-        "# Server Commands for Approach 1 Evaluation Grid",
-        "# ============================================================================",
-        "# Sizing notes (measured at full settings: emb_dim 384, batch_size 128 on CPU):",
-        "# - Buchwald-Hartwig: 6 reactant slots -> T = 21 tokens, 210 pair terms.",
-        "#   Forward+backward: ~1.2 s/batch. 14 splits run via slurm/approach1_grid_bh.sbatch.",
-        "# - Suzuki-Miyaura: 14 reactant slots -> T = 105 tokens, 5460 pair terms.",
-        "#   Forward+backward: ~70 s/batch on CPU with 2.15 GB pair tensor.",
-        "#   Real training runs on GPU server via slurm/approach1_grid_suzuki.sbatch.",
-        "# ============================================================================",
-        "",
-        "# Submit SLURM batch jobs from repo root:",
-        "#   sbatch slurm/approach1_grid_smoke.sbatch",
-        "#   sbatch slurm/approach1_grid_bh.sbatch",
-        "#   sbatch slurm/approach1_grid_suzuki.sbatch",
-        "",
-    ]
-    for cell in CELLS:
-        label = cell["label"]
-        tokens = cell["reactant_tokens"]
-        pooling = cell["reactant_pooling"]
-        head = cell["head"]
-        lines.append(f"# Cell: {label} ({cell['approach']})")
-        lines.append(
-            f"# BH: python train_bh.py --reactant_tokens {tokens} --reactant_pooling {pooling} "
-            f"--head {head} --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 "
-            f"--cv_ids 1 2 3 4 5 6 7 8 9 10 --split_columns split_70"
-        )
-        lines.append(
-            f"# Suzuki: python run_splits_sequential.py --reactant_tokens {tokens} --reactant_pooling {pooling} "
-            f"--head {head} --emb_dim 384 --batch_size 128 --epochs 100 --patience 10 "
-            f"--split_ids 0 1 2 3 4 5 6 7 8 9"
-        )
-        lines.append("")
-
-    with open(filepath, "w") as f:
-        f.write("\n".join(lines))
 
 
 def _resolve_data_folder(data_folder: str) -> str:
@@ -463,14 +434,26 @@ def _resolve_data_folder(data_folder: str) -> str:
 def _resolve_eval_datasets(
     args: argparse.Namespace,
     temp_splits: Optional[Dict[str, str]] = None,
-) -> List[Tuple[str, str, str, str, str]]:
-    """Builds list of (dataset_name, split_name, npz_dir, rxn_col, y_col) tuples."""
+) -> List[Tuple[str, str, str, str, str, str]]:
+    """Builds (dataset, split, split_kind, npz_dir, rxn_col, y_col) tuples.
+
+    split_kind is "test" for the BH out-of-sample Test<id> folders and "cv"
+    for the BH FullCV folders and all Suzuki splits.
+    """
     eval_datasets = []
     if args.smoke and temp_splits is not None:
         if args.datasets in ("bh", "all") and "bh" in temp_splits:
-            eval_datasets.append(("bh", "fullcv01_split70", temp_splits["bh"], "rxn", "Output"))
+            eval_datasets.append(
+                ("bh", "fullcv01_split70", "cv", temp_splits["bh"], "rxn", "Output")
+            )
+        if args.datasets in ("bh", "all") and "bh_test" in temp_splits:
+            eval_datasets.append(
+                ("bh", "test1", "test", temp_splits["bh_test"], "rxn", "Output")
+            )
         if args.datasets in ("suzuki", "all") and "suzuki" in temp_splits:
-            eval_datasets.append(("suzuki", "split_0", temp_splits["suzuki"], "rxn", "y"))
+            eval_datasets.append(
+                ("suzuki", "split_0", "cv", temp_splits["suzuki"], "rxn", "y")
+            )
         return eval_datasets
 
     if args.datasets in ("bh", "all"):
@@ -486,7 +469,8 @@ def _resolve_eval_datasets(
                 bh_splits_to_run.append("test%d" % test_id)
         for s in bh_splits_to_run:
             npz_dir = os.path.join(args.Data_folder, "npz", "bh", s)
-            eval_datasets.append(("bh", s, npz_dir, "rxn", "Output"))
+            split_kind = "test" if s.startswith("test") else "cv"
+            eval_datasets.append(("bh", s, split_kind, npz_dir, "rxn", "Output"))
 
     if args.datasets in ("suzuki", "all"):
         if args.suzuki_splits is not None:
@@ -495,7 +479,7 @@ def _resolve_eval_datasets(
             suzuki_splits_to_run = ["split_%d" % i for i in args.split_ids]
         for s in suzuki_splits_to_run:
             npz_dir = os.path.join(args.Data_folder, "processed", "suzuki", "npz", s)
-            eval_datasets.append(("suzuki", s, npz_dir, "rxn", "y"))
+            eval_datasets.append(("suzuki", s, "cv", npz_dir, "rxn", "y"))
 
     return eval_datasets
 
@@ -531,60 +515,16 @@ def _save_results(
 
 
 def build_grid_parser() -> argparse.ArgumentParser:
-    """Builds argument parser for Approach 1 grid runner."""
-    parser = argparse.ArgumentParser(description="Approach 1 Grid Runner")
-    # Base training arguments
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--device", type=int, default=0)
-    parser.add_argument("--gpus", type=str, nargs="+", default=None)
-    parser.add_argument("--num_workers", type=int, default=4)
-    parser.add_argument("--layer", type=int, default=3)
-    parser.add_argument("--attention_layer", type=int, default=1)
-    parser.add_argument("--num_heads", type=int, default=1)
-    parser.add_argument(
-        "--attention_on",
-        type=str,
-        default="reactants",
-        choices=["reactants", "reactants_products", "all", "none"],
-    )
-    parser.add_argument(
-        "--reaction_combine",
-        type=str,
-        default="concat",
-        choices=["both", "concat", "concat_sub", "diff", "interaction", "mul", "prod_only", "sum"],
-    )
-    parser.add_argument("--reactant_tokens", type=str, default="ind", choices=["ind", "comb"])
-    parser.add_argument("--reactant_pooling", type=str, default="mean", choices=["mean", "rn"])
-    parser.add_argument("--head", type=str, default="linear", choices=["linear", "mlp"])
-    parser.add_argument("--emb_dim", type=int, default=384)
-    parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--weight_decay", type=float, default=1e-4)
-    parser.add_argument("--schedule", type=str, default="none", choices=["none", "step", "linear", "cosine"])
-    parser.add_argument("--patience", type=int, default=0)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--Data_folder", type=str, default="../Data/")
-    parser.add_argument("--data_csv", type=str, default="raw/suzuki/random_split_0.tsv")
-    parser.add_argument("--npz_folder", type=str, default="npz/npz_yield")
-    parser.add_argument("--reaction_column", type=str, default="rxn")
-    parser.add_argument("--y_column", type=str, default="Output")
-    parser.add_argument("--model_path", type=str, default="../Data/model/")
-    parser.add_argument("--model_name", type=str, default="model_yield.pt")
-    parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
-    parser.add_argument("--image_folder", type=str, default="../Image/")
-    parser.add_argument("--track_test_each_epoch", action="store_true")
-    parser.add_argument("--save_embedding", action="store_true")
-    parser.add_argument("--store_attention", action="store_true")
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--pretrained_model_path", type=str, default="")
-    parser.add_argument("--log_dir", type=str, default=None)
+    """Builds the grid parser on top of the shared finetuning options."""
+    parser = build_parser()
+    parser.set_defaults(split_ids=list(range(10)))
 
     # Grid evaluation specific arguments
     parser.add_argument(
         "--smoke",
         action="store_true",
-        help="run fast smoke test on tiny subsets (1 BH split, 1 Suzuki split, 1 epoch)",
+        help="run fast smoke test on tiny subsets (1 BH CV split, BH test1, "
+        "1 Suzuki split, 2 epochs)",
     )
     parser.add_argument(
         "--datasets",
@@ -615,13 +555,6 @@ def build_grid_parser() -> argparse.ArgumentParser:
         help="BH split columns (e.g. split_70)",
     )
     parser.add_argument(
-        "--split_ids",
-        type=int,
-        nargs="*",
-        default=list(range(10)),
-        help="Suzuki split ids (0..9)",
-    )
-    parser.add_argument(
         "--bh_splits",
         type=str,
         nargs="*",
@@ -640,18 +573,8 @@ def build_grid_parser() -> argparse.ArgumentParser:
         type=str,
         nargs="*",
         default=["all"],
-        choices=[
-            "all",
-            "current_model",
-            "approach_3",
-            "approach_2",
-            "approach_1_linear",
-            "approach_1_mlp",
-            "option_b_linear",
-            "option_b_mlp",
-            "ind_mean_mlp",
-        ],
-        help="which experiment cells to run (default: 'all')",
+        help="which cells to run: 'all', any cell label "
+        "(e.g. comb-reactants-rn-mlp), or any approach name (e.g. approach_1)",
     )
     parser.add_argument(
         "--output_dir",
@@ -667,6 +590,17 @@ def build_grid_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _select_cells(selected: List[str]) -> List[dict]:
+    """Resolves --cells (all / labels / approach names) to grid cells."""
+    if "all" in selected:
+        return list(CELLS)
+    wanted = set(selected)
+    chosen = [c for c in CELLS if c["label"] in wanted or c["approach"] in wanted]
+    if not chosen:
+        raise ValueError("no grid cell matches --cells %s" % selected)
+    return chosen
+
+
 def main():
     parser = build_grid_parser()
     args = parser.parse_args()
@@ -674,12 +608,17 @@ def main():
     if getattr(args, "log_dir", None) and args.log_dir != "../logs/suzuki_regression/":
         args.output_dir = args.log_dir
 
+    if len(resolve_gpu_ids(args)) > 1:
+        parser.error(
+            "the grid runner runs on a single GPU only; DistributedDataParallel "
+            "would hide the per-cell peak GPU memory"
+        )
+
     os.makedirs(args.output_dir, exist_ok=True)
     logger = setup_logging(log_filename=os.path.join(args.output_dir, "grid.log"))
     logger.info("Starting Approach 1 Grid Runner (smoke=%s, datasets=%s)" % (args.smoke, args.datasets))
 
     args.Data_folder = _resolve_data_folder(args.Data_folder)
-    _emit_server_commands(args.output_dir)
 
     device = torch.device(
         f"cuda:{args.device}" if torch.cuda.is_available() and args.device >= 0 else "cpu"
@@ -688,9 +627,7 @@ def main():
     per_split_csv = os.path.join(args.output_dir, "approach1_per_split.csv")
     summary_csv = os.path.join(args.output_dir, "approach1_summary.csv")
 
-    active_cells = CELLS
-    if "all" not in args.cells:
-        active_cells = [c for c in CELLS if c["label"] in args.cells]
+    active_cells = _select_cells(args.cells)
 
     temp_dir_obj = None
     try:
@@ -706,7 +643,7 @@ def main():
                 datasets=args.datasets,
             )
             # Override parameters for fast smoke execution
-            args.epochs = 1
+            args.epochs = 2
             args.batch_size = 8
             args.num_workers = 0
             args.layer = 1
@@ -715,7 +652,7 @@ def main():
         eval_datasets = _resolve_eval_datasets(args, temp_splits)
         results = _load_existing_results(per_split_csv)
 
-        for dataset_name, split_name, npz_dir, rxn_col, y_col in eval_datasets:
+        for dataset_name, split_name, split_kind, npz_dir, rxn_col, y_col in eval_datasets:
             dataset_args = copy.copy(args)
             dataset_args.reaction_column = rxn_col
             dataset_args.y_column = y_col
@@ -743,6 +680,7 @@ def main():
                     dataset_args,
                     dataset_name,
                     split_name,
+                    split_kind,
                     cell,
                     npz_dir,
                     run_dir,

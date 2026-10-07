@@ -448,8 +448,12 @@ class model(nn.Module):
             has shape [batch_size, S + S * (S - 1) // 2, emb_dim], expanded_mask
             has shape [batch_size, S + S * (S - 1) // 2], and token_slots is a list
             of slot index tuples: (0,), ..., (S-1,), (0, 1), (0, 2), ...
+            Padding slots hold a dummy graph and therefore a non-zero embedding;
+            they are zeroed here, before the pairs are built, so that a padded
+            slot contributes nothing to any pair token.
         """
         S = tokens.shape[1]
+        tokens = tokens * mask.unsqueeze(-1).to(tokens.dtype)
         i, j = torch.triu_indices(
             S,
             S,

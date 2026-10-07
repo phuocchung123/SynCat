@@ -1,0 +1,101 @@
+2026-10-07 17:17:46,738 - INFO - Starting Approach 1 Grid Runner (smoke=True, datasets=all)
+2026-10-07 17:17:46,739 - INFO - Setting up smoke test configuration...
+2026-10-07 17:17:47,737 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-reactants-mean-linear (tokens=ind, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:17:52,133 - INFO - --- Cell ind-reactants-mean-linear DONE: test MAE=24.9609 RMSE=31.4907 R2=-0.3381 | sec/epoch=1.77
+2026-10-07 17:17:52,159 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-reactants-mean-mlp (tokens=ind, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:17:56,138 - INFO - --- Cell ind-reactants-mean-mlp DONE: test MAE=27.4755 RMSE=36.3976 R2=-0.7876 | sec/epoch=1.54
+2026-10-07 17:17:56,176 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-reactants-rn-linear (tokens=ind, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:18:00,654 - INFO - --- Cell ind-reactants-rn-linear DONE: test MAE=25.1849 RMSE=31.9914 R2=-0.3810 | sec/epoch=1.61
+2026-10-07 17:18:00,688 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-reactants-rn-mlp (tokens=ind, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:18:05,634 - INFO - --- Cell ind-reactants-rn-mlp DONE: test MAE=27.7243 RMSE=36.7764 R2=-0.8250 | sec/epoch=1.98
+2026-10-07 17:18:05,658 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-none-mean-linear (tokens=ind, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:18:09,592 - INFO - --- Cell ind-none-mean-linear DONE: test MAE=25.5568 RMSE=32.4380 R2=-0.4198 | sec/epoch=1.55
+2026-10-07 17:18:09,610 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-none-mean-mlp (tokens=ind, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:18:13,859 - INFO - --- Cell ind-none-mean-mlp DONE: test MAE=26.8590 RMSE=35.2901 R2=-0.6805 | sec/epoch=1.48
+2026-10-07 17:18:13,898 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-none-rn-linear (tokens=ind, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:18:18,525 - INFO - --- Cell ind-none-rn-linear DONE: test MAE=24.7740 RMSE=30.9908 R2=-0.2960 | sec/epoch=1.84
+2026-10-07 17:18:18,559 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=ind-none-rn-mlp (tokens=ind, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:18:22,502 - INFO - --- Cell ind-none-rn-mlp DONE: test MAE=27.6091 RMSE=36.5857 R2=-0.8061 | sec/epoch=1.53
+2026-10-07 17:18:22,558 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-reactants-mean-linear (tokens=comb, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:18:26,454 - INFO - --- Cell comb-reactants-mean-linear DONE: test MAE=24.9604 RMSE=31.4885 R2=-0.3379 | sec/epoch=1.50
+2026-10-07 17:18:26,498 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-reactants-mean-mlp (tokens=comb, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:18:30,396 - INFO - --- Cell comb-reactants-mean-mlp DONE: test MAE=27.5581 RMSE=36.5203 R2=-0.7997 | sec/epoch=1.49
+2026-10-07 17:18:30,437 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-reactants-rn-linear (tokens=comb, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:18:34,768 - INFO - --- Cell comb-reactants-rn-linear DONE: test MAE=25.2176 RMSE=32.0590 R2=-0.3869 | sec/epoch=1.73
+2026-10-07 17:18:34,816 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-reactants-rn-mlp (tokens=comb, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:18:39,101 - INFO - --- Cell comb-reactants-rn-mlp DONE: test MAE=27.7184 RMSE=36.7690 R2=-0.8243 | sec/epoch=1.55
+2026-10-07 17:18:39,154 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-none-mean-linear (tokens=comb, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:18:44,008 - INFO - --- Cell comb-none-mean-linear DONE: test MAE=24.8500 RMSE=30.5192 R2=-0.2568 | sec/epoch=1.73
+2026-10-07 17:18:44,069 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-none-mean-mlp (tokens=comb, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:18:48,279 - INFO - --- Cell comb-none-mean-mlp DONE: test MAE=26.1031 RMSE=33.7325 R2=-0.5354 | sec/epoch=1.60
+2026-10-07 17:18:48,334 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-none-rn-linear (tokens=comb, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:18:52,275 - INFO - --- Cell comb-none-rn-linear DONE: test MAE=24.7960 RMSE=31.0453 R2=-0.3005 | sec/epoch=1.53
+2026-10-07 17:18:52,333 - INFO - === RUNNING: dataset=bh split=fullcv01_split70 kind=cv cell=comb-none-rn-mlp (tokens=comb, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:18:56,399 - INFO - --- Cell comb-none-rn-mlp DONE: test MAE=27.7047 RMSE=36.7300 R2=-0.8204 | sec/epoch=1.52
+2026-10-07 17:18:56,460 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-reactants-mean-linear (tokens=ind, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:19:00,357 - INFO - --- Cell ind-reactants-mean-linear DONE: test MAE=10.0270 RMSE=14.5897 R2=-0.1500 | sec/epoch=1.50
+2026-10-07 17:19:00,422 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-reactants-mean-mlp (tokens=ind, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:19:04,362 - INFO - --- Cell ind-reactants-mean-mlp DONE: test MAE=12.4894 RMSE=17.8197 R2=-0.7156 | sec/epoch=1.51
+2026-10-07 17:19:04,421 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-reactants-rn-linear (tokens=ind, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:19:08,584 - INFO - --- Cell ind-reactants-rn-linear DONE: test MAE=10.1179 RMSE=14.6999 R2=-0.1674 | sec/epoch=1.60
+2026-10-07 17:19:08,656 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-reactants-rn-mlp (tokens=ind, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:19:12,647 - INFO - --- Cell ind-reactants-rn-mlp DONE: test MAE=12.3754 RMSE=17.7000 R2=-0.6926 | sec/epoch=1.51
+2026-10-07 17:19:12,732 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-none-mean-linear (tokens=ind, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:19:16,609 - INFO - --- Cell ind-none-mean-linear DONE: test MAE=9.9406 RMSE=14.4372 R2=-0.1261 | sec/epoch=1.52
+2026-10-07 17:19:16,691 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-none-mean-mlp (tokens=ind, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:19:20,542 - INFO - --- Cell ind-none-mean-mlp DONE: test MAE=11.2583 RMSE=16.4242 R2=-0.4574 | sec/epoch=1.47
+2026-10-07 17:19:20,623 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-none-rn-linear (tokens=ind, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:19:24,354 - INFO - --- Cell ind-none-rn-linear DONE: test MAE=9.8687 RMSE=14.3233 R2=-0.1084 | sec/epoch=1.43
+2026-10-07 17:19:24,438 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=ind-none-rn-mlp (tokens=ind, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:19:28,431 - INFO - --- Cell ind-none-rn-mlp DONE: test MAE=12.0914 RMSE=17.3879 R2=-0.6334 | sec/epoch=1.53
+2026-10-07 17:19:28,518 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-reactants-mean-linear (tokens=comb, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:19:32,483 - INFO - --- Cell comb-reactants-mean-linear DONE: test MAE=10.0281 RMSE=14.5905 R2=-0.1501 | sec/epoch=1.47
+2026-10-07 17:19:32,563 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-reactants-mean-mlp (tokens=comb, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:19:36,296 - INFO - --- Cell comb-reactants-mean-mlp DONE: test MAE=12.4860 RMSE=17.8161 R2=-0.7149 | sec/epoch=1.46
+2026-10-07 17:19:36,388 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-reactants-rn-linear (tokens=comb, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:19:41,099 - INFO - --- Cell comb-reactants-rn-linear DONE: test MAE=10.1388 RMSE=14.7323 R2=-0.1726 | sec/epoch=1.83
+2026-10-07 17:19:41,232 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-reactants-rn-mlp (tokens=comb, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:19:46,078 - INFO - --- Cell comb-reactants-rn-mlp DONE: test MAE=12.2949 RMSE=17.6135 R2=-0.6761 | sec/epoch=1.73
+2026-10-07 17:19:46,190 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-none-mean-linear (tokens=comb, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:19:50,064 - INFO - --- Cell comb-none-mean-linear DONE: test MAE=9.9437 RMSE=13.8130 R2=-0.0308 | sec/epoch=1.47
+2026-10-07 17:19:50,151 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-none-mean-mlp (tokens=comb, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:19:53,866 - INFO - --- Cell comb-none-mean-mlp DONE: test MAE=10.4238 RMSE=15.1569 R2=-0.2412 | sec/epoch=1.41
+2026-10-07 17:19:53,975 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-none-rn-linear (tokens=comb, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:19:58,123 - INFO - --- Cell comb-none-rn-linear DONE: test MAE=9.8787 RMSE=14.3407 R2=-0.1111 | sec/epoch=1.60
+2026-10-07 17:19:58,215 - INFO - === RUNNING: dataset=bh split=test1 kind=test cell=comb-none-rn-mlp (tokens=comb, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:20:02,460 - INFO - --- Cell comb-none-rn-mlp DONE: test MAE=12.1716 RMSE=17.4778 R2=-0.6504 | sec/epoch=1.62
+2026-10-07 17:20:02,570 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-reactants-mean-linear (tokens=ind, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:20:07,310 - INFO - --- Cell ind-reactants-mean-linear DONE: test MAE=0.5402 RMSE=0.6165 R2=-3.2873 | sec/epoch=1.67
+2026-10-07 17:20:07,425 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-reactants-mean-mlp (tokens=ind, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:20:12,211 - INFO - --- Cell ind-reactants-mean-mlp DONE: test MAE=0.2750 RMSE=0.3221 R2=-0.1704 | sec/epoch=1.74
+2026-10-07 17:20:12,357 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-reactants-rn-linear (tokens=ind, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:20:20,304 - INFO - --- Cell ind-reactants-rn-linear DONE: test MAE=0.3734 RMSE=0.4725 R2=-1.5176 | sec/epoch=2.81
+2026-10-07 17:20:20,479 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-reactants-rn-mlp (tokens=ind, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:20:27,752 - INFO - --- Cell ind-reactants-rn-mlp DONE: test MAE=0.2692 RMSE=0.3116 R2=-0.0953 | sec/epoch=2.80
+2026-10-07 17:20:27,870 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-none-mean-linear (tokens=ind, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:20:33,013 - INFO - --- Cell ind-none-mean-linear DONE: test MAE=0.3782 RMSE=0.4820 R2=-1.6208 | sec/epoch=1.88
+2026-10-07 17:20:33,149 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-none-mean-mlp (tokens=ind, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:20:38,405 - INFO - --- Cell ind-none-mean-mlp DONE: test MAE=0.2695 RMSE=0.3149 R2=-0.1181 | sec/epoch=2.02
+2026-10-07 17:20:38,605 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-none-rn-linear (tokens=ind, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:20:44,019 - INFO - --- Cell ind-none-rn-linear DONE: test MAE=0.3040 RMSE=0.4021 R2=-0.8234 | sec/epoch=1.98
+2026-10-07 17:20:44,156 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=ind-none-rn-mlp (tokens=ind, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:20:49,134 - INFO - --- Cell ind-none-rn-mlp DONE: test MAE=0.2654 RMSE=0.3032 R2=-0.0369 | sec/epoch=1.83
+2026-10-07 17:20:49,284 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-reactants-mean-linear (tokens=comb, attention_on=reactants, pooling=mean, head=linear) ===
+2026-10-07 17:20:54,495 - INFO - --- Cell comb-reactants-mean-linear DONE: test MAE=0.5520 RMSE=0.6265 R2=-3.4271 | sec/epoch=1.85
+2026-10-07 17:20:54,649 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-reactants-mean-mlp (tokens=comb, attention_on=reactants, pooling=mean, head=mlp) ===
+2026-10-07 17:20:59,770 - INFO - --- Cell comb-reactants-mean-mlp DONE: test MAE=0.2639 RMSE=0.3041 R2=-0.0427 | sec/epoch=1.89
+2026-10-07 17:20:59,912 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-reactants-rn-linear (tokens=comb, attention_on=reactants, pooling=rn, head=linear) ===
+2026-10-07 17:21:06,713 - INFO - --- Cell comb-reactants-rn-linear DONE: test MAE=0.3633 RMSE=0.4640 R2=-1.4282 | sec/epoch=2.49
+2026-10-07 17:21:06,855 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-reactants-rn-mlp (tokens=comb, attention_on=reactants, pooling=rn, head=mlp) ===
+2026-10-07 17:21:14,107 - INFO - --- Cell comb-reactants-rn-mlp DONE: test MAE=0.2670 RMSE=0.3073 R2=-0.0653 | sec/epoch=2.72
+2026-10-07 17:21:14,286 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-none-mean-linear (tokens=comb, attention_on=none, pooling=mean, head=linear) ===
+2026-10-07 17:21:21,004 - INFO - --- Cell comb-none-mean-linear DONE: test MAE=0.4902 RMSE=0.5829 R2=-2.8325 | sec/epoch=2.53
+2026-10-07 17:21:21,239 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-none-mean-mlp (tokens=comb, attention_on=none, pooling=mean, head=mlp) ===
+2026-10-07 17:21:27,136 - INFO - --- Cell comb-none-mean-mlp DONE: test MAE=0.2712 RMSE=0.3213 R2=-0.1642 | sec/epoch=2.28
+2026-10-07 17:21:27,314 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-none-rn-linear (tokens=comb, attention_on=none, pooling=rn, head=linear) ===
+2026-10-07 17:21:34,878 - INFO - --- Cell comb-none-rn-linear DONE: test MAE=0.2899 RMSE=0.3783 R2=-0.6144 | sec/epoch=3.01
+2026-10-07 17:21:35,047 - INFO - === RUNNING: dataset=suzuki split=split_0 kind=cv cell=comb-none-rn-mlp (tokens=comb, attention_on=none, pooling=rn, head=mlp) ===
+2026-10-07 17:21:42,232 - INFO - --- Cell comb-none-rn-mlp DONE: test MAE=0.2661 RMSE=0.3054 R2=-0.0518 | sec/epoch=2.44
+2026-10-07 17:21:42,774 - INFO - === GRID COMPLETE ===
+2026-10-07 17:21:42,774 - INFO - Per-split CSV: ../logs/grid_smoke_laptop/approach1_per_split.csv
+2026-10-07 17:21:42,774 - INFO - Summary CSV:   ../logs/grid_smoke_laptop/approach1_summary.csv

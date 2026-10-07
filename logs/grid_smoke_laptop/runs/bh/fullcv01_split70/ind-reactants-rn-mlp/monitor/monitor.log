@@ -1,0 +1,19 @@
+2026-10-07 17:18:00,690 - INFO - device is	cpu
+2026-10-07 17:18:00,711 - INFO - -- CONFIGURATIONS
+2026-10-07 17:18:00,711 - INFO - --- train/valid/test: 64/32/32
+2026-10-07 17:18:00,712 - INFO - --- max no. reactants_train, valid, test respectively: 6, 6, 6
+2026-10-07 17:18:00,712 - INFO - --- max no. products_train, valid, test respectively: 1, 1, 1
+2026-10-07 17:18:00,712 - INFO - --- model_path: ../logs/grid_smoke_laptop/runs\bh\fullcv01_split70\ind-reactants-rn-mlp\model.pt
+2026-10-07 17:18:00,717 - INFO - -- TRAINING
+2026-10-07 17:18:01,195 - INFO - --- training epoch 0, loss 33.3209, mae 33.8046, rmse 44.4134, time elapsed(min) 0.01---
+2026-10-07 17:18:01,355 - INFO - --- validation at epoch 0, val_loss 27.7000, val_mae 28.2000, val_rmse 35.6605, val_r2 -1.6147, val_pearson -0.1644, lr 1.00e-03 ---
+2026-10-07 17:18:01,355 - INFO - 
+****************************************************************************************************
+2026-10-07 17:18:03,351 - INFO - --- training epoch 1, loss 31.1649, mae 31.6578, rmse 42.2330, time elapsed(min) 0.01---
+2026-10-07 17:18:03,576 - INFO - --- validation at epoch 1, val_loss 24.5466, val_mae 25.0444, val_rmse 32.7170, val_r2 -1.2009, val_pearson -0.1607, lr 1.00e-03 ---
+2026-10-07 17:18:03,576 - INFO - 
+****************************************************************************************************
+2026-10-07 17:18:04,779 - INFO - --- selected checkpoint from epoch 1, val_loss 24.5466, val_mae 25.0444, val_rmse 32.7170
+2026-10-07 17:18:05,220 - INFO - -- RESULT
+2026-10-07 17:18:05,220 - INFO - --- test size: 32
+2026-10-07 17:18:05,220 - INFO - --- MAE: 27.7243 pp, RMSE: 36.7764 pp, R2: -0.8250, Pearson: -0.2741

@@ -8,10 +8,14 @@ Lightweight CPU unit tests for Approach 1:
 - Backward compatibility with original baseline
 """
 
+import copy
+import itertools
 import os
 import sys
 
 import numpy as np
+import pandas as pd
+import pytest
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -30,8 +34,18 @@ from attention import ReactionSelfAttention  # noqa: E402
 from gin import GIN  # noqa: E402
 from model import (  # noqa: E402
     REACTION_COMBINE_DIMS,
+    ATTENTION_TARGETS,
+    HEADS,
+    REACTANT_POOLINGS,
+    REACTANT_TOKENS,
     RelationPooling,
     model,
+)
+from run_approach1_grid import (  # noqa: E402
+    CELLS,
+    _resolve_eval_datasets,
+    build_grid_parser,
+    summarize_grid,
 )
 from test_regression_smoke import (  # noqa: E402
     EDGE_DIM,
@@ -40,6 +54,39 @@ from test_regression_smoke import (  # noqa: E402
     _split_batch,
 )
 from utils import collate_reaction_graphs, set_seed  # noqa: E402
+
+DEVICE = torch.device("cpu")
+
+
+def _build_cell_model(cell, emb_dim=16):
+    """Builds a model matching one grid cell at tiny dimensions on CPU."""
+    return model(
+        node_in_feats=NODE_DIM,
+        edge_in_feats=EDGE_DIM,
+        num_layer=1,
+        emb_dim=emb_dim,
+        drop_ratio=0.0,
+        num_attention_layer=1,
+        num_heads=1,
+        reactant_tokens=cell["reactant_tokens"],
+        attention_on=cell["attention_on"],
+        reactant_pooling=cell["reactant_pooling"],
+        head=cell["head"],
+    ).to(DEVICE)
+
+
+def _build_batch(rmol_max_cnt=3, pmol_max_cnt=1, y_values=(50.0, 75.0)):
+    """Builds a tiny two-sample batch plus a default all-real dummy list."""
+    dataset = _build_synthetic_dataset(
+        y_values=np.array(y_values, dtype=float),
+        rmol_max_cnt=rmol_max_cnt,
+        pmol_max_cnt=pmol_max_cnt,
+    )
+    loader = DataLoader(
+        dataset, batch_size=2, shuffle=False, collate_fn=collate_reaction_graphs
+    )
+    batch = next(iter(loader))
+    return _split_batch(batch, rmol_max_cnt, pmol_max_cnt)
 
 
 # ----------------------------------------------------------------------------
@@ -455,7 +502,8 @@ def test_suzuki_width_single_forward_backward():
 # ----------------------------------------------------------------------------
 
 
-def test_backward_compatibility_reference_model():
+@pytest.mark.parametrize("attention_on", ["reactants", "none"])
+def test_backward_compatibility_reference_model(attention_on):
     """Default new model matches ReferenceOriginalModel bit-for-bit with same weights."""
     set_seed(42)
     device = torch.device("cpu")
@@ -465,6 +513,7 @@ def test_backward_compatibility_reference_model():
         num_layer=1,
         emb_dim=16,
         drop_ratio=0.0,
+        attention_on=attention_on,
     ).to(device)
 
     new_m = model(
@@ -473,6 +522,7 @@ def test_backward_compatibility_reference_model():
         num_layer=1,
         emb_dim=16,
         drop_ratio=0.0,
+        attention_on=attention_on,
         reactant_tokens="ind",
         reactant_pooling="mean",
         head="linear",
@@ -518,3 +568,306 @@ def test_from_config_legacy_compatibility():
     assert net.config["reactant_tokens"] == "ind"
     assert net.config["reactant_pooling"] == "mean"
     assert net.config["head"] == "linear"
+
+
+# ----------------------------------------------------------------------------
+# 6. _add_pair_tokens zeroes padded slots
+# ----------------------------------------------------------------------------
+
+
+def test_add_pair_tokens_zeroes_padded_slots():
+    """Padded individual slots are zero and pairs only ever use real slots."""
+    set_seed(42)
+    net = model(10, 5, num_layer=1, emb_dim=8, drop_ratio=0.0)
+    B, S, D = 2, 4, 8
+    tokens = torch.randn(B, S, D)
+    mask = torch.tensor(
+        [[True, True, False, False], [True, False, True, False]],
+        dtype=torch.bool,
+    )
+
+    exp_tokens, exp_mask, token_slots = net._add_pair_tokens(tokens, mask)
+
+    # Every padded individual slot is exactly zero.
+    for b in range(B):
+        for s in range(S):
+            if not mask[b, s]:
+                assert torch.equal(exp_tokens[b, s], torch.zeros(D))
+
+    for idx, slot in enumerate(token_slots):
+        if len(slot) == 1:
+            continue
+        i, j = slot
+        torch.testing.assert_close(exp_mask[:, idx], mask[:, i] & mask[:, j])
+        for b in range(B):
+            # A padded slot contributes exactly zero to any pair.
+            expected = (tokens[b, i] if mask[b, i] else torch.zeros(D)) + (
+                tokens[b, j] if mask[b, j] else torch.zeros(D)
+            )
+            torch.testing.assert_close(exp_tokens[b, idx], expected)
+            if mask[b, i] and mask[b, j]:
+                torch.testing.assert_close(
+                    exp_tokens[b, idx], tokens[b, i] + tokens[b, j]
+                )
+
+
+# ----------------------------------------------------------------------------
+# 7. Full 16-cell grid: padding noise / permutation / S == 1
+# ----------------------------------------------------------------------------
+
+CELL_IDS = [c["label"] for c in CELLS]
+
+
+@pytest.mark.parametrize("cell", CELLS, ids=CELL_IDS)
+def test_grid_padding_noise_invariance(cell):
+    """Noise in a padding slot's graph never changes a cell's prediction."""
+    set_seed(42)
+    net = _build_cell_model(cell).eval()
+    rmols, pmols, _, p_dummy, _ = _build_batch(rmol_max_cnt=3, pmol_max_cnt=1)
+    r_dummy = [[True, True, False], [True, True, False]]
+
+    with torch.no_grad():
+        pred_base, rvec_base = net(rmols, pmols, r_dummy, p_dummy, DEVICE)
+
+    rmols_noisy = copy.deepcopy(rmols)
+    rmols_noisy[2].x = rmols_noisy[2].x + 3.0
+    rmols_noisy[2].edge_attr = rmols_noisy[2].edge_attr + 1.0
+
+    with torch.no_grad():
+        pred_noisy, rvec_noisy = net(rmols_noisy, pmols, r_dummy, p_dummy, DEVICE)
+
+    torch.testing.assert_close(pred_noisy, pred_base, atol=1e-5, rtol=1e-5)
+    torch.testing.assert_close(
+        torch.tensor(rvec_noisy), torch.tensor(rvec_base), atol=1e-5, rtol=1e-5
+    )
+
+
+@pytest.mark.parametrize("cell", CELLS, ids=CELL_IDS)
+def test_grid_reactant_permutation_invariance(cell):
+    """Permuting reactant slots together with r_dummy leaves predictions unchanged."""
+    set_seed(42)
+    net = _build_cell_model(cell).eval()
+    rmols, pmols, _, p_dummy, _ = _build_batch(rmol_max_cnt=3, pmol_max_cnt=1)
+    r_dummy = [[True, True, False], [True, True, False]]
+
+    with torch.no_grad():
+        pred_base, rvec_base = net(rmols, pmols, r_dummy, p_dummy, DEVICE)
+
+    perm = [1, 0, 2]
+    rmols_perm = [rmols[perm[0]], rmols[perm[1]], rmols[perm[2]]]
+    r_dummy_perm = [[d[perm[0]], d[perm[1]], d[perm[2]]] for d in r_dummy]
+
+    with torch.no_grad():
+        pred_perm, rvec_perm = net(rmols_perm, pmols, r_dummy_perm, p_dummy, DEVICE)
+
+    torch.testing.assert_close(pred_perm, pred_base, atol=1e-5, rtol=1e-5)
+    torch.testing.assert_close(
+        torch.tensor(rvec_perm), torch.tensor(rvec_base), atol=1e-5, rtol=1e-5
+    )
+
+
+@pytest.mark.parametrize("cell", CELLS, ids=CELL_IDS)
+def test_grid_single_reactant_forward_backward(cell):
+    """S == 1 (rmol_max_cnt=1) runs forward+backward with finite gradients."""
+    set_seed(42)
+    net = _build_cell_model(cell)
+    rmols, pmols, r_dummy, p_dummy, _ = _build_batch(rmol_max_cnt=1, pmol_max_cnt=1)
+
+    net.train()
+    net.zero_grad()
+    pred, _ = net(rmols, pmols, r_dummy, p_dummy, DEVICE)
+    assert pred.shape == (2,)
+    assert torch.isfinite(pred).all()
+
+    loss = pred.sum()
+    loss.backward()
+    grads = [p.grad for p in net.parameters() if p.grad is not None]
+    assert len(grads) > 0
+    assert all(torch.isfinite(g).all() for g in grads)
+    assert any((g != 0).any() for g in grads)
+
+
+def test_comb_all_attention_store_attention():
+    """comb + attention_on='all' exposes the full attention matrix and a [B, 2D] vector."""
+    set_seed(42)
+    D = 16
+    net = model(
+        NODE_DIM,
+        EDGE_DIM,
+        1,
+        D,
+        0.0,
+        num_attention_layer=1,
+        num_heads=1,
+        reactant_tokens="comb",
+        attention_on="all",
+        reactant_pooling="rn",
+        head="mlp",
+    )
+    net.store_attention = True
+    net.eval()
+
+    S, S_p = 3, 1
+    rmols, pmols, _, p_dummy, _ = _build_batch(rmol_max_cnt=S, pmol_max_cnt=S_p)
+    r_dummy = [[True, True, False], [True, True, False]]
+
+    with torch.no_grad():
+        pred, rvec = net(rmols, pmols, r_dummy, p_dummy, DEVICE)
+
+    T = S + S * (S - 1) // 2  # expanded reactant tokens including pair tokens
+    att = np.asarray(net.last_attention)
+    assert att.shape == (2, T + S_p, T + S_p)
+    assert np.asarray(rvec).shape == (2, 2 * D)
+
+    # padding-noise invariance for the all-attention path
+    rmols_noisy = copy.deepcopy(rmols)
+    rmols_noisy[2].x = rmols_noisy[2].x + 3.0
+    with torch.no_grad():
+        pred_noisy, _ = net(rmols_noisy, pmols, r_dummy, p_dummy, DEVICE)
+    torch.testing.assert_close(pred_noisy, pred, atol=1e-5, rtol=1e-5)
+
+
+# ----------------------------------------------------------------------------
+# 8. Parameter deltas and grid-runner wiring
+# ----------------------------------------------------------------------------
+
+
+def test_parameter_deltas():
+    """Architecture parameter deltas at D=16 with concat (k=2)."""
+    D = 16
+
+    def n_params(**kwargs):
+        net = model(10, 5, 1, D, 0.0, reaction_combine="concat", **kwargs)
+        return sum(p.numel() for p in net.parameters())
+
+    mean_linear = n_params(
+        reactant_tokens="ind",
+        attention_on="reactants",
+        reactant_pooling="mean",
+        head="linear",
+    )
+    rn_linear = n_params(
+        reactant_tokens="ind",
+        attention_on="reactants",
+        reactant_pooling="rn",
+        head="linear",
+    )
+    mean_mlp = n_params(
+        reactant_tokens="ind",
+        attention_on="reactants",
+        reactant_pooling="mean",
+        head="mlp",
+    )
+    comb_linear = n_params(
+        reactant_tokens="comb",
+        attention_on="reactants",
+        reactant_pooling="mean",
+        head="linear",
+    )
+
+    assert rn_linear - mean_linear == 5 * D * D + 6 * D
+    assert mean_mlp - mean_linear == 2 * D * D
+    assert comb_linear - mean_linear == 0
+
+
+def test_grid_cells_cover_product():
+    """CELLS is the full 16-cell product with the expected approach counts."""
+    labels = [c["label"] for c in CELLS]
+    assert len(CELLS) == 16
+    assert len(set(labels)) == 16
+
+    expected = {
+        "%s-%s-%s-%s" % combo
+        for combo in itertools.product(
+            REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS
+        )
+    }
+    assert set(labels) == expected
+
+    counts = {}
+    for c in CELLS:
+        counts[c["approach"]] = counts.get(c["approach"], 0) + 1
+    assert counts == {
+        "baseline": 1,
+        "control": 2,
+        "A": 2,
+        "B": 2,
+        "approach_1": 2,
+        "approach_2": 1,
+        "approach_3": 1,
+        "unlabeled": 5,
+    }
+
+
+def test_grid_parser_defaults_and_choices():
+    """Grid parser extends the shared parser and keeps the model choices."""
+    parser = build_grid_parser()
+    args = parser.parse_args([])
+
+    assert args.test_ids == [1, 2, 3, 4]
+    assert args.cv_ids == list(range(1, 11))
+    assert args.split_ids == list(range(10))
+
+    choices = {a.dest: a.choices for a in parser._actions}
+    assert set(choices["attention_on"]) == set(ATTENTION_TARGETS)
+    assert set(choices["reaction_combine"]) == set(REACTION_COMBINE_DIMS)
+
+
+def test_resolve_eval_datasets_split_kinds():
+    """Default ids yield 10 BH cv + 4 BH test + 10 Suzuki cv, BH first."""
+    args = build_grid_parser().parse_args([])
+    entries = _resolve_eval_datasets(args, None)
+
+    assert len(entries) == 24
+    bh = [e for e in entries if e[0] == "bh"]
+    suzuki = [e for e in entries if e[0] == "suzuki"]
+    assert len(bh) == 14
+    assert len(suzuki) == 10
+    assert sum(1 for e in bh if e[2] == "cv") == 10
+    assert sum(1 for e in bh if e[2] == "test") == 4
+    assert all(e[2] == "cv" for e in suzuki)
+
+    # Order: BH CV first, then BH test, then Suzuki.
+    assert entries[0][0] == "bh" and entries[0][2] == "cv"
+    assert entries[10][0] == "bh" and entries[10][2] == "test"
+    assert entries[-1][0] == "suzuki"
+
+
+def test_summarize_grid_separates_bh_cv_and_test():
+    """BH cv (n=10) and BH test (n=4) never pool into one summary row."""
+    rows = []
+    for split_kind, n in (("cv", 10), ("test", 4)):
+        for i in range(n):
+            rows.append(
+                {
+                    "dataset": "bh",
+                    "split": "s%d" % i,
+                    "split_kind": split_kind,
+                    "cell": "ind-reactants-mean-linear",
+                    "approach": "baseline",
+                    "reactant_tokens": "ind",
+                    "attention_on": "reactants",
+                    "reactant_pooling": "mean",
+                    "head": "linear",
+                    "status": "success",
+                    "train_r2": 0.1,
+                    "train_mae": 0.2,
+                    "train_rmse": 0.3,
+                    "test_r2": 0.4,
+                    "test_mae": 0.5,
+                    "test_rmse": 0.6,
+                    "trainable_parameters": 100,
+                    "epochs_ran": 10,
+                    "train_runtime_sec": 1.0,
+                    "seconds_per_epoch": 0.1,
+                    "peak_gpu_memory_mb": None,
+                }
+            )
+    summary = summarize_grid(pd.DataFrame(rows))
+
+    assert len(summary) == 2
+    by_kind = {r["split_kind"]: r for _, r in summary.iterrows()}
+    assert by_kind["cv"]["n_successful"] == 10
+    assert by_kind["test"]["n_successful"] == 4
+    assert by_kind["cv"]["test_mae_mean"] == 0.5
+    assert by_kind["test"]["test_mae_mean"] == 0.5
