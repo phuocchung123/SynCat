@@ -1,10 +1,10 @@
 """
 Standalone experiment runner for the full Approach 1 ablation grid.
 
-Runs the 16-cell comparison over
+Runs the 24-cell comparison over
     reactant_tokens   {ind, comb}
     x attention_on    {reactants, none}
-    x reactant_pooling {mean, rn}
+    x reactant_pooling {mean, sum, rn}
     x head            {linear, mlp}
 on Buchwald-Hartwig (10 FullCV 1-10 split_70 and the 4 out-of-sample Test1-4
 sets) and Suzuki-Miyaura (split_0..split_9), always with the same seed and

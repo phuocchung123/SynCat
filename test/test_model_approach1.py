@@ -248,6 +248,30 @@ def test_add_pair_tokens_single_real_reactant():
     torch.testing.assert_close(mean_vec, tokens[:, 0])
 
 
+def test_sum_pooling_matches_masked_sum():
+    """reactant_pooling='sum' selects a masked sum and leaves reactant_pool unset."""
+    set_seed(42)
+    net = model(10, 5, num_layer=1, emb_dim=8, drop_ratio=0.0, reactant_pooling="sum")
+    assert net.reactant_pooling == "sum"
+    assert net.reactant_pool is None
+
+    B, S, D = 2, 3, 8
+    tokens = torch.randn(B, S, D)
+    mask = torch.tensor(
+        [[True, True, False], [True, False, False]], dtype=torch.bool
+    )
+
+    pooled = net._pool_reactants(tokens, mask)
+    torch.testing.assert_close(pooled, net._masked_sum(tokens, mask))
+
+    # Sum keeps every real slot, so it differs from the mean when >1 slot is real.
+    mean = net._masked_mean(tokens, mask)
+    assert not torch.allclose(pooled[0], mean[0])
+
+    # With a single real slot the sum equals that slot's vector.
+    torch.testing.assert_close(pooled[1], tokens[1, 0])
+
+
 # ----------------------------------------------------------------------------
 # 2. Tests for RelationPooling
 # ----------------------------------------------------------------------------
@@ -612,7 +636,7 @@ def test_add_pair_tokens_zeroes_padded_slots():
 
 
 # ----------------------------------------------------------------------------
-# 7. Full 16-cell grid: padding noise / permutation / S == 1
+# 7. Full 24-cell grid: padding noise / permutation / S == 1
 # ----------------------------------------------------------------------------
 
 CELL_IDS = [c["label"] for c in CELLS]
@@ -771,10 +795,10 @@ def test_parameter_deltas():
 
 
 def test_grid_cells_cover_product():
-    """CELLS is the full 16-cell product with the expected approach counts."""
+    """CELLS is the full 24-cell product with the expected approach counts."""
     labels = [c["label"] for c in CELLS]
-    assert len(CELLS) == 16
-    assert len(set(labels)) == 16
+    assert len(CELLS) == 24
+    assert len(set(labels)) == 24
 
     expected = {
         "%s-%s-%s-%s" % combo
@@ -795,7 +819,7 @@ def test_grid_cells_cover_product():
         "approach_1": 2,
         "approach_2": 1,
         "approach_3": 1,
-        "unlabeled": 5,
+        "unlabeled": 13,
     }
 
 

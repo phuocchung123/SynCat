@@ -21,8 +21,8 @@ ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
 # Reactant token representations: individual slots or with pairwise combination tokens.
 REACTANT_TOKENS = ("ind", "comb")
 
-# Reactant pooling methods: mean reduction or relation network.
-REACTANT_POOLINGS = ("mean", "rn")
+# Reactant pooling methods: mean reduction, sum reduction or relation network.
+REACTANT_POOLINGS = ("mean", "sum", "rn")
 
 # Regression head architectures.
 HEADS = ("linear", "mlp")
@@ -185,7 +185,8 @@ class model(nn.Module):
             self-attention.
         reactant_pooling : str, optional
             How to pool attended reactant tokens into the reactant vector (default is "mean"):
-            "mean" for masked average; "rn" for relation-network pooling.
+            "mean" for masked average; "sum" for masked sum; "rn" for
+            relation-network pooling.
         head : str, optional
             Regression head architecture (default is "linear"):
             "linear" for a single linear layer; "mlp" for a 2-layer MLP with
@@ -362,6 +363,30 @@ class model(nn.Module):
         count = weights.sum(dim=1).clamp(min=1.0)
         return (x * weights).sum(dim=1) / count
 
+    @staticmethod
+    def _masked_sum(x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """
+        Sum the vectors of the real (non-padding) slots.
+
+        Unlike `_masked_mean`, no division by the number of real slots is
+        applied, so the result grows with the number of reactants.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Vectors of shape [batch_size, num_slots, emb_dim].
+        mask : torch.Tensor
+            Boolean tensor of shape [batch_size, num_slots], True for real slots.
+
+        Returns
+        -------
+        torch.Tensor
+            Summed vectors of shape [batch_size, emb_dim]; zero when a reaction
+            has no real slot.
+        """
+        weights = mask.unsqueeze(-1).to(x.dtype)
+        return (x * weights).sum(dim=1)
+
     def _pool_reactants(
         self, tokens: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
@@ -394,6 +419,8 @@ class model(nn.Module):
             self.last_pair_terms = None
             return self.reactant_pool(tokens, mask)
         self.last_pair_terms = None
+        if self.reactant_pooling == "sum":
+            return self._masked_sum(tokens, mask)
         return self._masked_mean(tokens, mask)
 
     def _combine(self, r: torch.Tensor, p: torch.Tensor) -> torch.Tensor:

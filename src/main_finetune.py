@@ -95,7 +95,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="mean",
         choices=list(REACTANT_POOLINGS),
         help="reactant pooling method: 'mean' masked average; "
-        "'rn' relation-network pooling with main and pairwise effects",
+        "'sum' masked sum; 'rn' relation-network pooling with main and "
+        "pairwise effects",
     )
     parser.add_argument(
         "--head",
