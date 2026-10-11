@@ -10,22 +10,21 @@
 #SBATCH --output=slurm/logs/syncat-%j.out
 #SBATCH --error=slurm/logs/syncat-%j.err
 
-# Full 16-cell ablation grid on Buchwald-Hartwig and Suzuki-Miyaura:
-#   cells = tokens {ind, comb} x attention_on {reactants, none}
-#           x pooling {mean, rn} x head {linear, mlp}
-#   labels = "<tokens>-<attention>-<pooling>-<head>", grouped into approaches:
+# Single-cell run: ONLY approach_3 = comb-reactants-mean-linear
+#   (reactant_tokens=comb, attention_on=reactants, pooling=mean, head=linear).
+#   All other grid cells are skipped via `--cells approach_3`.
+#
+# Full ablation grid (see run_approach1_grid.py) for reference:
 #     baseline    ind-reactants-mean-linear
-#     control     ind-none-mean-linear, ind-none-mean-mlp
-#     A           ind-none-rn-linear, ind-none-rn-mlp
-#     B           ind-reactants-rn-linear, ind-reactants-rn-mlp
-#     approach_1  comb-reactants-rn-linear, comb-reactants-rn-mlp
+#     control     ind-none-mean-{linear,mlp}
+#     A           ind-none-rn-{linear,mlp}
+#     B           ind-reactants-rn-{linear,mlp}
+#     approach_1  comb-reactants-rn-{linear,mlp}
 #     approach_2  comb-reactants-mean-mlp
 #     approach_3  comb-reactants-mean-linear
-#     unlabeled   ind-reactants-mean-mlp, comb-none-mean-linear,
-#                 comb-none-mean-mlp, comb-none-rn-linear, comb-none-rn-mlp
 #
-# 384 trainings = 16 cells x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
-# Estimated ~12-18 h on one RTX 4070 Ti S / 4090 (from the Oct-1 timings).
+# 24 trainings = 1 cell x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
+# Training runs the full --epochs 500 with early stopping disabled (--patience 0).
 # Resubmit to resume (successful rows are skipped).
 #
 # Order: BH CV, then BH Test, then Suzuki, so the cheaper BH results arrive early.
@@ -97,8 +96,8 @@ export TQDM_DISABLE=1
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
-    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells all --output_dir ../logs/grid_full/ \
-    --epochs 400 --patience 100 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --output_dir ../logs/grid_full/ \
+    --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
     --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
     --seed 42 --num_workers 2
 
