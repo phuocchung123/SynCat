@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=syncat-grid-sum
+#SBATCH --job-name=syncat-grid-split
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -10,11 +10,14 @@
 #SBATCH --output=slurm/logs/syncat-%j.out
 #SBATCH --error=slurm/logs/syncat-%j.err
 
-# Single-cell run: ONLY comb-reactants-sum-linear, the sum-pooling analogue of
-#   approach_3 = comb-reactants-mean-linear
-#   (reactant_tokens=comb, attention_on=reactants, pooling=sum, head=linear).
-#   All other grid cells are skipped via `--cells comb-reactants-sum-linear`.
-#   (sum cells are not named approaches, so they must be given as a cell label.)
+# Single-cell run: ONLY comb-reactants-split-linear, the split-pooling model
+#   (reactant_tokens=comb, attention_on=reactants, pooling=split, head=linear,
+#    reaction_combine=concat).
+#   The attended individual reactant tokens and the attended pairwise tokens are
+#   mean-pooled separately into h_individual and h_pair, and the reaction vector
+#   becomes [h_individual, h_pair, p].
+#   All other grid cells are skipped via `--cells comb-reactants-split-linear`.
+#   (`split` cells are not named approaches, so they must be given as a cell label.)
 #
 # Full ablation grid (see run_approach1_grid.py) for reference:
 #     baseline    ind-reactants-mean-linear
@@ -25,7 +28,7 @@
 #     approach_2  comb-reactants-mean-mlp
 #     approach_3  comb-reactants-mean-linear
 #
-# This run:      comb-reactants-sum-linear   (sum pooling instead of mean)
+# This run:      comb-reactants-split-linear   (separate individual/pair pooling)
 #
 # 24 trainings = 1 cell x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
 # Training runs the full --epochs 500 with early stopping disabled (--patience 0).
@@ -33,8 +36,8 @@
 #
 # Order: BH CV, then BH Test, then Suzuki, so the cheaper BH results arrive early.
 #
-# Outputs: ../logs/grid_full_only_sum/approach1_per_split.csv
-#          ../logs/grid_full_only_sum/approach1_summary.csv
+# Outputs: ../logs/grid_full_only_split/approach1_per_split.csv
+#          ../logs/grid_full_only_split/approach1_summary.csv
 #
 # Submit from the repository root:
 #   sbatch slurm/grid_all.sbatch
@@ -100,7 +103,7 @@ export TQDM_DISABLE=1
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
-    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells comb-reactants-sum-linear --output_dir ../logs/grid_full_only_sum/ \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells comb-reactants-split-linear --output_dir ../logs/grid_full_only_split/ \
     --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
     --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
     --seed 42 --num_workers 2

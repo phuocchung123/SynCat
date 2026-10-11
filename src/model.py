@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,8 +23,9 @@ ATTENTION_TARGETS = ("reactants", "products", "both", "all", "none")
 # Reactant token representations: individual slots or with pairwise combination tokens.
 REACTANT_TOKENS = ("ind", "comb")
 
-# Reactant pooling methods: mean reduction, sum reduction or relation network.
-REACTANT_POOLINGS = ("mean", "sum", "rn")
+# Reactant pooling methods: mean reduction, sum reduction, relation network, or
+# separate (split) mean pooling of the individual and the pairwise tokens.
+REACTANT_POOLINGS = ("mean", "sum", "rn", "split")
 
 # Regression head architectures.
 HEADS = ("linear", "mlp")
@@ -115,6 +118,44 @@ class RelationPooling(nn.Module):
         return out
 
 
+def _validate_pooling_settings(
+    reactant_tokens: str, reactant_pooling: str, reaction_combine: str
+) -> None:
+    """
+    Reject pooling settings that cannot be realised by the forward pass.
+
+    "split" pooling averages the individual and the pairwise reactant tokens
+    separately, so it needs combination tokens to exist and only supports the
+    concatenation combine (the reaction vector [h_individual, h_pair, p]).
+
+    Parameters
+    ----------
+    reactant_tokens : str
+        Reactant token representation ("ind" or "comb").
+    reactant_pooling : str
+        Reactant pooling method.
+    reaction_combine : str
+        How the reactant and product vectors are combined.
+
+    Returns
+    -------
+    None
+    """
+    if reactant_pooling != "split":
+        return
+    if reactant_tokens != "comb":
+        raise ValueError(
+            "reactant_pooling='split' requires reactant_tokens='comb' "
+            "(there are no pair tokens otherwise), got reactant_tokens=%r"
+            % reactant_tokens
+        )
+    if reaction_combine != "concat":
+        raise ValueError(
+            "reactant_pooling='split' requires reaction_combine='concat', got %r"
+            % reaction_combine
+        )
+
+
 class model(nn.Module):
     """
     Graph-based regression model with reaction-level self attention for
@@ -186,7 +227,11 @@ class model(nn.Module):
         reactant_pooling : str, optional
             How to pool attended reactant tokens into the reactant vector (default is "mean"):
             "mean" for masked average; "sum" for masked sum; "rn" for
-            relation-network pooling.
+            relation-network pooling; "split" for two separate masked averages,
+            one over the individual reactant tokens and one over the pairwise
+            combination tokens (so the reactant vector is twice as wide). "split"
+            requires reactant_tokens="comb" and reaction_combine="concat", where
+            the reaction vector becomes [h_individual, h_pair, p].
         head : str, optional
             Regression head architecture (default is "linear"):
             "linear" for a single linear layer; "mlp" for a 2-layer MLP with
@@ -270,7 +315,14 @@ class model(nn.Module):
                 % (sorted(REACTION_COMBINE_DIMS), reaction_combine)
             )
         self.reaction_combine = reaction_combine
-        input_dim = REACTION_COMBINE_DIMS[reaction_combine] * emb_dim
+
+        # "split" pools the individual and the pairwise tokens separately, so the
+        # reactant vector is twice as wide and the reaction vector is
+        # [h_individual, h_pair, p]. Only combination tokens with the
+        # concatenation combine realise this.
+        _validate_pooling_settings(reactant_tokens, reactant_pooling, reaction_combine)
+        reactant_dim = emb_dim * (1 + int(reactant_pooling == "split"))
+        input_dim = reactant_dim + (REACTION_COMBINE_DIMS[reaction_combine] - 1) * emb_dim
         if head == "linear":
             self.regressor = nn.Linear(input_dim, 1)
         elif head == "mlp":
@@ -388,10 +440,13 @@ class model(nn.Module):
         return (x * weights).sum(dim=1)
 
     def _pool_reactants(
-        self, tokens: torch.Tensor, mask: torch.Tensor
+        self,
+        tokens: torch.Tensor,
+        mask: torch.Tensor,
+        n_individual: Optional[int] = None,
     ) -> torch.Tensor:
         """
-        Pool attended reactant tokens into a single reactant vector.
+        Pool attended reactant tokens into the reactant vector(s).
 
         Parameters
         ----------
@@ -399,12 +454,32 @@ class model(nn.Module):
             Attended reactant tokens of shape [batch_size, num_tokens, emb_dim].
         mask : torch.Tensor
             Boolean mask of shape [batch_size, num_tokens], True for real tokens.
+        n_individual : int, optional
+            Number of leading individual tokens before the pairwise combination
+            tokens (only needed by "split" pooling, where the first `n_individual`
+            tokens are the individual reactants and the rest are pair tokens).
 
         Returns
         -------
         torch.Tensor
-            Pooled reactant vector of shape [batch_size, emb_dim].
+            Pooled reactant vector of shape [batch_size, emb_dim], or
+            [batch_size, 2 * emb_dim] for "split" pooling, where the two halves
+            are the mean of the attended individual tokens and the mean of the
+            attended pair tokens.
         """
+        self.last_pair_terms = None
+        if self.reactant_pooling == "split":
+            if n_individual is None:
+                raise ValueError(
+                    "n_individual is required for reactant_pooling='split'"
+                )
+            individual_vectors = self._masked_mean(
+                tokens[:, :n_individual], mask[:, :n_individual]
+            )
+            pair_vectors = self._masked_mean(
+                tokens[:, n_individual:], mask[:, n_individual:]
+            )
+            return torch.cat((individual_vectors, pair_vectors), dim=1)
         if self.reactant_pooling == "rn":
             if self.store_attention:
                 pooled, pair_out, (a, b) = self.reactant_pool(
@@ -538,8 +613,13 @@ class model(nn.Module):
         p_mask = torch.as_tensor(np.asarray(p_dummy, dtype=bool), device=device)
 
         if self.reactant_tokens == "comb":
+            # The first num_individual slots are the individual reactants; the
+            # pairwise combination tokens follow. "split" pooling needs the
+            # boundary to average the two groups separately.
+            n_individual = r_tokens.shape[1]
             r_tokens, r_mask, token_slots = self._add_pair_tokens(r_tokens, r_mask)
         else:
+            n_individual = r_tokens.shape[1]
             token_slots = [(s,) for s in range(r_tokens.shape[1])]
 
         weights = {}
@@ -569,7 +649,7 @@ class model(nn.Module):
             self.last_token_slots = None
 
         # A side that does not attend keeps the plain mean of its GNN embeddings.
-        reactant_vectors = self._pool_reactants(r_tokens, r_mask)
+        reactant_vectors = self._pool_reactants(r_tokens, r_mask, n_individual)
         product_vectors = self._masked_mean(p_tokens, p_mask)
 
         reaction_vectors = self._combine(reactant_vectors, product_vectors)

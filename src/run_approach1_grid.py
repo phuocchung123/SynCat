@@ -65,11 +65,17 @@ APPROACHES = {
 
 
 def _build_cells() -> List[dict]:
-    """Builds the 16 cells of the grid from the model constants."""
+    """Builds the cells of the grid from the model constants.
+
+    "split" pooling needs pairwise combination tokens, so the individual-token
+    combinations with it are not valid and are left out.
+    """
     cells = []
     for tokens, attention_on, pooling, head in itertools.product(
         REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS
     ):
+        if pooling == "split" and tokens != "comb":
+            continue
         cells.append(
             {
                 "label": "%s-%s-%s-%s" % (tokens, attention_on, pooling, head),

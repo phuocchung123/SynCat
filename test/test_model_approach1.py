@@ -272,6 +272,68 @@ def test_sum_pooling_matches_masked_sum():
     torch.testing.assert_close(pooled[1], tokens[1, 0])
 
 
+def test_split_pooling_separates_individual_and_pair_means():
+    """reactant_pooling='split' averages individual and pair tokens separately."""
+    set_seed(42)
+    D = 8
+    net = model(
+        10,
+        5,
+        num_layer=1,
+        emb_dim=D,
+        drop_ratio=0.0,
+        reactant_tokens="comb",
+        reactant_pooling="split",
+        reaction_combine="concat",
+        head="linear",
+    )
+    # [h_individual, h_pair, p] is three emb_dim-wide blocks.
+    assert net.regressor.in_features == 3 * D
+
+    B, S = 2, 3
+    T = S + S * (S - 1) // 2  # 3 individuals + 3 pairs
+    tokens = torch.randn(B, T, D)
+    mask = torch.ones(B, T, dtype=torch.bool)
+
+    pooled = net._pool_reactants(tokens, mask, n_individual=S)
+    assert pooled.shape == (B, 2 * D)
+    torch.testing.assert_close(
+        pooled[:, :D], net._masked_mean(tokens[:, :S], mask[:, :S])
+    )
+    torch.testing.assert_close(
+        pooled[:, D:], net._masked_mean(tokens[:, S:], mask[:, S:])
+    )
+
+
+def test_split_pooling_requires_comb_tokens():
+    """reactant_pooling='split' rejects individual-only tokens."""
+    with pytest.raises(ValueError, match="requires reactant_tokens"):
+        model(
+            10,
+            5,
+            num_layer=1,
+            emb_dim=8,
+            drop_ratio=0.0,
+            reactant_tokens="ind",
+            reactant_pooling="split",
+        )
+
+
+def test_split_pooling_requires_concat_combine():
+    """reactant_pooling='split' only supports reaction_combine='concat'."""
+    with pytest.raises(ValueError, match="requires reaction_combine"):
+        model(
+            10,
+            5,
+            num_layer=1,
+            emb_dim=8,
+            drop_ratio=0.0,
+            reactant_tokens="comb",
+            reactant_pooling="split",
+            reaction_combine="sum",
+        )
+
+
 # ----------------------------------------------------------------------------
 # 2. Tests for RelationPooling
 # ----------------------------------------------------------------------------
@@ -795,16 +857,18 @@ def test_parameter_deltas():
 
 
 def test_grid_cells_cover_product():
-    """CELLS is the full 24-cell product with the expected approach counts."""
+    """CELLS is the full product minus invalid ind+split cells, with expected counts."""
     labels = [c["label"] for c in CELLS]
-    assert len(CELLS) == 24
-    assert len(set(labels)) == 24
+    assert len(CELLS) == 28
+    assert len(set(labels)) == 28
 
     expected = {
         "%s-%s-%s-%s" % combo
         for combo in itertools.product(
             REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS
         )
+        # "split" pooling requires pairwise combination tokens.
+        if not (combo[0] != "comb" and combo[2] == "split")
     }
     assert set(labels) == expected
 
@@ -819,7 +883,7 @@ def test_grid_cells_cover_product():
         "approach_1": 2,
         "approach_2": 1,
         "approach_3": 1,
-        "unlabeled": 13,
+        "unlabeled": 17,
     }
 
 

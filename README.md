@@ -152,6 +152,8 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 | --- | --- | --- |
 | `--attention_on` | `reactants` | which compounds attend to each other — see the table below |
 | `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
+| `--reactant_tokens` | `ind` | reactant token representation: `ind` individual compound slots only; `comb` individual tokens plus unordered pairwise combination tokens |
+| `--reactant_pooling` | `mean` | how attended reactant tokens become `r`: `mean` masked average; `sum` masked sum; `rn` relation-network pooling; `split` two masked averages, one over the individual tokens `h_individual` and one over the pair tokens `h_pair`, giving `[h_individual, h_pair, p]` (requires `--reactant_tokens comb` and `--reaction_combine concat`) |
 | `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |
 | `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
 | `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
@@ -171,7 +173,7 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 
 Reactions in these datasets usually have a single product, and self-attention over one compound reduces to a linear projection of its embedding, so `products` and `both` mostly add capacity rather than interaction between compounds.
 
-The size of the reaction vector follows from the two options — `emb_dim` for `sum`/`sub`/`mul`, `2 × emb_dim` for `concat`, `3 ×` for `concat_sub`, `4 ×` for `interaction` — and is what `Data/monitor/embedding.json` contains.
+The size of the reaction vector follows from the options — `emb_dim` for `sum`/`sub`/`mul`, `2 × emb_dim` for `concat`, `3 ×` for `concat_sub`, `4 ×` for `interaction`, and `3 × emb_dim` for `concat` with `--reactant_pooling split` (the reactant vector is `2 × emb_dim`) — and is what `Data/monitor/embedding.json` contains.
 
 ### Comparing configurations
 
