@@ -102,7 +102,7 @@ python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
     --split_ids 0 1 2 3 4 5 6 7 8 9 --cells comb-reactants-sum-linear --output_dir ../logs/grid_full_only_sum/ \
     --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
-    --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
+    --emb_dim 384 --layer 5 --attention_layer 2 --num_heads 16 --reaction_combine concat \
     --seed 42 --num_workers 2
 
 echo "Finished $(date)"
