@@ -104,7 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="linear",
         choices=list(HEADS),
         help="regression head architecture: 'linear' for a single linear layer; "
-        "'mlp' for a 2-layer MLP with ReLU and dropout",
+        "'mlp' for a 3-layer MLP with ReLU and dropout",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

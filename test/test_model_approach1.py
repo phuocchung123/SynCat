@@ -852,7 +852,7 @@ def test_parameter_deltas():
     )
 
     assert rn_linear - mean_linear == 5 * D * D + 6 * D
-    assert mean_mlp - mean_linear == 2 * D * D
+    assert mean_mlp - mean_linear == 3 * D * D + D
     assert comb_linear - mean_linear == 0
 
 

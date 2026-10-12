@@ -234,8 +234,8 @@ class model(nn.Module):
             the reaction vector becomes [h_individual, h_pair, p].
         head : str, optional
             Regression head architecture (default is "linear"):
-            "linear" for a single linear layer; "mlp" for a 2-layer MLP with
-            ReLU and dropout.
+            "linear" for a single linear layer; "mlp" for a 3-layer MLP
+            (input -> emb_dim -> emb_dim -> 1) with ReLU and dropout.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -328,6 +328,9 @@ class model(nn.Module):
         elif head == "mlp":
             self.regressor = nn.Sequential(
                 nn.Linear(input_dim, emb_dim),
+                nn.ReLU(),
+                nn.Dropout(drop_ratio),
+                nn.Linear(emb_dim, emb_dim),
                 nn.ReLU(),
                 nn.Dropout(drop_ratio),
                 nn.Linear(emb_dim, 1),

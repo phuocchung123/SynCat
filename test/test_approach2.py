@@ -165,21 +165,30 @@ def test_mlp_head():
         head="mlp",
     )
     assert isinstance(net.regressor, nn.Sequential)
-    assert len(net.regressor) == 4
+    assert len(net.regressor) == 7
 
-    l1, act, drop, l2 = net.regressor
+    l1, act1, drop1, l2, act2, drop2, l3 = net.regressor
     assert isinstance(l1, nn.Linear)
     assert l1.in_features == 2 * emb_dim
     assert l1.out_features == emb_dim
 
-    assert isinstance(act, nn.ReLU)
+    assert isinstance(act1, nn.ReLU)
 
-    assert isinstance(drop, nn.Dropout)
-    assert drop.p == drop_ratio
+    assert isinstance(drop1, nn.Dropout)
+    assert drop1.p == drop_ratio
 
     assert isinstance(l2, nn.Linear)
     assert l2.in_features == emb_dim
-    assert l2.out_features == 1
+    assert l2.out_features == emb_dim
+
+    assert isinstance(act2, nn.ReLU)
+
+    assert isinstance(drop2, nn.Dropout)
+    assert drop2.p == drop_ratio
+
+    assert isinstance(l3, nn.Linear)
+    assert l3.in_features == emb_dim
+    assert l3.out_features == 1
 
     # Forward output shape is [B]
     B = 2
