@@ -42,6 +42,7 @@ from data import GraphDataset
 from finetune import finetune
 from prepare_data import clean_reaction_data, split_reaction_data
 from reaction_data import get_graph_data
+from reaction_validation import validate_reaction_strings
 from utils import read_reaction_table, set_seed
 
 SUBSETS = ("train", "valid", "test")
@@ -278,6 +279,13 @@ def featurize_reactions(args, data: pd.DataFrame, logger) -> dict:
     start = time.time()
     ordered = data.sort_index()
     rsmi_list = ordered[args.reaction_column].values
+    strict_validation = (
+        getattr(args, "yield_arch", "legacy") or "legacy"
+    ) == "hierarchical4"
+    if strict_validation:
+        # Validate before slot counting, so a malformed reaction is reported
+        # instead of producing a wrong padding count.
+        validate_reaction_strings(rsmi_list)
     rmol_max_cnt = int(np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_list]))
     pmol_max_cnt = int(np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_list]))
     logger.info(
@@ -285,7 +293,13 @@ def featurize_reactions(args, data: pd.DataFrame, logger) -> dict:
         % (len(ordered), rmol_max_cnt, pmol_max_cnt)
     )
     rmol, pmol, reaction = get_graph_data(
-        rsmi_list, rmol_max_cnt, pmol_max_cnt, args, None, ordered[args.y_column].values
+        rsmi_list,
+        rmol_max_cnt,
+        pmol_max_cnt,
+        args,
+        None,
+        ordered[args.y_column].values,
+        strict_validation=strict_validation,
     )
     runtime = time.time() - start
     logger.info("Featurization finished in %.1f s" % runtime)
@@ -617,9 +631,19 @@ def _check_sample_arrays(label, sample_ids, source_rows, reaction, errors) -> No
         errors.append("%s targets must be finite floats" % label)
 
 
-def check_npz_file(path: str, errors: list):
+def check_npz_file(path: str, errors: list, strict_validation: bool = False):
     """
     Loads and structurally checks one prepared npz file.
+
+    Parameters
+    ----------
+    path : str
+        Path of the npz file.
+    errors : list
+        List that receives the error messages.
+    strict_validation : bool, optional
+        When True (hierarchical runs), also validate the structure of the cached
+        reaction strings (default is False).
 
     Returns
     -------
@@ -643,6 +667,12 @@ def check_npz_file(path: str, errors: list):
             "%s is corrupted or unreadable: %s: %s" % (label, type(e).__name__, e)
         )
         return None
+
+    if strict_validation:
+        try:
+            validate_reaction_strings(reaction.get("rsmi", []))
+        except ValueError as e:
+            errors.append("%s has a malformed cached reaction: %s" % (label, e))
 
     y = np.asarray(reaction.get("y"))
     n = len(sample_ids)
@@ -750,6 +780,9 @@ def validate_split(args, split_id: int) -> list:
     _check_metadata(args, split_id, metadata, errors)
 
     loaded = {}
+    strict_validation = (
+        getattr(args, "yield_arch", "legacy") or "legacy"
+    ) == "hierarchical4"
     for name in SUBSETS:
         path = os.path.join(out_dir, name + ".npz")
         recorded = metadata.get("files", {}).get(name, {})
@@ -758,7 +791,9 @@ def validate_split(args, split_id: int) -> list:
                 "%s.npz checksum does not match metadata (modified or corrupted)" % name
             )
         file_errors = []
-        loaded[name] = check_npz_file(path, file_errors)
+        loaded[name] = check_npz_file(
+            path, file_errors, strict_validation=strict_validation
+        )
         errors.extend(file_errors)
         if loaded[name] is not None and recorded.get("n_samples") != len(
             loaded[name]["sample_ids"]

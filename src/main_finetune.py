@@ -10,6 +10,7 @@ from model import (
     REACTANT_TOKENS,
     REACTION_COMBINE_DIMS,
 )
+from model_factory import YIELD_ARCHS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -105,6 +106,42 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(HEADS),
         help="regression head architecture: 'linear' for a single linear layer; "
         "'mlp' for a 3-layer MLP with ReLU and dropout",
+    )
+    parser.add_argument(
+        "--yield_arch",
+        type=str,
+        default="legacy",
+        choices=list(YIELD_ARCHS),
+        help="yield-model architecture: 'legacy' (default) is the existing "
+        "attention/GINE model, whose --layer/--attention_on/--reaction_combine/"
+        "--reactant_tokens/--reactant_pooling/--head options apply; "
+        "'hierarchical4' is the four-level atoms -> molecules -> side groups -> "
+        "reaction model, which ignores those legacy options and is configured by "
+        "--hierarchy_passes/--hierarchy_gine_layers/--hierarchy_no_feedback",
+    )
+    parser.add_argument(
+        "--hierarchy_passes",
+        type=int,
+        default=2,
+        help="number of upward passes of --yield_arch hierarchical4 (K). Each "
+        "pass runs bonds -> molecules -> side groups -> reaction; with feedback "
+        "enabled (the default) passes 1..K-1 are followed by the reverse "
+        "reaction -> groups -> molecules -> atoms update. Must be >= 1 "
+        "(K=1 is the collect-only control without feedback). Unused by legacy",
+    )
+    parser.add_argument(
+        "--hierarchy_gine_layers",
+        type=int,
+        default=2,
+        help="GINE layers per pass of --yield_arch hierarchical4 (>= 1). The "
+        "total depth is hierarchy_passes * hierarchy_gine_layers. Unused by "
+        "legacy, whose depth is --layer",
+    )
+    parser.add_argument(
+        "--hierarchy_no_feedback",
+        action="store_true",
+        help="run --yield_arch hierarchical4 with the same depth but without the "
+        "downward feedback updates (a same-depth control). Unused by legacy",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)
@@ -211,11 +248,24 @@ def build_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     arg_parser = build_parser()
     args = arg_parser.parse_args()
-    if args.num_heads < 1 or args.emb_dim % args.num_heads != 0:
-        arg_parser.error(
-            "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
-            % (args.num_heads, args.emb_dim)
-        )
+    if args.yield_arch == "legacy":
+        # The attention-head divisibility only constrains the legacy attention.
+        if args.num_heads < 1 or args.emb_dim % args.num_heads != 0:
+            arg_parser.error(
+                "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
+                % (args.num_heads, args.emb_dim)
+            )
+    else:
+        if args.hierarchy_passes < 1:
+            arg_parser.error(
+                "--hierarchy_passes must be a positive integer, got %d"
+                % args.hierarchy_passes
+            )
+        if args.hierarchy_gine_layers < 1:
+            arg_parser.error(
+                "--hierarchy_gine_layers must be a positive integer, got %d"
+                % args.hierarchy_gine_layers
+            )
 
     if args.prepare_only and args.stage is not None:
         arg_parser.error("--prepare_only cannot be combined with --stage")

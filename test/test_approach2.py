@@ -18,6 +18,11 @@ SRC_DIR = os.path.join(
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
+try:
+    import rdkit.Chem  # noqa: F401
+except ImportError as e:  # pragma: no cover - sandbox dependent
+    pytest.skip("rdkit.Chem is not importable: %s" % e, allow_module_level=True)
+
 from attention import ReactionSelfAttention  # noqa: E402
 from data import GraphDataset  # noqa: E402
 from finetune import _build_model, _load_checkpoint_safely  # noqa: E402

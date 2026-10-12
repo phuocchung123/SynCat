@@ -2,6 +2,7 @@ import numpy as np
 from rdkit import Chem
 from utils import setup_logging
 from preprocess_utils import add_mol, add_dummy, dict_list_to_numpy
+from reaction_validation import validate_reaction_structure
 
 
 def mol_dict() -> dict:
@@ -31,6 +32,7 @@ def get_graph_data(
     args=None,
     filename=None,
     y_list=None,
+    strict_validation=False,
 ) -> None:
     """
     Processes reaction SMILES and target values, encodes reactant and product information,
@@ -52,6 +54,11 @@ def get_graph_data(
         Maximum number of reactant molecules per reaction.
     pmol_max_cnt : int
         Maximum number of product molecules per reaction.
+    strict_validation : bool, optional
+        When True (used by the hierarchical architecture), reject reaction
+        strings that are not exactly ``reactants>>products`` with non-empty,
+        dot-separated components and raise a clear error for a component RDKit
+        cannot parse. The default False preserves the legacy behaviour.
 
     Returns
     -------
@@ -83,6 +90,10 @@ def get_graph_data(
 
     for i in range(len(rsmi_list)):
         rsmi = rsmi_list[i].replace("~", "-")
+        if strict_validation:
+            # Reject malformed reaction strings before any slot counting or
+            # graph construction, instead of silently mis-grouping fragments.
+            validate_reaction_structure(rsmi, i)
         if y_list is not None:
             y = y_list[i]
         else:
@@ -101,6 +112,11 @@ def get_graph_data(
             else:
                 rmol_dict[j]["dummy"].append(True)
                 rmol = Chem.MolFromSmiles(smi)
+                if strict_validation and rmol is None:
+                    raise ValueError(
+                        "sample %d: RDKit could not parse reactant component %r "
+                        "of %r" % (i, smi, rsmi)
+                    )
                 rs = Chem.FindPotentialStereo(rmol)
                 for element in rs:
                     if (
@@ -132,6 +148,11 @@ def get_graph_data(
             else:
                 pmol_dict[j]["dummy"].append(True)
                 pmol = Chem.MolFromSmiles(smi)
+                if strict_validation and pmol is None:
+                    raise ValueError(
+                        "sample %d: RDKit could not parse product component %r "
+                        "of %r" % (i, smi, rsmi)
+                    )
                 ps = Chem.FindPotentialStereo(pmol)
                 for element in ps:
                     if (

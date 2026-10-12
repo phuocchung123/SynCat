@@ -42,7 +42,8 @@ from torch.utils.data import DataLoader
 from data import GraphDataset
 from finetune import _build_model, finetune
 from main_finetune import build_parser
-from model import HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
+from model import HEADS, REACTANT_POOLINGS, REACTANT_TOKENS
+from model_factory import model_from_config
 from multi_gpu import resolve_gpu_ids
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from validation import validation
@@ -315,7 +316,7 @@ def run_cell(
         # Reload best checkpoint to evaluate on complete train set
         checkpoint = torch.load(checkpoint_file, map_location=device, weights_only=False)
         if "model_config" in checkpoint:
-            eval_net = model.from_config(checkpoint["model_config"]).to(device)
+            eval_net = model_from_config(checkpoint["model_config"]).to(device)
         else:
             eval_net = _build_model(run_opts, node_dim, edge_dim).to(device)
         eval_net.load_state_dict(checkpoint["model_state_dict"])
@@ -611,9 +612,22 @@ def _select_cells(selected: List[str]) -> List[dict]:
     return chosen
 
 
+def _reject_non_legacy_arch(parser, args) -> None:
+    """Approach 1 cells vary legacy-only options, so hierarchical is rejected."""
+    if (getattr(args, "yield_arch", "legacy") or "legacy") != "legacy":
+        parser.error(
+            "run_approach1_grid.py only runs yield_arch=legacy: its cells vary "
+            "the legacy attention/token/pooling/head options, which do not change "
+            "the hierarchical architecture. Use main_finetune.py --yield_arch %s "
+            "directly instead." % args.yield_arch
+        )
+
+
 def main():
     parser = build_grid_parser()
     args = parser.parse_args()
+
+    _reject_non_legacy_arch(parser, args)
 
     if getattr(args, "log_dir", None) and args.log_dir != "../logs/suzuki_regression/":
         args.output_dir = args.log_dir

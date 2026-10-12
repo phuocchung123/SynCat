@@ -30,6 +30,11 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 if TEST_DIR not in sys.path:
     sys.path.insert(0, TEST_DIR)
 
+try:
+    import rdkit.Chem  # noqa: F401
+except ImportError as e:  # pragma: no cover - sandbox dependent
+    pytest.skip("rdkit.Chem is not importable: %s" % e, allow_module_level=True)
+
 from attention import ReactionSelfAttention  # noqa: E402
 from gin import GIN  # noqa: E402
 from model import (  # noqa: E402

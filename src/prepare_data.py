@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Tuple
 from reaction_data import get_graph_data
+from reaction_validation import validate_reaction_strings
 from utils import configure_warnings_and_logs, read_reaction_table, setup_logging
 from sklearn.model_selection import train_test_split
 
@@ -178,7 +179,12 @@ def prepare_data(args) -> None:
             args.split_strategy or "shuffle",
         )
 
+    strict_validation = (getattr(args, "yield_arch", "legacy") or "legacy") == "hierarchical4"
     rsmi_list = data[args.reaction_column].values
+    if strict_validation:
+        # Validate before slot counting, so a malformed reaction is reported
+        # instead of producing a wrong padding count.
+        validate_reaction_strings(rsmi_list)
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_list])
     pmol_max_cnt = np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_list])
 
@@ -209,6 +215,7 @@ def prepare_data(args) -> None:
         args,
         filename_train,
         y_list_train,
+        strict_validation=strict_validation,
     )
     get_graph_data(
         rsmi_list_valid,
@@ -217,6 +224,7 @@ def prepare_data(args) -> None:
         args,
         filename_valid,
         y_list_valid,
+        strict_validation=strict_validation,
     )
     get_graph_data(
         rsmi_list_test,
@@ -225,4 +233,5 @@ def prepare_data(args) -> None:
         args,
         filename_test,
         y_list_test,
+        strict_validation=strict_validation,
     )

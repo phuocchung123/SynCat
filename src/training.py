@@ -5,6 +5,7 @@ import torch
 from torch.optim import Adam
 from tqdm import tqdm
 from validation import validation, compute_regression_metrics
+from model_factory import checkpoint_config
 from utils import setup_logging
 from multi_gpu import broadcast_flag, gather_lists, is_main_process, unwrap
 from visualization import init_history, record_epoch, save_history, plot_training_history
@@ -202,7 +203,7 @@ def train(
                 {
                     "epoch": epoch + current_epoch,
                     "model_state_dict": plain_net.state_dict(),
-                    "model_config": plain_net.config,
+                    "model_config": checkpoint_config(plain_net),
                     "val_loss": best_val_loss,
                     "scheduler_state_dict": scheduler.state_dict(),
                 },

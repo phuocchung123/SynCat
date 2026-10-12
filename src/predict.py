@@ -5,7 +5,7 @@ from tqdm import tqdm
 from reaction_data import get_graph_data
 from data import GraphDataset
 from utils import collate_reaction_graphs
-from model import model
+from model_factory import model_from_config
 from typing import List, Optional, Tuple
 
 # Architecture of checkpoints saved before the model settings were stored in
@@ -34,7 +34,8 @@ def predict(
     The model architecture (GNN layers, embedding size, attention layers, heads,
     reactant token mode, and regression head) is rebuilt from the settings stored
     in the checkpoint, so any model trained with `main_finetune.py` can be loaded
-    without repeating them.
+    without repeating them. For a hierarchical4 checkpoint, the input reactions
+    are additionally validated structurally before featurization.
 
     Parameters:
         rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".
@@ -50,11 +51,29 @@ def predict(
         (pred, emb) as returned by the model during inference, where
         `pred` holds the predicted yield values of shape [batch_size].
     """
+    device = (
+        torch.device(f"cuda:{device}")
+        if torch.cuda.is_available()
+        else torch.device("cpu")
+    )
+    if not model_name.endswith(".pt"):
+        model_name += ".pt"
+    # Inspect the checkpoint first: its architecture decides whether the strict
+    # hierarchical input validation applies to the reactions.
+    checkpoint = torch.load(
+        model_path + model_name, map_location=device, weights_only=False
+    )
+    config = checkpoint.get("model_config")
+    strict_validation = bool(
+        config and (config.get("yield_arch", "legacy") or "legacy") == "hierarchical4"
+    )
 
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_lst])
     pmol_max_cnt = np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_lst])
 
-    rmol, pmol, reaction = get_graph_data(rsmi_lst, rmol_max_cnt, pmol_max_cnt)
+    rmol, pmol, reaction = get_graph_data(
+        rsmi_lst, rmol_max_cnt, pmol_max_cnt, strict_validation=strict_validation
+    )
     dataset = GraphDataset(
         save_path=None,
         rmol=rmol,
@@ -71,17 +90,6 @@ def predict(
     node_dim = dataset.rmol_node_attr[0].shape[1]
     edge_dim = dataset.rmol_edge_attr[0].shape[1]
 
-    device = (
-        torch.device(f"cuda:{device}")
-        if torch.cuda.is_available()
-        else torch.device("cpu")
-    )
-    if not model_name.endswith(".pt"):
-        model_name += ".pt"
-    checkpoint = torch.load(
-        model_path + model_name, map_location=device, weights_only=False
-    )
-    config = checkpoint.get("model_config")
     if config is None:
         config = dict(LEGACY_CONFIG, node_in_feats=node_dim, edge_in_feats=edge_dim)
     elif (config["node_in_feats"], config["edge_in_feats"]) != (node_dim, edge_dim):
@@ -104,7 +112,7 @@ def predict(
                 "head assertion failed: checkpoint was configured with "
                 "%r, but %r was requested" % (expected_head, head)
             )
-    net = model.from_config(config).to(device)
+    net = model_from_config(config).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
 
     net.eval()

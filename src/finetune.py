@@ -9,7 +9,7 @@ from data import GraphDataset
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from model import model
+from model_factory import build_yield_model, model_from_config, describe_model
 from training import train
 from validation import validation
 from multi_gpu import init_process_group, resolve_gpu_ids, set_launch_env
@@ -38,6 +38,14 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     """
     saved_config = checkpoint.get("model_config")
     if saved_config is not None:
+        # Reject a cross-architecture reload before any partial weight loading.
+        saved_arch = saved_config.get("yield_arch", "legacy") or "legacy"
+        net_arch = getattr(net, "yield_arch", "legacy")
+        if saved_arch != net_arch:
+            raise RuntimeError(
+                "Checkpoint architecture %r does not match the model architecture "
+                "%r; reload it with --yield_arch %s" % (saved_arch, net_arch, saved_arch)
+            )
         # Checkpoints saved before `reaction_combine`, `reactant_tokens`, `reactant_pooling`, or `head` existed.
         saved_config = dict(
             {
@@ -81,20 +89,7 @@ def _load_checkpoint_safely(net, checkpoint, logger):
 
 
 def _build_model(args, node_dim, edge_dim):
-    return model(
-        node_dim,
-        edge_dim,
-        args.layer,
-        args.emb_dim,
-        args.dropout,
-        num_attention_layer=getattr(args, "attention_layer", 1),
-        num_heads=getattr(args, "num_heads", 1),
-        reaction_combine=getattr(args, "reaction_combine", "concat"),
-        attention_on=getattr(args, "attention_on", "reactants"),
-        reactant_tokens=getattr(args, "reactant_tokens", "ind"),
-        reactant_pooling=getattr(args, "reactant_pooling", "mean"),
-        head=getattr(args, "head", "linear"),
-    )
+    return build_yield_model(args, node_dim, edge_dim)
 
 
 def _ddp_train_worker(rank, args, gpus, model_path, resume):
@@ -149,6 +144,7 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         node_dim = train_set.rmol_node_attr[0].shape[1]
         edge_dim = train_set.rmol_edge_attr[0].shape[1]
         net = _build_model(args, node_dim, edge_dim).to(device)
+        setup_logging().info("--- model: %s" % describe_model(net))
         current_epoch, best_val_loss = 0, 1e10
         scheduler_state = None
         if resume:
@@ -262,6 +258,24 @@ def finetune(args, save_embedding: bool = True) -> dict:
         % (train_set.pmol_max_cnt, val_set.pmol_max_cnt, test_set.pmol_max_cnt)
     )
     logger.info("--- model_path: %s" % model_path)
+    logger.info("--- yield_arch: %s" % (getattr(args, "yield_arch", "legacy") or "legacy"))
+    if (getattr(args, "yield_arch", "legacy") or "legacy") == "hierarchical4":
+        logger.info(
+            "--- hierarchy: passes=%d, gine_layers_per_pass=%d, feedback=%s; "
+            "--layer/--attention_on/--attention_layer/--num_heads/"
+            "--reaction_combine/--reactant_tokens/--reactant_pooling/--head are "
+            "unused by this architecture"
+            % (
+                getattr(args, "hierarchy_passes", 2),
+                getattr(args, "hierarchy_gine_layers", 2),
+                not getattr(args, "hierarchy_no_feedback", False),
+            )
+        )
+    else:
+        logger.info(
+            "--- hierarchy options (--hierarchy_passes/--hierarchy_gine_layers/"
+            "--hierarchy_no_feedback) are unused by yield_arch=legacy"
+        )
     monitor_test_loader = test_loader if args.track_test_each_epoch else None
 
     # training
@@ -283,6 +297,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
         logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     else:
         net = _build_model(args, node_dim, edge_dim).to(device)
+        logger.info("--- model: %s" % describe_model(net))
         current_epoch, best_val_loss = 0, 1e10
         scheduler_state = None
         if not resume:
@@ -319,7 +334,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
     test_y = test_loader.dataset.y
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     if "model_config" in checkpoint:
-        net = model.from_config(checkpoint["model_config"]).to(device)
+        net = model_from_config(checkpoint["model_config"]).to(device)
     else:  # checkpoint saved before the config was stored
         net = _build_model(args, node_dim, edge_dim).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])

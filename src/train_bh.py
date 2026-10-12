@@ -13,12 +13,13 @@ re-run to continue. Every model, monitor log and plot of a run stays in its own
 folder under `<log_dir>/runs/<dataset>/`.
 
 All the model and training options of `main_finetune.py` are accepted
-(`--architecture`, `--attention_on`, `--epochs`, `--patience`, `--gpus`, ...).
+(`--yield_arch`, `--attention_on`, `--epochs`, `--patience`, `--gpus`, ...).
 
 Usage (from src/):
     python train_bh.py --epochs 100 --patience 10
     python train_bh.py --cv_ids 1 2 3 --test_ids --epochs 100
-    python train_bh.py --architecture cross_center --log_dir ../logs/bh_crosscenter/
+    python train_bh.py --yield_arch hierarchical4 --hierarchy_passes 2 \
+        --hierarchy_gine_layers 2 --log_dir ../logs/bh_hierarchical4/
 """
 
 import copy
