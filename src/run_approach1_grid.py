@@ -6,6 +6,8 @@ Runs the 24-cell comparison over
     x attention_on    {reactants, none}
     x reactant_pooling {mean, sum, rn}
     x head            {linear, mlp}
+and, optionally, an extra `--gnn_types {gine, gat}` axis that re-runs any cell
+once per graph encoder (the default "gine" labels are unchanged).
 on Buchwald-Hartwig (10 FullCV 1-10 split_70 and the 4 out-of-sample Test1-4
 sets) and Suzuki-Miyaura (split_0..split_9), always with the same seed and
 hyperparameters. Cells are labelled "<tokens>-<attention>-<pooling>-<head>" and
@@ -42,7 +44,7 @@ from torch.utils.data import DataLoader
 from data import GraphDataset
 from finetune import _build_model, finetune
 from main_finetune import build_parser
-from model import HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
+from model import GNN_TYPES, HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
 from multi_gpu import resolve_gpu_ids
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from validation import validation
@@ -64,15 +66,23 @@ APPROACHES = {
 }
 
 
-def _build_cells() -> List[dict]:
-    """Builds the 16 cells of the grid from the model constants."""
+def _build_cells(gnn_types: Tuple[str, ...] = ("gine",)) -> List[dict]:
+    """Builds the grid cells from the model constants.
+
+    The GNN encoder is an extra axis: every (tokens, attention, pooling, head)
+    combination appears once per requested `gnn_types` entry. The label of the
+    default "gine" encoder is left unchanged (e.g. "comb-reactants-mean-linear")
+    so existing results stay valid; other encoders get a "-<gnn>" suffix (e.g.
+    "comb-reactants-mean-linear-gat").
+    """
     cells = []
-    for tokens, attention_on, pooling, head in itertools.product(
-        REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS
+    for tokens, attention_on, pooling, head, gnn in itertools.product(
+        REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS, gnn_types
     ):
+        base_label = "%s-%s-%s-%s" % (tokens, attention_on, pooling, head)
         cells.append(
             {
-                "label": "%s-%s-%s-%s" % (tokens, attention_on, pooling, head),
+                "label": base_label if gnn == "gine" else "%s-%s" % (base_label, gnn),
                 "approach": APPROACHES.get(
                     (tokens, attention_on, pooling, head), "unlabeled"
                 ),
@@ -80,11 +90,13 @@ def _build_cells() -> List[dict]:
                 "attention_on": attention_on,
                 "reactant_pooling": pooling,
                 "head": head,
+                "gnn": gnn,
             }
         )
     return cells
 
 
+# Default grid (GINE only); the active encoder set is chosen with --gnn_types.
 CELLS = _build_cells()
 
 METRICS = [
@@ -234,6 +246,7 @@ def run_cell(
         "attention_on": cell["attention_on"],
         "reactant_pooling": cell["reactant_pooling"],
         "head": cell["head"],
+        "gnn": cell["gnn"],
         "seed": base_args.seed,
         "train_r2": None,
         "train_mae": None,
@@ -259,6 +272,7 @@ def run_cell(
     run_opts.reactant_pooling = cell["reactant_pooling"]
     run_opts.head = cell["head"]
     run_opts.attention_on = cell["attention_on"]
+    run_opts.gnn = cell["gnn"]
     run_opts.model_path = os.path.join(run_dir, "")
     run_opts.model_name = "model.pt"
     run_opts.monitor_folder = os.path.join(run_dir, "monitor", "")
@@ -272,7 +286,7 @@ def run_cell(
     set_seed(run_opts.seed)
     logger.info(
         "=== RUNNING: dataset=%s split=%s kind=%s cell=%s "
-        "(tokens=%s, attention_on=%s, pooling=%s, head=%s) ==="
+        "(tokens=%s, attention_on=%s, pooling=%s, head=%s, gnn=%s) ==="
         % (
             dataset_name,
             split_name,
@@ -282,6 +296,7 @@ def run_cell(
             cell["attention_on"],
             cell["reactant_pooling"],
             cell["head"],
+            cell["gnn"],
         )
     )
 
@@ -402,6 +417,7 @@ def summarize_grid(df: pd.DataFrame) -> pd.DataFrame:
         "attention_on",
         "reactant_pooling",
         "head",
+        "gnn",
     ]
     actual_cols = [c for c in group_cols if c in success.columns]
     for keys, group in success.groupby(actual_cols):
@@ -581,6 +597,16 @@ def build_grid_parser() -> argparse.ArgumentParser:
         "(e.g. comb-reactants-rn-mlp), or any approach name (e.g. approach_1)",
     )
     parser.add_argument(
+        "--gnn_types",
+        type=str,
+        nargs="+",
+        default=["gine"],
+        choices=list(GNN_TYPES),
+        help="graph encoder(s) to evaluate: 'gine' (default), 'gat', or both. "
+        "Each encoder is an extra grid axis; selecting several runs the same "
+        "cells once per encoder so they can be compared in one CSV.",
+    )
+    parser.add_argument(
         "--output_dir",
         type=str,
         default="../logs/approach1_grid/",
@@ -594,12 +620,12 @@ def build_grid_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _select_cells(selected: List[str]) -> List[dict]:
+def _select_cells(selected: List[str], cells: List[dict]) -> List[dict]:
     """Resolves --cells (all / labels / approach names) to grid cells."""
     if "all" in selected:
-        return list(CELLS)
+        return list(cells)
     wanted = set(selected)
-    chosen = [c for c in CELLS if c["label"] in wanted or c["approach"] in wanted]
+    chosen = [c for c in cells if c["label"] in wanted or c["approach"] in wanted]
     if not chosen:
         raise ValueError("no grid cell matches --cells %s" % selected)
     return chosen
@@ -631,7 +657,7 @@ def main():
     per_split_csv = os.path.join(args.output_dir, "approach1_per_split.csv")
     summary_csv = os.path.join(args.output_dir, "approach1_summary.csv")
 
-    active_cells = _select_cells(args.cells)
+    active_cells = _select_cells(args.cells, _build_cells(tuple(args.gnn_types)))
 
     temp_dir_obj = None
     try:

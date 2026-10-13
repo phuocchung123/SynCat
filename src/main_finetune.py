@@ -5,6 +5,7 @@ from prepare_data import prepare_data, SPLIT_STRATEGIES
 from finetune import finetune
 from model import (
     ATTENTION_TARGETS,
+    GNN_TYPES,
     HEADS,
     REACTANT_POOLINGS,
     REACTANT_TOKENS,
@@ -47,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="DataLoader worker processes (0 loads batches in the main process)",
     )
     parser.add_argument(
-        "--layer", type=int, default=3, help="number of GNN (GIN) layers"
+        "--layer", type=int, default=3, help="number of GNN layers"
     )
     parser.add_argument(
         "--attention_layer",
@@ -105,6 +106,15 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(HEADS),
         help="regression head architecture: 'linear' for a single linear layer; "
         "'mlp' for a 2-layer MLP with ReLU and dropout",
+    )
+    parser.add_argument(
+        "--gnn",
+        type=str,
+        default="gine",
+        choices=list(GNN_TYPES),
+        help="graph encoder for the compound graphs: 'gine' for the edge-aware "
+        "Graph Isomorphism Network (default); 'gat' for a multi-head Graph "
+        "Attention Network",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

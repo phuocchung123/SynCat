@@ -38,7 +38,7 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     """
     saved_config = checkpoint.get("model_config")
     if saved_config is not None:
-        # Checkpoints saved before `reaction_combine`, `reactant_tokens`, `reactant_pooling`, or `head` existed.
+        # Checkpoints saved before `reaction_combine`, `reactant_tokens`, `reactant_pooling`, `head`, or `gnn` existed.
         saved_config = dict(
             {
                 "reaction_combine": "concat",
@@ -46,6 +46,7 @@ def _load_checkpoint_safely(net, checkpoint, logger):
                 "reactant_tokens": "ind",
                 "reactant_pooling": "mean",
                 "head": "linear",
+                "gnn": "gine",
             },
             **saved_config
         )
@@ -94,6 +95,7 @@ def _build_model(args, node_dim, edge_dim):
         reactant_tokens=getattr(args, "reactant_tokens", "ind"),
         reactant_pooling=getattr(args, "reactant_pooling", "mean"),
         head=getattr(args, "head", "linear"),
+        gnn=getattr(args, "gnn", "gine"),
     )
 
 

@@ -43,6 +43,7 @@ from model import (  # noqa: E402
 )
 from run_approach1_grid import (  # noqa: E402
     CELLS,
+    _build_cells,
     _resolve_eval_datasets,
     build_grid_parser,
     summarize_grid,
@@ -72,6 +73,7 @@ def _build_cell_model(cell, emb_dim=16):
         attention_on=cell["attention_on"],
         reactant_pooling=cell["reactant_pooling"],
         head=cell["head"],
+        gnn=cell.get("gnn", "gine"),
     ).to(DEVICE)
 
 
@@ -709,6 +711,43 @@ def test_grid_single_reactant_forward_backward(cell):
     assert len(grads) > 0
     assert all(torch.isfinite(g).all() for g in grads)
     assert any((g != 0).any() for g in grads)
+
+
+_GNN_CELLS = _build_cells(("gine", "gat"))
+_GNN_CELL_IDS = [c["label"] for c in _GNN_CELLS]
+
+
+def test_gnn_axis_adds_gat_variant():
+    """--gnn_types 'gine gat' adds one '<cell>-gat' cell per GINE cell."""
+    assert len(_GNN_CELLS) == 2 * len(CELLS)
+    labels = {c["label"] for c in _GNN_CELLS}
+    assert "comb-reactants-mean-linear" in labels
+    assert "comb-reactants-mean-linear-gat" in labels
+    approach_3 = {c["label"]: c["gnn"] for c in _GNN_CELLS if c["approach"] == "approach_3"}
+    assert approach_3 == {
+        "comb-reactants-mean-linear": "gine",
+        "comb-reactants-mean-linear-gat": "gat",
+    }
+
+
+@pytest.mark.parametrize("cell", _GNN_CELLS, ids=_GNN_CELL_IDS)
+def test_grid_gnn_encoders_forward_backward(cell):
+    """Every cell runs forward+backward with the encoder named in the cell."""
+    set_seed(42)
+    net = _build_cell_model(cell)
+    assert net.gnn_type == cell["gnn"]
+    rmols, pmols, r_dummy, p_dummy, _ = _build_batch(rmol_max_cnt=2, pmol_max_cnt=1)
+
+    net.train()
+    net.zero_grad()
+    pred, _ = net(rmols, pmols, r_dummy, p_dummy, DEVICE)
+    assert pred.shape == (2,)
+    assert torch.isfinite(pred).all()
+
+    pred.sum().backward()
+    grads = [p.grad for p in net.gnn.parameters() if p.grad is not None]
+    assert len(grads) > 0
+    assert all(torch.isfinite(g).all() for g in grads)
 
 
 def test_comb_all_attention_store_attention():

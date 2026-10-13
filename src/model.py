@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from gat import GAT
 from gin import GIN
 from attention import ReactionSelfAttention
 
@@ -26,6 +27,9 @@ REACTANT_POOLINGS = ("mean", "sum", "rn")
 
 # Regression head architectures.
 HEADS = ("linear", "mlp")
+
+# Graph encoders for the compound graphs.
+GNN_TYPES = ("gine", "gat")
 
 
 class RelationPooling(nn.Module):
@@ -144,6 +148,7 @@ class model(nn.Module):
         reactant_tokens: str = "ind",
         reactant_pooling: str = "mean",
         head: str = "linear",
+        gnn: str = "gine",
     ) -> None:
         """
         Initialize the model.
@@ -191,6 +196,10 @@ class model(nn.Module):
             Regression head architecture (default is "linear"):
             "linear" for a single linear layer; "mlp" for a 2-layer MLP with
             ReLU and dropout.
+        gnn : str, optional
+            Graph encoder for the compound graphs (default is "gine"):
+            "gine" for the edge-aware Graph Isomorphism Network; "gat" for a
+            multi-head Graph Attention Network.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -208,14 +217,29 @@ class model(nn.Module):
             "reactant_tokens": str(reactant_tokens),
             "reactant_pooling": str(reactant_pooling),
             "head": str(head),
+            "gnn": str(gnn),
         }
-        self.gnn = GIN(
-            node_in_feats,
-            edge_in_feats,
-            num_layer,
-            emb_dim,
-            drop_ratio,
-        )
+        if gnn not in GNN_TYPES:
+            raise ValueError(
+                "gnn must be one of %s, got %r" % (list(GNN_TYPES), gnn)
+            )
+        self.gnn_type = gnn
+        if gnn == "gat":
+            self.gnn = GAT(
+                node_in_feats,
+                edge_in_feats,
+                num_layer,
+                emb_dim,
+                drop_ratio,
+            )
+        else:
+            self.gnn = GIN(
+                node_in_feats,
+                edge_in_feats,
+                num_layer,
+                emb_dim,
+                drop_ratio,
+            )
 
         if num_attention_layer < 1:
             raise ValueError(
