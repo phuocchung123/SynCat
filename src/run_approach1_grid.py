@@ -6,8 +6,8 @@ Runs the 24-cell comparison over
     x attention_on    {reactants, none}
     x reactant_pooling {mean, sum, rn}
     x head            {linear, mlp}
-and, optionally, an extra `--gnn_types {gine, gat}` axis that re-runs any cell
-once per graph encoder (the default "gine" labels are unchanged).
+and, optionally, an extra `--gnn_types {gine, gat, dmpnn}` axis that re-runs any
+cell once per graph encoder (the default "gine" labels are unchanged).
 on Buchwald-Hartwig (10 FullCV 1-10 split_70 and the 4 out-of-sample Test1-4
 sets) and Suzuki-Miyaura (split_0..split_9), always with the same seed and
 hyperparameters. Cells are labelled "<tokens>-<attention>-<pooling>-<head>" and
@@ -602,9 +602,10 @@ def build_grid_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=["gine"],
         choices=list(GNN_TYPES),
-        help="graph encoder(s) to evaluate: 'gine' (default), 'gat', or both. "
-        "Each encoder is an extra grid axis; selecting several runs the same "
-        "cells once per encoder so they can be compared in one CSV.",
+        help="graph encoder(s) to evaluate: 'gine' (default), 'gat', 'dmpnn', "
+        "or several. Each encoder is an extra grid axis; selecting several "
+        "runs the same cells once per encoder so they can be compared in one "
+        "CSV.",
     )
     parser.add_argument(
         "--output_dir",

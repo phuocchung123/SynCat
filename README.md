@@ -146,11 +146,11 @@ Results land in `--log_dir` (default `../logs/bh/`):
 
 ### Model options (all datasets)
 
-Each reaction becomes one vector in three steps: every compound is encoded by the shared graph encoder (GINE by default, or GAT with `--gnn gat`); `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GNN embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
+Each reaction becomes one vector in three steps: every compound is encoded by the shared graph encoder (GINE by default; GAT or DMPNN via `--gnn`); `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GNN embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--gnn` | `gine` | graph encoder for the compound graphs: `gine` (edge-aware Graph Isomorphism Network) or `gat` (multi-head Graph Attention Network, 4 heads averaged) |
+| `--gnn` | `gine` | graph encoder for the compound graphs: `gine` (edge-aware Graph Isomorphism Network), `gat` (multi-head Graph Attention Network, 4 heads averaged), or `dmpnn` (directed message passing neural network) |
 | `--attention_on` | `reactants` | which compounds attend to each other — see the table below |
 | `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
 | `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |

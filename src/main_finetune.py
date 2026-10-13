@@ -114,7 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(GNN_TYPES),
         help="graph encoder for the compound graphs: 'gine' for the edge-aware "
         "Graph Isomorphism Network (default); 'gat' for a multi-head Graph "
-        "Attention Network",
+        "Attention Network; 'dmpnn' for a directed message passing neural "
+        "network",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

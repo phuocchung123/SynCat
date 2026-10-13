@@ -713,20 +713,22 @@ def test_grid_single_reactant_forward_backward(cell):
     assert any((g != 0).any() for g in grads)
 
 
-_GNN_CELLS = _build_cells(("gine", "gat"))
+_GNN_CELLS = _build_cells(("gine", "gat", "dmpnn"))
 _GNN_CELL_IDS = [c["label"] for c in _GNN_CELLS]
 
 
-def test_gnn_axis_adds_gat_variant():
-    """--gnn_types 'gine gat' adds one '<cell>-gat' cell per GINE cell."""
-    assert len(_GNN_CELLS) == 2 * len(CELLS)
+def test_gnn_axis_adds_encoder_variants():
+    """--gnn_types 'gine gat dmpnn' adds one '<cell>-<gnn>' cell per encoder."""
+    assert len(_GNN_CELLS) == 3 * len(CELLS)
     labels = {c["label"] for c in _GNN_CELLS}
     assert "comb-reactants-mean-linear" in labels
     assert "comb-reactants-mean-linear-gat" in labels
+    assert "comb-reactants-mean-linear-dmpnn" in labels
     approach_3 = {c["label"]: c["gnn"] for c in _GNN_CELLS if c["approach"] == "approach_3"}
     assert approach_3 == {
         "comb-reactants-mean-linear": "gine",
         "comb-reactants-mean-linear-gat": "gat",
+        "comb-reactants-mean-linear-dmpnn": "dmpnn",
     }
 
 

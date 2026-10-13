@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from dmpnn import DMPNN
 from gat import GAT
 from gin import GIN
 from attention import ReactionSelfAttention
@@ -29,7 +30,7 @@ REACTANT_POOLINGS = ("mean", "sum", "rn")
 HEADS = ("linear", "mlp")
 
 # Graph encoders for the compound graphs.
-GNN_TYPES = ("gine", "gat")
+GNN_TYPES = ("gine", "gat", "dmpnn")
 
 
 class RelationPooling(nn.Module):
@@ -199,7 +200,8 @@ class model(nn.Module):
         gnn : str, optional
             Graph encoder for the compound graphs (default is "gine"):
             "gine" for the edge-aware Graph Isomorphism Network; "gat" for a
-            multi-head Graph Attention Network.
+            multi-head Graph Attention Network; "dmpnn" for a directed message
+            passing neural network.
         """
         super(model, self).__init__()
         # Everything needed to rebuild this architecture; saved in checkpoints
@@ -226,6 +228,14 @@ class model(nn.Module):
         self.gnn_type = gnn
         if gnn == "gat":
             self.gnn = GAT(
+                node_in_feats,
+                edge_in_feats,
+                num_layer,
+                emb_dim,
+                drop_ratio,
+            )
+        elif gnn == "dmpnn":
+            self.gnn = DMPNN(
                 node_in_feats,
                 edge_in_feats,
                 num_layer,

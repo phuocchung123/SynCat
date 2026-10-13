@@ -13,12 +13,13 @@
 # Approach-3 encoder comparison: the same cell
 #   approach_3 = comb-reactants-mean-linear
 #   (reactant_tokens=comb, attention_on=reactants, pooling=mean, head=linear)
-# is trained once per graph encoder, GINE and GAT, so the two land in one CSV
+# is trained once per graph encoder, GINE, GAT and DMPNN, so they land in one CSV
 # with a `gnn` column for direct comparison:
-#     comb-reactants-mean-linear       (GINE, the original)
-#     comb-reactants-mean-linear-gat   (GAT)
-# The encoder is an extra grid axis (`--gnn_types gine gat`); all other grid
-# cells still default to GINE.
+#     comb-reactants-mean-linear         (GINE, the original)
+#     comb-reactants-mean-linear-gat     (GAT)
+#     comb-reactants-mean-linear-dmpnn   (DMPNN)
+# The encoder is an extra grid axis (`--gnn_types gine gat dmpnn`); all other
+# grid cells still default to GINE.
 #
 # Full ablation grid (see run_approach1_grid.py) for reference:
 #     baseline    ind-reactants-mean-linear
@@ -29,9 +30,9 @@
 #     approach_2  comb-reactants-mean-mlp
 #     approach_3  comb-reactants-mean-linear
 #
-# This run:      approach_3 x {gine, gat}
+# This run:      approach_3 x {gine, gat, dmpnn}
 #
-# 48 trainings = 2 cells x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
+# 72 trainings = 3 cells x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
 # Training runs the full --epochs 500 with early stopping disabled (--patience 0).
 # Resubmit to resume (successful rows are skipped).
 #
@@ -104,7 +105,7 @@ export TQDM_DISABLE=1
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
-    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --gnn_types gine gat \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --gnn_types gine gat dmpnn \
     --output_dir ../logs/grid_approach3_gnn/ \
     --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
     --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
