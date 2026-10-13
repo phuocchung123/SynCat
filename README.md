@@ -177,53 +177,79 @@ The size of the reaction vector follows from the options — `emb_dim` for `sum`
 
 ### Yield-model architectures
 
-`--yield_arch` selects the architecture and defaults to `legacy`, so omitting it reproduces every existing run exactly. The two options are:
+`--yield_arch` selects the architecture and defaults to `legacy`, so omitting it reproduces every existing run exactly. The options are:
 
 | `--yield_arch` | Model |
 | --- | --- |
 | `legacy` | the existing shared-GINE + attention/pooling/reaction-combination model, configured by `--layer`, `--attention_on`, `--reaction_combine`, `--reactant_tokens`, `--reactant_pooling`, `--head` |
-| `hierarchical4` | a four-level atoms → molecules → side groups → reaction model, configured by the `--hierarchy_*` options below |
+| `hierarchical3` | a three-level atoms → molecules → Reactants/Products model with a concatenated `[Reactants, Products]` readout, configured by the `--hierarchy_*` options and `--head` |
+| `hierarchical4` | a four-level atoms → molecules → side groups → reaction model with a fixed head, configured by the `--hierarchy_*` options |
 
-**`hierarchical4`.** Every reaction is encoded as a four-level graph:
+**`hierarchical3`.** Every reaction is encoded as a three-level graph:
 
 1. **atoms** connected by chemical bonds inside each molecule,
 2. one **molecule** node per real supplied molecular graph (so dot-separated salts are separate molecules),
-3. exactly two **side-group** nodes per reaction — Reactants and Products,
-4. one **reaction** node per reaction.
+3. exactly two **side-group** nodes per reaction — Reactants and Products.
 
-Every supplied left-side molecule belongs to Reactants (catalysts, ligands, solvents, bases, reagents and additives included) and every right-side molecule to Products; grouping depends only on the reaction side, so multiple products and variable molecule counts are supported. Each pass runs
-
-```
-bonds -> molecules -> side groups -> reaction
-```
-
-and, when feedback is enabled, the reverse
+There is no reaction node. Each pass runs
 
 ```
-reaction -> side groups -> molecules -> atoms
+bonds -> molecules -> side groups
 ```
 
-so the next pass starts from feedback-updated atom states. The default two passes with two GINE layers each use four GINE layers in total. There is no attention, pair-token or relation-network pooling, no sigmoid and no target normalization, and the yield head is a two-layer MLP `D → D → 1`.
+and, between passes only, the feedback steps
+
+```
+side groups -> molecules -> atoms
+```
+
+so the next pass starts from feedback-updated atom states. The final pass stops after the group update. The two group embeddings are then concatenated in the fixed order `[Reactants, Products]` (a `2 × D` readout) and fed to the prediction head. Reactants and Products only interact through that head — there is no cross-side attention or message passing.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--hierarchy_passes` | `2` | number K of upward passes. Must be ≥ 1; `K=1` is a collect-only control with no feedback module. Passes 1…K-1 feed the reaction back down. |
+| `--hierarchy_passes` | `2` | number K of upward passes. Must be ≥ 1; `K=1` is a collect-only control with no feedback module. Passes 1…K-1 feed the groups back down to atoms. |
 | `--hierarchy_gine_layers` | `2` | GINE layers **per pass** (≥ 1). Total depth is `passes × gine_layers`. |
 | `--hierarchy_no_feedback` | off | same depth as the default, but skip every downward update (a same-depth control). |
+| `--head` | `linear` | regression head applied to the `2D` readout (see below). |
 
-The legacy options listed in the previous section are ignored by `hierarchical4`; conversely `--hierarchy_passes`, `--hierarchy_gine_layers` and `--hierarchy_no_feedback` are ignored by `legacy`. The attention-head `--num_heads` divisibility check only applies to `legacy`. The selected architecture and its effective settings are written to the monitor log.
+The `hierarchical3` heads receive a `2D`-dimensional readout (768 at `--emb_dim 384`) and are exactly:
 
-**Input validation.** For `hierarchical4`, reaction strings are validated before featurization: exactly one `>>`, a non-empty reactant and product side, and no empty dot-separated component; a component RDKit cannot parse is reported with its sample, side and component. Cached prepared reaction strings are validated too. The same structural checks apply during prediction when the checkpoint is `hierarchical4`. Malformed records are reported, never silently dropped, and no existing cache is rewritten.
+```
+linear:  Linear(2D, 1)
+mlp:     Linear(2D, D) -> ReLU -> Dropout(drop_ratio) -> Linear(D, 1)
+```
 
-**Checkpoints.** A checkpoint records its architecture as `yield_arch` in `model_config`. Reloading it into the other architecture fails explicitly before any weight is loaded, and a change of pass count, layers per pass or feedback setting is rejected as an architecture mismatch. Checkpoints written before the selector existed have no `yield_arch` and therefore reload as `legacy`. The legacy head warm-start behaviour (loading a differently sized regression head) is unchanged.
+Only the selected head is allocated. The encoder/backbone is constructed before the head, so two runs that differ only in `--head` share an identical encoder initialisation. The head is the only difference between the two runs.
 
-**Exact commands.** Both use their own `--log_dir` so they never collide. Omitting `--yield_arch` is the legacy run.
+The default two passes with two GINE layers each use four GINE layers in total. There is no attention, pair-token or relation-network pooling, no sigmoid, no clipping and no target normalization.
+
+**`hierarchical4`.** Every reaction is encoded as a four-level graph (atoms → molecules → side groups → reaction). Each pass runs `bonds -> molecules -> side groups -> reaction`; when feedback is enabled, passes 1…K-1 are followed by `reaction -> side groups -> molecules -> atoms`. The yield head is a fixed two-layer MLP `D → D → 1` applied to the reaction node, so `--head` is ignored.
+
+The legacy options listed in the previous section are ignored by both hierarchical architectures; conversely `--hierarchy_passes`, `--hierarchy_gine_layers` and `--hierarchy_no_feedback` are ignored by `legacy`. The attention-head `--num_heads` divisibility check only applies to `legacy`. The selected architecture and its effective settings (including the head for `hierarchical3`) are written to the monitor log.
+
+**Input validation.** For `hierarchical3` and `hierarchical4`, reaction strings are validated before featurization: exactly one `>>`, a non-empty reactant and product side, and no empty dot-separated component; a component RDKit cannot parse is reported with its sample, side and component. Cached prepared reaction strings are validated too. The same structural checks apply during prediction when the checkpoint is hierarchical. Malformed records are reported, never silently dropped, and no existing cache is rewritten.
+
+**Checkpoints.** A checkpoint records its architecture as `yield_arch` in `model_config`, together with the head (for `hierarchical3`), embedding dimension, pass count, GINE layers per pass, feedback setting and dropout. Reloading it into a different architecture fails explicitly before any weight is loaded, and a change of pass count, layers per pass or feedback setting is rejected as an architecture mismatch. A `hierarchical4` checkpoint is never reinterpreted as `hierarchical3` (or vice versa). Checkpoints written before the selector existed have no `yield_arch` and therefore reload as `legacy`. A different head reloads as an explicit warm-start (only the regression head differs), as for `legacy`.
+
+**Exact commands.** Each run uses its own `--log_dir` so they never collide. Omitting `--yield_arch` is the legacy run.
 
 ```bash
 # legacy (or simply omit --yield_arch)
 python main_finetune.py --stage all --split_ids 0 --yield_arch legacy \
   --emb_dim 384 --epochs 100 --patience 10 --batch_size 128 --num_workers 0 \
   --log_dir ../logs/suzuki_legacy_split0/
+
+# three-level hierarchy, linear head: 2 passes x 2 GINE layers, feedback enabled
+python main_finetune.py --stage train --split_ids 0 --yield_arch hierarchical3 \
+  --hierarchy_passes 2 --hierarchy_gine_layers 2 --emb_dim 384 --head linear \
+  --seed 42 --epochs 100 --patience 10 --batch_size 128 --num_workers 0 \
+  --log_dir ../logs/suzuki_hierarchical3_linear/
+
+# three-level hierarchy, MLP head (same split, seed and encoder settings)
+python main_finetune.py --stage train --split_ids 0 --yield_arch hierarchical3 \
+  --hierarchy_passes 2 --hierarchy_gine_layers 2 --emb_dim 384 --head mlp \
+  --seed 42 --epochs 100 --patience 10 --batch_size 128 --num_workers 0 \
+  --log_dir ../logs/suzuki_hierarchical3_mlp/
 
 # four-level hierarchy: 2 passes x 2 GINE layers, feedback enabled
 python main_finetune.py --stage all --split_ids 0 --yield_arch hierarchical4 \
@@ -232,7 +258,7 @@ python main_finetune.py --stage all --split_ids 0 --yield_arch hierarchical4 \
   --log_dir ../logs/suzuki_hierarchical4_k2_gine2/
 ```
 
-Prepared Suzuki split files are reused as-is: if `Data/processed/suzuki/npz/split_0` already validates, the `prepare` stage skips featurization and goes straight to training. Give each architecture its own `--log_dir` (and, with `--model_name`, its own checkpoint).
+Prepared Suzuki split files are reused as-is: if `Data/processed/suzuki/npz/split_0` already validates, the `prepare`/`train` stages skip featurization and go straight to training. Give each architecture and head its own `--log_dir` (and, with `--model_name`, its own checkpoint).
 
 ### Comparing configurations
 

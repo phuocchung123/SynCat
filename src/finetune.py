@@ -9,7 +9,12 @@ from data import GraphDataset
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from model_factory import build_yield_model, model_from_config, describe_model
+from model_factory import (
+    build_yield_model,
+    describe_model,
+    is_hierarchical_arch,
+    model_from_config,
+)
 from training import train
 from validation import validation
 from multi_gpu import init_process_group, resolve_gpu_ids, set_launch_env
@@ -258,17 +263,24 @@ def finetune(args, save_embedding: bool = True) -> dict:
         % (train_set.pmol_max_cnt, val_set.pmol_max_cnt, test_set.pmol_max_cnt)
     )
     logger.info("--- model_path: %s" % model_path)
-    logger.info("--- yield_arch: %s" % (getattr(args, "yield_arch", "legacy") or "legacy"))
-    if (getattr(args, "yield_arch", "legacy") or "legacy") == "hierarchical4":
+    yield_arch = getattr(args, "yield_arch", "legacy") or "legacy"
+    logger.info("--- yield_arch: %s" % yield_arch)
+    if is_hierarchical_arch(yield_arch):
+        head_note = (
+            ", head=%s" % (getattr(args, "head", "linear"))
+            if yield_arch == "hierarchical3"
+            else ""
+        )
         logger.info(
-            "--- hierarchy: passes=%d, gine_layers_per_pass=%d, feedback=%s; "
+            "--- hierarchy: passes=%d, gine_layers_per_pass=%d, feedback=%s%s; "
             "--layer/--attention_on/--attention_layer/--num_heads/"
-            "--reaction_combine/--reactant_tokens/--reactant_pooling/--head are "
+            "--reaction_combine/--reactant_tokens/--reactant_pooling are "
             "unused by this architecture"
             % (
                 getattr(args, "hierarchy_passes", 2),
                 getattr(args, "hierarchy_gine_layers", 2),
                 not getattr(args, "hierarchy_no_feedback", False),
+                head_note,
             )
         )
     else:

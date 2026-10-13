@@ -105,7 +105,10 @@ def build_parser() -> argparse.ArgumentParser:
         default="linear",
         choices=list(HEADS),
         help="regression head architecture: 'linear' for a single linear layer; "
-        "'mlp' for a 3-layer MLP with ReLU and dropout",
+        "'mlp' for an MLP with ReLU and dropout. For yield_arch=legacy the head "
+        "is Linear(input,1) or a 3-layer MLP; for yield_arch=hierarchical3 it is "
+        "Linear(2D,1) or Linear(2D,D)->ReLU->Dropout->Linear(D,1). "
+        "hierarchical4 has a fixed head and ignores --head",
     )
     parser.add_argument(
         "--yield_arch",
@@ -115,33 +118,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="yield-model architecture: 'legacy' (default) is the existing "
         "attention/GINE model, whose --layer/--attention_on/--reaction_combine/"
         "--reactant_tokens/--reactant_pooling/--head options apply; "
+        "'hierarchical3' is the three-level atoms -> molecules -> Reactants/"
+        "Products model, which predicts from the concatenated [Reactants, "
+        "Products] readout and uses --head but ignores the other legacy options; "
         "'hierarchical4' is the four-level atoms -> molecules -> side groups -> "
-        "reaction model, which ignores those legacy options and is configured by "
-        "--hierarchy_passes/--hierarchy_gine_layers/--hierarchy_no_feedback",
+        "reaction model with a fixed head. The hierarchical architectures are "
+        "configured by --hierarchy_passes/--hierarchy_gine_layers/"
+        "--hierarchy_no_feedback",
     )
     parser.add_argument(
         "--hierarchy_passes",
         type=int,
         default=2,
-        help="number of upward passes of --yield_arch hierarchical4 (K). Each "
-        "pass runs bonds -> molecules -> side groups -> reaction; with feedback "
-        "enabled (the default) passes 1..K-1 are followed by the reverse "
-        "reaction -> groups -> molecules -> atoms update. Must be >= 1 "
-        "(K=1 is the collect-only control without feedback). Unused by legacy",
+        help="number of upward passes of yield_arch hierarchical3/hierarchical4 "
+        "(K). Each pass runs bonds -> molecules -> side groups (-> reaction for "
+        "hierarchical4); with feedback enabled (the default) passes 1..K-1 are "
+        "followed by the reverse feedback update. Must be >= 1 (K=1 is the "
+        "collect-only control without feedback). Unused by legacy",
     )
     parser.add_argument(
         "--hierarchy_gine_layers",
         type=int,
         default=2,
-        help="GINE layers per pass of --yield_arch hierarchical4 (>= 1). The "
-        "total depth is hierarchy_passes * hierarchy_gine_layers. Unused by "
-        "legacy, whose depth is --layer",
+        help="GINE layers per pass of yield_arch hierarchical3/hierarchical4 "
+        "(>= 1). The total depth is hierarchy_passes * hierarchy_gine_layers. "
+        "Unused by legacy, whose depth is --layer",
     )
     parser.add_argument(
         "--hierarchy_no_feedback",
         action="store_true",
-        help="run --yield_arch hierarchical4 with the same depth but without the "
-        "downward feedback updates (a same-depth control). Unused by legacy",
+        help="run yield_arch hierarchical3/hierarchical4 with the same depth but "
+        "without the downward feedback updates (a same-depth control). Unused by "
+        "legacy",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)

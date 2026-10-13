@@ -40,6 +40,7 @@ import pandas as pd
 
 from data import GraphDataset
 from finetune import finetune
+from model_factory import is_hierarchical_arch
 from prepare_data import clean_reaction_data, split_reaction_data
 from reaction_data import get_graph_data
 from reaction_validation import validate_reaction_strings
@@ -279,9 +280,7 @@ def featurize_reactions(args, data: pd.DataFrame, logger) -> dict:
     start = time.time()
     ordered = data.sort_index()
     rsmi_list = ordered[args.reaction_column].values
-    strict_validation = (
-        getattr(args, "yield_arch", "legacy") or "legacy"
-    ) == "hierarchical4"
+    strict_validation = is_hierarchical_arch(getattr(args, "yield_arch", "legacy"))
     if strict_validation:
         # Validate before slot counting, so a malformed reaction is reported
         # instead of producing a wrong padding count.
@@ -780,9 +779,7 @@ def validate_split(args, split_id: int) -> list:
     _check_metadata(args, split_id, metadata, errors)
 
     loaded = {}
-    strict_validation = (
-        getattr(args, "yield_arch", "legacy") or "legacy"
-    ) == "hierarchical4"
+    strict_validation = is_hierarchical_arch(getattr(args, "yield_arch", "legacy"))
     for name in SUBSETS:
         path = os.path.join(out_dir, name + ".npz")
         recorded = metadata.get("files", {}).get(name, {})

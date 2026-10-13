@@ -7,7 +7,10 @@ selects the same class on reload:
 
     legacy         the existing attention/GINE model (default), returned
                    directly and untouched
-    hierarchical4  the four-level hierarchical model
+    hierarchical4  the four-level atoms -> molecules -> side groups -> reaction
+                   model
+    hierarchical3  the three-level atoms -> molecules -> side groups model with
+                   a concatenated [Reactants, Products] readout
 
 The selector is stored in the checkpoint's "model_config" but is stripped before
 the legacy `model.from_config()` is called, so the legacy model's config schema
@@ -16,17 +19,40 @@ and constructor stay exactly as they were.
 
 from typing import Union
 
-from hierarchical_model import Hierarchical4YieldModel
+from hierarchical_model import Hierarchical3YieldModel, Hierarchical4YieldModel
 from model import model
 
-YIELD_ARCHS = ("legacy", "hierarchical4")
+# Architectures that share the hierarchical packing/inputs and therefore need
+# the strict reaction-string validation.
+HIERARCHICAL_ARCHS = ("hierarchical3", "hierarchical4")
+YIELD_ARCHS = ("legacy",) + HIERARCHICAL_ARCHS
 
 # Key added to a legacy checkpoint's "model_config"; older checkpoints do not
 # carry it and therefore default to the legacy architecture.
 ARCH_KEY = "yield_arch"
 
 
-def build_yield_model(args, node_dim: int, edge_dim: int) -> Union[model, Hierarchical4YieldModel]:
+def is_hierarchical_arch(arch: str) -> bool:
+    """
+    Whether `arch` (as stored in a checkpoint or given on the CLI) is one of the
+    hierarchical architectures.
+
+    Parameters
+    ----------
+    arch : str
+        Architecture identifier; may be None.
+
+    Returns
+    -------
+    bool
+        True for "hierarchical3" and "hierarchical4".
+    """
+    return (arch or "legacy") in HIERARCHICAL_ARCHS
+
+
+def build_yield_model(
+    args, node_dim: int, edge_dim: int
+) -> Union[model, Hierarchical3YieldModel, Hierarchical4YieldModel]:
     """
     Build the yield model selected by `args.yield_arch`.
 
@@ -39,7 +65,7 @@ def build_yield_model(args, node_dim: int, edge_dim: int) -> Union[model, Hierar
     args : argparse.Namespace
         Parsed options; needs `layer`, `emb_dim`, `dropout` and the legacy
         attention/head options for the legacy branch, and the hierarchy options
-        for the hierarchical branch.
+        for the hierarchical branches.
     node_dim : int
         Node feature dimension.
     edge_dim : int
@@ -76,13 +102,26 @@ def build_yield_model(args, node_dim: int, edge_dim: int) -> Union[model, Hierar
             hierarchy_gine_layers=getattr(args, "hierarchy_gine_layers", 2),
             hierarchy_no_feedback=getattr(args, "hierarchy_no_feedback", False),
         )
+    if arch == "hierarchical3":
+        return Hierarchical3YieldModel(
+            node_dim,
+            edge_dim,
+            args.emb_dim,
+            args.dropout,
+            hierarchy_passes=getattr(args, "hierarchy_passes", 2),
+            hierarchy_gine_layers=getattr(args, "hierarchy_gine_layers", 2),
+            hierarchy_no_feedback=getattr(args, "hierarchy_no_feedback", False),
+            head=getattr(args, "head", "linear"),
+        )
     raise ValueError(
         "unknown yield architecture %r; expected one of %s"
         % (arch, list(YIELD_ARCHS))
     )
 
 
-def model_from_config(config: dict) -> Union[model, Hierarchical4YieldModel]:
+def model_from_config(
+    config: dict,
+) -> Union[model, Hierarchical3YieldModel, Hierarchical4YieldModel]:
     """
     Rebuild a model from a checkpoint's "model_config".
 
@@ -106,6 +145,8 @@ def model_from_config(config: dict) -> Union[model, Hierarchical4YieldModel]:
         return model.from_config(config)
     if arch == "hierarchical4":
         return Hierarchical4YieldModel.from_config(config)
+    if arch == "hierarchical3":
+        return Hierarchical3YieldModel.from_config(config)
     raise ValueError(
         "unknown yield architecture %r; expected one of %s"
         % (arch, list(YIELD_ARCHS))
@@ -149,6 +190,19 @@ def describe_model(net) -> str:
         One line naming the architecture and its effective settings.
     """
     arch = getattr(net, "yield_arch", "legacy")
+    if arch == "hierarchical3":
+        return (
+            "yield_arch=hierarchical3, passes=%d, gine_layers_per_pass=%d, "
+            "feedback=%s, emb_dim=%d, dropout=%s, head=%s"
+            % (
+                net.hierarchy_passes,
+                net.hierarchy_gine_layers,
+                net.feedback_enabled,
+                net.emb_dim,
+                net.config["drop_ratio"],
+                net.head,
+            )
+        )
     if arch == "hierarchical4":
         return (
             "yield_arch=hierarchical4, passes=%d, gine_layers_per_pass=%d, "

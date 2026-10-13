@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Tuple
 from reaction_data import get_graph_data
+from model_factory import is_hierarchical_arch
 from reaction_validation import validate_reaction_strings
 from utils import configure_warnings_and_logs, read_reaction_table, setup_logging
 from sklearn.model_selection import train_test_split
@@ -179,7 +180,7 @@ def prepare_data(args) -> None:
             args.split_strategy or "shuffle",
         )
 
-    strict_validation = (getattr(args, "yield_arch", "legacy") or "legacy") == "hierarchical4"
+    strict_validation = is_hierarchical_arch(getattr(args, "yield_arch", "legacy"))
     rsmi_list = data[args.reaction_column].values
     if strict_validation:
         # Validate before slot counting, so a malformed reaction is reported

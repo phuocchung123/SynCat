@@ -5,7 +5,7 @@ from tqdm import tqdm
 from reaction_data import get_graph_data
 from data import GraphDataset
 from utils import collate_reaction_graphs
-from model_factory import model_from_config
+from model_factory import is_hierarchical_arch, model_from_config
 from typing import List, Optional, Tuple
 
 # Architecture of checkpoints saved before the model settings were stored in
@@ -34,8 +34,8 @@ def predict(
     The model architecture (GNN layers, embedding size, attention layers, heads,
     reactant token mode, and regression head) is rebuilt from the settings stored
     in the checkpoint, so any model trained with `main_finetune.py` can be loaded
-    without repeating them. For a hierarchical4 checkpoint, the input reactions
-    are additionally validated structurally before featurization.
+    without repeating them. For a hierarchical3 or hierarchical4 checkpoint, the
+    input reactions are additionally validated structurally before featurization.
 
     Parameters:
         rsmi_lst: List of reaction SMILES strings, each formatted as "reactant>>product".
@@ -65,7 +65,7 @@ def predict(
     )
     config = checkpoint.get("model_config")
     strict_validation = bool(
-        config and (config.get("yield_arch", "legacy") or "legacy") == "hierarchical4"
+        config and is_hierarchical_arch(config.get("yield_arch", "legacy"))
     )
 
     rmol_max_cnt = np.max([smi.split(">>")[0].count(".") + 1 for smi in rsmi_lst])

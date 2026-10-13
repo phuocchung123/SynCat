@@ -22,12 +22,16 @@ if SRC_DIR not in sys.path:
 
 from finetune import _load_checkpoint_safely  # noqa: E402
 from gin import GIN  # noqa: E402
-from hierarchical_model import Hierarchical4YieldModel  # noqa: E402
+from hierarchical_model import (  # noqa: E402
+    Hierarchical3YieldModel,
+    Hierarchical4YieldModel,
+)
 from model import model  # noqa: E402
 from model_factory import (  # noqa: E402
     build_yield_model,
     checkpoint_config,
     describe_model,
+    is_hierarchical_arch,
     model_from_config,
 )
 from utils import set_seed  # noqa: E402
@@ -63,6 +67,20 @@ def hierarchical_args(**overrides):
         hierarchy_gine_layers=2,
         hierarchy_no_feedback=False,
         yield_arch="hierarchical4",
+    )
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
+
+def hierarchical3_args(**overrides):
+    values = dict(
+        emb_dim=16,
+        dropout=0.0,
+        hierarchy_passes=2,
+        hierarchy_gine_layers=2,
+        hierarchy_no_feedback=False,
+        head="linear",
+        yield_arch="hierarchical3",
     )
     values.update(overrides)
     return argparse.Namespace(**values)
@@ -153,6 +171,40 @@ def test_describe_model_reports_effective_settings():
     assert "passes=2" in hier
 
 
+def test_hierarchical3_selection_builds_model_with_head():
+    linear = build_yield_model(hierarchical3_args(head="linear"), NODE_DIM, EDGE_DIM)
+    mlp = build_yield_model(hierarchical3_args(head="mlp"), NODE_DIM, EDGE_DIM)
+    assert isinstance(linear, Hierarchical3YieldModel)
+    assert isinstance(mlp, Hierarchical3YieldModel)
+    assert linear.head == "linear"
+    assert mlp.head == "mlp"
+    assert linear.hierarchy_passes == 2 and linear.hierarchy_gine_layers == 2
+    assert linear.feedback_enabled is True
+
+
+def test_describe_model_reports_hierarchical3_head_and_settings():
+    line = describe_model(build_yield_model(hierarchical3_args(head="mlp"), NODE_DIM, EDGE_DIM))
+    assert "yield_arch=hierarchical3" in line
+    assert "passes=2" in line
+    assert "head=mlp" in line
+
+
+def test_hierarchical3_and_hierarchical4_are_distinct_architectures():
+    h3 = build_yield_model(hierarchical3_args(), NODE_DIM, EDGE_DIM)
+    h4 = build_yield_model(hierarchical_args(), NODE_DIM, EDGE_DIM)
+    assert isinstance(model_from_config(checkpoint_config(h3)), Hierarchical3YieldModel)
+    assert isinstance(model_from_config(checkpoint_config(h4)), Hierarchical4YieldModel)
+    assert checkpoint_config(h3)["yield_arch"] == "hierarchical3"
+    assert checkpoint_config(h4)["yield_arch"] == "hierarchical4"
+
+
+def test_is_hierarchical_arch_helper_flag():
+    assert is_hierarchical_arch("hierarchical3")
+    assert is_hierarchical_arch("hierarchical4")
+    assert not is_hierarchical_arch("legacy")
+    assert not is_hierarchical_arch(None)
+
+
 # ----------------------------------------------------------------------------
 # GIN state-dict layout is preserved
 # ----------------------------------------------------------------------------
@@ -214,6 +266,31 @@ def test_hierarchical_checkpoint_pass_mismatch_is_rejected():
 
     with pytest.raises(RuntimeError, match="different architecture"):
         _load_checkpoint_safely(net_k2, ckpt, logger)
+
+
+def test_hierarchical3_and_hierarchical4_cross_load_is_rejected():
+    logger = logging.getLogger("test_factory")
+    h3 = build_yield_model(hierarchical3_args(), NODE_DIM, EDGE_DIM)
+    h4 = build_yield_model(hierarchical_args(), NODE_DIM, EDGE_DIM)
+    h3_ckpt = {"model_config": checkpoint_config(h3), "model_state_dict": h3.state_dict()}
+    h4_ckpt = {"model_config": checkpoint_config(h4), "model_state_dict": h4.state_dict()}
+    import pytest
+
+    with pytest.raises(RuntimeError, match="architecture"):
+        _load_checkpoint_safely(h4, h3_ckpt, logger)
+    with pytest.raises(RuntimeError, match="architecture"):
+        _load_checkpoint_safely(h3, h4_ckpt, logger)
+
+
+def test_hierarchical3_pass_mismatch_is_rejected():
+    logger = logging.getLogger("test_factory")
+    k2 = build_yield_model(hierarchical3_args(hierarchy_passes=2), NODE_DIM, EDGE_DIM)
+    k3 = build_yield_model(hierarchical3_args(hierarchy_passes=3), NODE_DIM, EDGE_DIM)
+    ckpt = {"model_config": checkpoint_config(k3), "model_state_dict": k3.state_dict()}
+    import pytest
+
+    with pytest.raises(RuntimeError, match="different architecture"):
+        _load_checkpoint_safely(k2, ckpt, logger)
 
 
 def test_matching_hierarchical_checkpoint_loads():
