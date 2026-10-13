@@ -1,6 +1,11 @@
+import inspect
+
 import numpy as np
 import torch
 import torch.nn as nn
+from bond_line import LINE_FEATURE_VERSION, bond_line_node_dim
+from bond_line_encoders import BondLineDMPNN, BondLineGAT, BondLineGIN
+from data import GRAPH_REPRESENTATIONS
 from dmpnn import DMPNN
 from gat import GAT
 from gin import GIN
@@ -29,8 +34,93 @@ REACTANT_POOLINGS = ("mean", "sum", "rn")
 # Regression head architectures.
 HEADS = ("linear", "mlp")
 
-# Graph encoders for the compound graphs.
-GNN_TYPES = ("gine", "gat", "dmpnn")
+# Graph encoders per representation. Every encoder name is global and unique;
+# "gin" is the standard GIN of the bond-line representation, "gine" the
+# edge-aware GIN of the atom representation.
+ATOM_ENCODERS = ("gine", "gat", "dmpnn")
+BOND_LINE_ENCODERS = ("gin", "gat", "dmpnn")
+# Every accepted --gnn / --gnn_types value (a representation/encoder pair is
+# validated separately, since not every encoder is valid for both).
+GNN_TYPES = ("gine", "gin", "gat", "dmpnn")
+
+
+def allowed_encoders(graph_representation: str) -> tuple:
+    """
+    Encoders supported by a graph representation.
+
+    Parameters
+    ----------
+    graph_representation : str
+        "atom" or "bond_line".
+
+    Returns
+    -------
+    tuple
+        The valid encoder names.
+    """
+    if graph_representation == "atom":
+        return ATOM_ENCODERS
+    if graph_representation == "bond_line":
+        return BOND_LINE_ENCODERS
+    raise ValueError(
+        "graph_representation must be one of %s, got %r"
+        % (list(GRAPH_REPRESENTATIONS), graph_representation)
+    )
+
+
+def validate_encoder(graph_representation: str, gnn: str) -> None:
+    """
+    Reject unsupported representation/encoder combinations.
+
+    Parameters
+    ----------
+    graph_representation : str
+        "atom" or "bond_line".
+    gnn : str
+        Graph encoder name.
+
+    Raises
+    ------
+    ValueError
+        If the encoder is not valid for the representation.
+    """
+    allowed = allowed_encoders(graph_representation)
+    if gnn not in allowed:
+        other = BOND_LINE_ENCODERS if graph_representation == "atom" else ATOM_ENCODERS
+        hint = ""
+        if gnn in other:
+            hint = " (%r belongs to the other graph representation)" % gnn
+        raise ValueError(
+            "encoder %r is not valid for graph_representation %r; supported: %s%s"
+            % (gnn, graph_representation, list(allowed), hint)
+        )
+
+
+def _make_encoder(
+    graph_representation,
+    gnn,
+    node_in_feats,
+    edge_in_feats,
+    num_layer,
+    emb_dim,
+    drop_ratio,
+    gat_heads,
+):
+    """Build the molecular encoder for a representation/encoder pair."""
+    if graph_representation == "bond_line":
+        line_dim = bond_line_node_dim(node_in_feats, edge_in_feats)
+        if gnn == "gin":
+            return BondLineGIN(line_dim, num_layer, emb_dim, drop_ratio)
+        if gnn == "gat":
+            return BondLineGAT(
+                line_dim, num_layer, emb_dim, drop_ratio, gat_heads=gat_heads
+            )
+        return BondLineDMPNN(line_dim, num_layer, emb_dim, drop_ratio)
+    if gnn == "gat":
+        return GAT(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
+    if gnn == "dmpnn":
+        return DMPNN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
+    return GIN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
 
 
 class RelationPooling(nn.Module):
@@ -150,6 +240,8 @@ class model(nn.Module):
         reactant_pooling: str = "mean",
         head: str = "linear",
         gnn: str = "gine",
+        graph_representation: str = "atom",
+        gat_heads: int = 4,
     ) -> None:
         """
         Initialize the model.
@@ -199,11 +291,26 @@ class model(nn.Module):
             ReLU and dropout.
         gnn : str, optional
             Graph encoder for the compound graphs (default is "gine"):
-            "gine" for the edge-aware Graph Isomorphism Network; "gat" for a
-            multi-head Graph Attention Network; "dmpnn" for a directed message
-            passing neural network.
+            atom representation: "gine" (edge-aware Graph Isomorphism Network),
+            "gat" (multi-head Graph Attention Network) or "dmpnn" (directed
+            message passing); bond-line representation: "gin" (standard GIN),
+            "gat" or "dmpnn".
+        graph_representation : str, optional
+            Molecular graph representation (default is "atom"): "atom" keeps
+            the source atom/bond graph; "bond_line" transforms each molecule
+            into its line graph (one node per chemical bond) before encoding.
+        gat_heads : int, optional
+            Number of concatenated graph-attention heads for the bond-line GAT
+            (default is 4). Distinct from `num_heads`, which controls the
+            reaction-level self-attention.
         """
         super(model, self).__init__()
+        if graph_representation not in GRAPH_REPRESENTATIONS:
+            raise ValueError(
+                "graph_representation must be one of %s, got %r"
+                % (list(GRAPH_REPRESENTATIONS), graph_representation)
+            )
+        validate_encoder(graph_representation, gnn)
         # Everything needed to rebuild this architecture; saved in checkpoints
         # so that a model can be reloaded without repeating its settings.
         self.config = {
@@ -220,36 +327,22 @@ class model(nn.Module):
             "reactant_pooling": str(reactant_pooling),
             "head": str(head),
             "gnn": str(gnn),
+            "graph_representation": str(graph_representation),
+            "gat_heads": int(gat_heads),
+            "bond_line_feature_version": int(LINE_FEATURE_VERSION),
         }
-        if gnn not in GNN_TYPES:
-            raise ValueError(
-                "gnn must be one of %s, got %r" % (list(GNN_TYPES), gnn)
-            )
         self.gnn_type = gnn
-        if gnn == "gat":
-            self.gnn = GAT(
-                node_in_feats,
-                edge_in_feats,
-                num_layer,
-                emb_dim,
-                drop_ratio,
-            )
-        elif gnn == "dmpnn":
-            self.gnn = DMPNN(
-                node_in_feats,
-                edge_in_feats,
-                num_layer,
-                emb_dim,
-                drop_ratio,
-            )
-        else:
-            self.gnn = GIN(
-                node_in_feats,
-                edge_in_feats,
-                num_layer,
-                emb_dim,
-                drop_ratio,
-            )
+        self.graph_representation = graph_representation
+        self.gnn = _make_encoder(
+            graph_representation,
+            gnn,
+            node_in_feats,
+            edge_in_feats,
+            num_layer,
+            emb_dim,
+            drop_ratio,
+            gat_heads,
+        )
 
         if num_attention_layer < 1:
             raise ValueError(
@@ -340,7 +433,13 @@ class model(nn.Module):
         model
             A freshly initialised model with that architecture.
         """
-        return cls(**config)
+        params = inspect.signature(cls.__init__).parameters
+        kwargs = {
+            key: value
+            for key, value in config.items()
+            if key in params and key != "self"
+        }
+        return cls(**kwargs)
 
     def _attend(self, tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         """

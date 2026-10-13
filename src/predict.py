@@ -4,6 +4,7 @@ import torch
 from tqdm import tqdm
 from reaction_data import get_graph_data
 from data import GraphDataset
+from bond_line import LINE_FEATURE_VERSION
 from utils import collate_reaction_graphs
 from model import model
 from typing import List, Optional, Tuple
@@ -55,21 +56,11 @@ def predict(
     pmol_max_cnt = np.max([smi.split(">>")[1].count(".") + 1 for smi in rsmi_lst])
 
     rmol, pmol, reaction = get_graph_data(rsmi_lst, rmol_max_cnt, pmol_max_cnt)
-    dataset = GraphDataset(
-        save_path=None,
-        rmol=rmol,
-        pmol=pmol,
-        reaction=reaction,
-    )
-    loader = DataLoader(
-        dataset=dataset,
-        batch_size=int(np.min([len(dataset), 8])),
-        shuffle=False,
-        collate_fn=collate_reaction_graphs,
-    )
 
-    node_dim = dataset.rmol_node_attr[0].shape[1]
-    edge_dim = dataset.rmol_edge_attr[0].shape[1]
+    # Source feature widths (155 atom features, 9 bond features) are read from
+    # the freshly featurized data, before the representation is chosen.
+    node_dim = rmol[0]["node_attr"].shape[1]
+    edge_dim = rmol[0]["edge_attr"].shape[1]
 
     device = (
         torch.device(f"cuda:{device}")
@@ -83,12 +74,24 @@ def predict(
     )
     config = checkpoint.get("model_config")
     if config is None:
+        # Checkpoints saved before the model settings existed used the atom
+        # representation with the default architecture.
         config = dict(LEGACY_CONFIG, node_in_feats=node_dim, edge_in_feats=edge_dim)
     elif (config["node_in_feats"], config["edge_in_feats"]) != (node_dim, edge_dim):
         raise ValueError(
             "The checkpoint expects node/edge features of size %d/%d, but the "
             "input reactions were featurized to %d/%d"
             % (config["node_in_feats"], config["edge_in_feats"], node_dim, edge_dim)
+        )
+    graph_representation = config.get("graph_representation", "atom")
+    if (
+        graph_representation == "bond_line"
+        and config.get("bond_line_feature_version", 1) != LINE_FEATURE_VERSION
+    ):
+        raise ValueError(
+            "The checkpoint expects bond-line feature version %s, but this code "
+            "builds version %d"
+            % (config.get("bond_line_feature_version", 1), LINE_FEATURE_VERSION)
         )
     if reactant_tokens is not None:
         expected_rt = config.get("reactant_tokens", "ind")
@@ -104,6 +107,22 @@ def predict(
                 "head assertion failed: checkpoint was configured with "
                 "%r, but %r was requested" % (expected_head, head)
             )
+
+    # The dataset is built only now that the checkpoint's representation is known.
+    dataset = GraphDataset(
+        save_path=None,
+        rmol=rmol,
+        pmol=pmol,
+        reaction=reaction,
+        graph_representation=graph_representation,
+    )
+    loader = DataLoader(
+        dataset=dataset,
+        batch_size=int(np.min([len(dataset), 8])),
+        shuffle=False,
+        collate_fn=collate_reaction_graphs,
+    )
+
     net = model.from_config(config).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
 

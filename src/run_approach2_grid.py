@@ -210,9 +210,12 @@ def run_cell(
     try:
         result = finetune(run_opts, save_embedding=False)
 
-        train_set = GraphDataset(os.path.join(npz_dir, "train.npz"))
-        node_dim = train_set.rmol_node_attr[0].shape[1]
-        edge_dim = train_set.rmol_edge_attr[0].shape[1]
+        train_set = GraphDataset(
+            os.path.join(npz_dir, "train.npz"),
+            graph_representation=getattr(run_opts, "graph_representation", "atom"),
+        )
+        node_dim = train_set.atom_dim
+        edge_dim = train_set.bond_dim
 
         # Reload best checkpoint to evaluate on complete train set
         checkpoint = torch.load(checkpoint_file, map_location=device, weights_only=False)

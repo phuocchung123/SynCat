@@ -146,16 +146,18 @@ Results land in `--log_dir` (default `../logs/bh/`):
 
 ### Model options (all datasets)
 
-Each reaction becomes one vector in three steps: every compound is encoded by the shared graph encoder (GINE by default; GAT or DMPNN via `--gnn`); `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GNN embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
+Each reaction becomes one vector in three steps: every compound is encoded by the shared graph encoder (chosen with `--graph_representation` and `--gnn`); `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain molecular embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--gnn` | `gine` | graph encoder for the compound graphs: `gine` (edge-aware Graph Isomorphism Network), `gat` (multi-head Graph Attention Network, 4 heads averaged), or `dmpnn` (directed message passing neural network) |
+| `--graph_representation` | `atom` | molecular graph fed to the encoder: `atom` (the source atom/bond graph) or `bond_line` (its line graph, one node per chemical bond) |
+| `--gnn` | `gine` | molecular encoder; must match `--graph_representation`: atom → `gine`, `gat`, `dmpnn`; bond_line → `gin`, `gat`, `dmpnn` |
+| `--gat_heads` | `4` | concatenated graph-attention heads of the bond-line GAT; must divide `--emb_dim`. Independent of the reaction-level `--num_heads` |
 | `--attention_on` | `reactants` | which compounds attend to each other — see the table below |
 | `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
 | `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |
-| `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
-| `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
+| `--num_heads` | `1` | reaction-attention heads; must divide `--emb_dim` |
+| `--layer` / `--emb_dim` | `3` / `384` | molecular encoder layers (depth) and embedding size |
 | `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
 | `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
 | `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
@@ -168,7 +170,7 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 | `products` | everything right of `>>`, reactants untouched | |
 | `both` | each side separately, sharing the same attention weights | a product never sees a reactant |
 | `all` | every compound of the reaction in one shared attention | a reactant can attend to a product; the two sides are told apart only by being averaged separately |
-| `none` | nothing; both sides are plain means of the GINE embeddings | drops ~1.2M parameters — the ablation baseline for "does attention help?" |
+| `none` | nothing; both sides are plain means of the molecular embeddings | drops ~1.2M parameters — the ablation baseline for "does attention help?" |
 
 Reactions in these datasets usually have a single product, and self-attention over one compound reduces to a linear projection of its embedding, so `products` and `both` mostly add capacity rather than interaction between compounds.
 
@@ -199,6 +201,153 @@ A checkpoint records the architecture it was trained with, so reloading one into
 | `Data/monitor/monitor.log` | preparation progress, per-epoch losses, final test metrics |
 | `Data/monitor/embedding.json` | reaction embeddings of the test set |
 | `Image/` | `loss_curve.png`, `metric_curves.png`, `test_parity.png` |
+
+## Molecular graph representations and molecular encoders
+
+The reaction pipeline is unchanged; only the **molecular encoder** at the bottom of the model changes. Two graph representations are supported:
+
+| `--graph_representation` | Valid `--gnn` | Molecular pooling |
+| --- | --- | --- |
+| `atom` (default) | `gine`, `gat`, `dmpnn` | **sum** (`global_add_pool`) |
+| `bond_line` | `gin`, `gat`, `dmpnn` | **mean** (`global_mean_pool`) |
+
+`atom` + `gin` and `bond_line` + `gine` are rejected explicitly. The encoder flag `--gnn` and the grid flag `--gnn_types` share the same names; `--layer` is the molecular encoder depth and `--num_heads` is the **reaction** attention, while `--gat_heads` is the **graph** attention of the bond-line GAT only.
+
+### A. From a molecule to its bond-line graph
+
+```mermaid
+flowchart LR
+    subgraph ORIG["Original molecule: CCO"]
+        direction LR
+        C1((C)) ---|chemical bond| C2((C))
+        C2 ---|chemical bond| O1((O))
+    end
+    subgraph LINE["Bond-line graph"]
+        direction LR
+        L01["node: C-C bond"] ---|line adjacency| L12["node: C-O bond"]
+    end
+    ORIG ==>|"to_bond_line()"| LINE
+```
+
+- **One transformed node per undirected chemical bond.** For `CCO` the two chemical bonds become two nodes; every node is a *bond*.
+- **Two transformed nodes are connected when their original bonds share an atom** — this shared-atom relation is the line-graph adjacency (the horizontal edge above). It is *not* a chemical bond.
+- **Bond-node features** (`a_i`, `e_ij` are the source atom and bond features):
+
+  ```
+  f_ij = concat( a_i + a_j , |a_i - a_j| , e_ij , [0] )
+  ```
+
+- **Isolated-atom fallback features** (an atom of degree 0, e.g. `O` alone, or the `[Na+]` of `CC.[Na+]`):
+
+  ```
+  f_i  = concat( a_i , zeros(atom_dim) , zeros(bond_dim) , [1] )
+  ```
+
+- The last column is the node flag: `0` for a chemical-bond node, `1` for an isolated-atom fallback node.
+- **Current transformed feature width** `2*155 + 9 + 1 = 320` (derived in code from the source widths, never hardcoded). Chemical-bond features live in the transformed **node** features; the line edges are **topology-only**.
+- **Disconnected components stay disconnected**: different fragments (and the fallback node of an isolated atom) never receive a line edge between them.
+- Each undirected line adjacency is stored **in both directions** for message passing, together with a `rev_edge` map from every directed edge to its opposite. The transformation is deterministic and independent of the source edge ordering (bonds are grouped by unordered endpoints, not by assuming reverse pairs are adjacent).
+
+### B. Complete Approach 3 model
+
+```mermaid
+flowchart TD
+    RSMI["Reaction SMILES"] --> SPLIT["Split on '.' into reactant, reagent and product molecule slots"]
+    SPLIT --> FEAT["Existing atom features a_i (width 155) and bond features e_ij (width 9)"]
+    FEAT --> REP{"--graph_representation"}
+
+    subgraph ATMP["Atom encoder branch (runs only when --graph_representation = atom)"]
+        direction TB
+        AP["Project node features: Linear(155, D) then ReLU<br/>Project edge features: Linear(9, D) for gine / gat"]
+        AP --> AMSG["--layer message-passing layers<br/>gine: GINEConv on atoms with edge features<br/>gat: GATConv with edge_dim, 4 averaged heads<br/>dmpnn: directed messages on atom-bonds<br/>interlayer ReLU + per-layer dropout"]
+        AMSG --> APOOL["Readout: global_add_pool = SUM over atoms"]
+    end
+
+    subgraph LINP["Bond-line encoder branch (runs only when --graph_representation = bond_line)"]
+        direction TB
+        BT["to_bond_line: one node per chemical bond<br/>f_ij = concat(a_i + a_j, abs(a_i - a_j), e_ij, 0) -> width 320<br/>topology-only line edges + rev_edge"]
+        BT --> BP["Project node features: Linear(320, D) then ReLU"]
+        BP --> BMSG["--layer message-passing layers<br/>gin: GINConv, topology only<br/>gat: GATConv, 4 concatenated heads, no edge features<br/>dmpnn: directed messages on line edges, reverse excluded<br/>interlayer ReLU + per-layer dropout"]
+        BMSG --> BPOOL["Readout: global_mean_pool = MEAN over bond nodes"]
+    end
+
+    REP -->|atom| AP
+    REP -->|bond_line| BT
+
+    APOOL -->|"taken only if atom was chosen"| ME
+    BPOOL -->|"taken only if bond_line was chosen"| ME
+    ME["Molecule embedding [D] per molecule slot<br/>= the output of the ONE branch that ran<br/>(atom OR bond_line, never both; not a sum/concat of the two)"]
+
+    NOTE["The two branches are alternatives, not two encoders running together.<br/>A run picks exactly one --graph_representation, so exactly one readout<br/>(SUM for atom, MEAN for bond_line) produces the [D] embedding."]
+    ME -.-> NOTE
+
+    ME --> RC["Reactants + reagents"]
+    ME --> PP["Products"]
+    RC --> TOK["Individual tokens + unordered pair tokens r_i + r_j"]
+    TOK --> ATT["Existing reactant self-attention (2 layers, 16 heads)"]
+    ATT --> RPOOL["Masked mean pooling"]
+    RPOOL --> RV["Reactant vector [B, D]"]
+    PP --> PPOOL["Existing masked mean pooling"]
+    PPOOL --> PV["Product vector [B, D]"]
+    RV --> CAT["Ordered concatenation [r, p]"]
+    PV --> CAT
+    CAT --> REG["Existing Linear(2D, 1) head"]
+    REG --> Y["Predicted yield [B]"]
+```
+
+The two encoder branches above make the molecule embedding explicit: both start from the **same source features**, pick a **graph representation**, run `--layer` message-passing layers, and only differ in the encoder and the final readout pooling. The atom branch keeps edge features in the message passing and **sums** atom vectors (`global_add_pool`); the bond-line branch first applies `to_bond_line`, whose nodes already carry the bond information, so its messages are topology-only and it **means** bond-node vectors (`global_mean_pool`). Each branch is a single shared module applied to every molecule slot, so a slot graph — real or padding — yields exactly one `[D]` row.
+
+**The two readouts do not combine.** A run selects one `--graph_representation`, so exactly one branch is active and the molecule embedding is that branch's pooled vector — a `[D]` produced either by SUM (atom) **or** by MEAN (bond-line), never by adding or concatenating the two. Both readouts have the same width `D`, so everything after the molecule embedding is identical no matter which branch ran; the atom and bond-line branches are alternative encoder configurations, not two encoders running side by side.
+
+The four experiment variants are **alternative encoder configurations, not four encoders running simultaneously**:
+
+| # | Representation | Encoder | Molecular pooling |
+| --- | --- | --- | --- |
+| 1 | atom graph | existing GINE (edge-aware) | **sum** |
+| 2 | bond-line graph | standard GIN (`GINConv`, `train_eps=True`, sum neighborhood) | **mean** |
+| 3 | bond-line graph | standard GAT (`GATConv`, 4 **concatenated** heads, no edge features) | **mean** |
+| 4 | bond-line graph | D-MPNN adapted to the bond-line graph | **mean** |
+
+The **molecular encoder weights are shared** across reactants, reagents and products (and across slots). Everything after the molecule encoding is the existing Approach 3 pipeline: `--reactant_tokens comb`, `--attention_on reactants`, `--reactant_pooling mean`, `--reaction_combine concat`, `--head linear`.
+
+Prescribed experiment settings: `D = 384`; concatenated reaction vector `[r, p] = 768`; molecular depth `--layer 2`; reaction self-attention `--attention_layer 2` with `--num_heads 16`; bond-line GAT `--gat_heads 4`. Keep graph-attention heads (`--gat_heads`) and reaction-attention heads (`--num_heads`) distinct.
+
+**Caption.** True presence masks (`r_dummy`/`p_dummy`) identify real molecules; padding slots are excluded from pair tokens, attention and side pooling. The adapted D-MPNN's messages live on **directed line-graph edges** and the immediate reverse message is excluded at every step. Its depth `K = --layer` means `K - 1` directed-state updates (so `--layer 2` performs one update). The atom baseline uses molecular **sum** pooling while all bond-line encoders use molecular **mean** pooling.
+
+### Running the comparison
+
+Smoke check (tiny slices, `--layer 1`, `D = 32` — a plumbing check only, **not** the `D = 384`/`layer 2` configuration):
+
+```bash
+cd src
+python -u run_approach1_grid.py --smoke --datasets all --cells approach_3 \
+    --graph_representation atom --gnn_types gine
+python -u run_approach1_grid.py --smoke --datasets all --cells approach_3 \
+    --graph_representation bond_line --gnn_types gin gat dmpnn --gat_heads 4
+```
+
+Full comparison, one representation/encoder per invocation (`slurm/grid_bond_line.sbatch` runs all four with the preset recipe):
+
+```bash
+cd src
+python -u run_approach1_grid.py --datasets all --cells approach_3 \
+    --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 \
+    --graph_representation atom --gnn_types gine \
+    --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 \
+    --dropout 0.1 --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 \
+    --reaction_combine concat --seed 42 --num_workers 2 \
+    --output_dir ../logs/grid_approach3_bond_line/
+
+# ... then --graph_representation bond_line with --gnn_types gin, gat (--gat_heads 4), dmpnn
+# (or all three at once: --graph_representation bond_line --gnn_types gin gat dmpnn)
+```
+
+The grid writes `approach1_per_split.csv` and `approach1_summary.csv` into `--output_dir`. Bond-line cells are labelled `<cell>-bond_line-<gnn>` (e.g. `comb-reactants-mean-linear-bond_line-dmpnn`); atom labels are unchanged. Each result row also carries a `config_fingerprint` (representation, encoder, architecture, seed, recipe): a cell is skipped only when a row with the **same** fingerprint already succeeded, so an `atom:gat` result can never satisfy a `bond_line:gat` run and results from a different seed or depth are retrained. Attempted-but-unfinished cells are restarted from scratch (their `model.pt` is removed first).
+
+### Metrics and measurement scope
+
+The grid records **train / validation / test** R², MAE and RMSE (validation metrics come from the same validation data used for checkpoint selection; test metrics are never used to choose a configuration), trainable parameter count, epochs, training runtime, evaluation runtime, seconds per epoch, and peak GPU memory. `peak_gpu_memory_mb` is the peak allocated memory of the **whole cell** (training plus the train-set re-evaluation), not training alone, and is reported as unavailable (`NaN`) on CPU. Checkpoints store the representation, encoder, applicable graph-attention head count and a bond-line feature-format version, so an incompatible representation or stale feature format is rejected before any weights load.
 
 ## Suzuki Reaction-Yield Regression on 10 Random Splits
 

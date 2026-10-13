@@ -10,7 +10,9 @@ from model import (
     REACTANT_POOLINGS,
     REACTANT_TOKENS,
     REACTION_COMBINE_DIMS,
+    validate_encoder,
 )
+from data import GRAPH_REPRESENTATIONS
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -112,10 +114,26 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default="gine",
         choices=list(GNN_TYPES),
-        help="graph encoder for the compound graphs: 'gine' for the edge-aware "
-        "Graph Isomorphism Network (default); 'gat' for a multi-head Graph "
-        "Attention Network; 'dmpnn' for a directed message passing neural "
-        "network",
+        help="graph encoder: atom representation 'gine' (edge-aware GIN, "
+        "default), 'gat', 'dmpnn'; bond-line representation 'gin' (standard "
+        "GIN), 'gat', 'dmpnn'. Must match --graph_representation",
+    )
+    parser.add_argument(
+        "--graph_representation",
+        type=str,
+        default="atom",
+        choices=list(GRAPH_REPRESENTATIONS),
+        help="molecular graph representation: 'atom' (default) keeps the source "
+        "atom/bond graph; 'bond_line' transforms each molecule into its line "
+        "graph (one node per chemical bond) before encoding",
+    )
+    parser.add_argument(
+        "--gat_heads",
+        type=int,
+        default=4,
+        help="number of concatenated graph-attention heads for the bond-line "
+        "GAT; must divide --emb_dim (default 4). Independent of --num_heads, "
+        "which controls the reaction-level self-attention",
     )
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)
@@ -226,6 +244,19 @@ if __name__ == "__main__":
         arg_parser.error(
             "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
             % (args.num_heads, args.emb_dim)
+        )
+    try:
+        validate_encoder(args.graph_representation, args.gnn)
+    except ValueError as exc:
+        arg_parser.error(str(exc))
+    if (
+        args.graph_representation == "bond_line"
+        and args.gnn == "gat"
+        and (args.gat_heads < 1 or args.emb_dim % args.gat_heads != 0)
+    ):
+        arg_parser.error(
+            "--gat_heads (%d) must be a positive divisor of --emb_dim (%d)"
+            % (args.gat_heads, args.emb_dim)
         )
 
     if args.prepare_only and args.stage is not None:

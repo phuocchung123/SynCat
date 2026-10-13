@@ -6,8 +6,13 @@ Runs the 24-cell comparison over
     x attention_on    {reactants, none}
     x reactant_pooling {mean, sum, rn}
     x head            {linear, mlp}
-and, optionally, an extra `--gnn_types {gine, gat, dmpnn}` axis that re-runs any
-cell once per graph encoder (the default "gine" labels are unchanged).
+and, optionally, extra axes
+    x graph_representation {atom, bond_line}
+    x gnn             {atom: gine, gat, dmpnn; bond_line: gin, gat, dmpnn}
+that re-run any cell once per graph representation / encoder. The default
+"atom"/"gine" labels are unchanged (e.g. "comb-reactants-mean-linear"), while
+bond-line cells carry the representation, e.g.
+"comb-reactants-mean-linear-bond_line-gin".
 on Buchwald-Hartwig (10 FullCV 1-10 split_70 and the 4 out-of-sample Test1-4
 sets) and Suzuki-Miyaura (split_0..split_9), always with the same seed and
 hyperparameters. Cells are labelled "<tokens>-<attention>-<pooling>-<head>" and
@@ -28,6 +33,7 @@ Supports both fast smoke testing and full cluster execution with resumption.
 import argparse
 import copy
 import gc
+import hashlib
 import itertools
 import json
 import logging
@@ -44,7 +50,14 @@ from torch.utils.data import DataLoader
 from data import GraphDataset
 from finetune import _build_model, finetune
 from main_finetune import build_parser
-from model import GNN_TYPES, HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
+from model import (
+    GNN_TYPES,
+    HEADS,
+    REACTANT_POOLINGS,
+    REACTANT_TOKENS,
+    model,
+    validate_encoder,
+)
 from multi_gpu import resolve_gpu_ids
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from validation import validation
@@ -66,23 +79,33 @@ APPROACHES = {
 }
 
 
-def _build_cells(gnn_types: Tuple[str, ...] = ("gine",)) -> List[dict]:
+def _build_cells(
+    gnn_types: Tuple[str, ...] = ("gine",),
+    graph_representation: str = "atom",
+) -> List[dict]:
     """Builds the grid cells from the model constants.
 
-    The GNN encoder is an extra axis: every (tokens, attention, pooling, head)
-    combination appears once per requested `gnn_types` entry. The label of the
-    default "gine" encoder is left unchanged (e.g. "comb-reactants-mean-linear")
-    so existing results stay valid; other encoders get a "-<gnn>" suffix (e.g.
-    "comb-reactants-mean-linear-gat").
+    The graph representation and the GNN encoder are extra axes: every
+    (tokens, attention, pooling, head) combination appears once per requested
+    `gnn_types` entry for the given `graph_representation`. Atom labels are
+    unchanged for the default "gine" encoder (e.g. "comb-reactants-mean-linear")
+    so existing results stay valid, atom cells with another encoder get a
+    "-<gnn>" suffix, and bond-line cells carry the representation, e.g.
+    "comb-reactants-mean-linear-bond_line-gin".
     """
     cells = []
     for tokens, attention_on, pooling, head, gnn in itertools.product(
         REACTANT_TOKENS, ("reactants", "none"), REACTANT_POOLINGS, HEADS, gnn_types
     ):
+        validate_encoder(graph_representation, gnn)
         base_label = "%s-%s-%s-%s" % (tokens, attention_on, pooling, head)
+        if graph_representation == "bond_line":
+            label = "%s-%s-%s" % (base_label, graph_representation, gnn)
+        else:
+            label = base_label if gnn == "gine" else "%s-%s" % (base_label, gnn)
         cells.append(
             {
-                "label": base_label if gnn == "gine" else "%s-%s" % (base_label, gnn),
+                "label": label,
                 "approach": APPROACHES.get(
                     (tokens, attention_on, pooling, head), "unlabeled"
                 ),
@@ -91,27 +114,69 @@ def _build_cells(gnn_types: Tuple[str, ...] = ("gine",)) -> List[dict]:
                 "reactant_pooling": pooling,
                 "head": head,
                 "gnn": gnn,
+                "graph_representation": graph_representation,
             }
         )
     return cells
 
 
-# Default grid (GINE only); the active encoder set is chosen with --gnn_types.
+# Default grid (atom, GINE only); the active representation and encoder set are
+# chosen with --graph_representation and --gnn_types.
 CELLS = _build_cells()
+
+# Per-cell configuration fingerprint inputs: everything that changes the
+# trained model or the training recipe. Results are only reused when the stored
+# fingerprint matches, so an old atom:GAT result can never satisfy a
+# bond_line:GAT run and results from a different seed or depth are retrained.
+FINGERPRINT_KEYS = (
+    "graph_representation",
+    "gnn",
+    "reactant_tokens",
+    "attention_on",
+    "reactant_pooling",
+    "head",
+    "seed",
+    "epochs",
+    "batch_size",
+    "lr",
+    "weight_decay",
+    "dropout",
+    "emb_dim",
+    "layer",
+    "attention_layer",
+    "num_heads",
+    "gat_heads",
+    "reaction_combine",
+)
 
 METRICS = [
     "train_r2",
     "train_mae",
     "train_rmse",
+    "val_r2",
+    "val_mae",
+    "val_rmse",
     "test_r2",
     "test_mae",
     "test_rmse",
     "trainable_parameters",
     "epochs_ran",
     "train_runtime_sec",
+    "eval_runtime_sec",
     "seconds_per_epoch",
     "peak_gpu_memory_mb",
 ]
+
+
+def _cell_fingerprint(args: argparse.Namespace, cell: dict) -> str:
+    """Stable fingerprint of a cell's architecture and training recipe."""
+    parts = {key: cell.get(key) for key in FINGERPRINT_KEYS if key in cell}
+    for key in FINGERPRINT_KEYS:
+        if key not in parts:
+            parts[key] = getattr(args, key, None)
+    return hashlib.sha1(
+        json.dumps(parts, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()[:16]
 
 
 def _slice_npz(src_path: str, dst_path: str, n_samples: int) -> None:
@@ -234,29 +299,39 @@ def run_cell(
     run_dir: str,
     device: torch.device,
     logger: logging.Logger,
+    graph_representation: str = "atom",
 ) -> dict:
     """Runs a single cell of the experiment grid."""
+    representation = cell.get("graph_representation", graph_representation)
+    fingerprint = _cell_fingerprint(base_args, cell)
     row = {
         "dataset": dataset_name,
         "split": split_name,
         "split_kind": split_kind,
         "cell": cell["label"],
         "approach": cell.get("approach", ""),
+        "graph_representation": representation,
+        "gnn": cell["gnn"],
+        "gat_heads": getattr(base_args, "gat_heads", None),
         "reactant_tokens": cell["reactant_tokens"],
         "attention_on": cell["attention_on"],
         "reactant_pooling": cell["reactant_pooling"],
         "head": cell["head"],
-        "gnn": cell["gnn"],
         "seed": base_args.seed,
+        "config_fingerprint": fingerprint,
         "train_r2": None,
         "train_mae": None,
         "train_rmse": None,
+        "val_r2": None,
+        "val_mae": None,
+        "val_rmse": None,
         "test_r2": None,
         "test_mae": None,
         "test_rmse": None,
         "trainable_parameters": None,
         "epochs_ran": None,
         "train_runtime_sec": None,
+        "eval_runtime_sec": None,
         "seconds_per_epoch": None,
         "peak_gpu_memory_mb": None,
         "status": "failed",
@@ -265,6 +340,8 @@ def run_cell(
 
     checkpoint_file = os.path.join(run_dir, "model.pt")
     if os.path.exists(checkpoint_file):
+        # Restart an incomplete/attempted cell from scratch; successful cells
+        # are skipped before reaching this point.
         os.remove(checkpoint_file)
 
     run_opts = copy.copy(base_args)
@@ -273,6 +350,7 @@ def run_cell(
     run_opts.head = cell["head"]
     run_opts.attention_on = cell["attention_on"]
     run_opts.gnn = cell["gnn"]
+    run_opts.graph_representation = representation
     run_opts.model_path = os.path.join(run_dir, "")
     run_opts.model_name = "model.pt"
     run_opts.monitor_folder = os.path.join(run_dir, "monitor", "")
@@ -286,17 +364,20 @@ def run_cell(
     set_seed(run_opts.seed)
     logger.info(
         "=== RUNNING: dataset=%s split=%s kind=%s cell=%s "
-        "(tokens=%s, attention_on=%s, pooling=%s, head=%s, gnn=%s) ==="
+        "(representation=%s, tokens=%s, attention_on=%s, pooling=%s, head=%s, "
+        "gnn=%s, gat_heads=%s) ==="
         % (
             dataset_name,
             split_name,
             split_kind,
             cell["label"],
+            representation,
             cell["reactant_tokens"],
             cell["attention_on"],
             cell["reactant_pooling"],
             cell["head"],
             cell["gnn"],
+            getattr(base_args, "gat_heads", None),
         )
     )
 
@@ -317,9 +398,12 @@ def run_cell(
                 log_filename=os.path.join(base_args.output_dir, "grid.log")
             )
 
-        train_set = GraphDataset(os.path.join(npz_dir, "train.npz"))
-        node_dim = train_set.rmol_node_attr[0].shape[1]
-        edge_dim = train_set.rmol_edge_attr[0].shape[1]
+        train_set = GraphDataset(
+            os.path.join(npz_dir, "train.npz"),
+            graph_representation=representation,
+        )
+        node_dim = train_set.atom_dim
+        edge_dim = train_set.bond_dim
 
         # Reload best checkpoint to evaluate on complete train set
         checkpoint = torch.load(checkpoint_file, map_location=device, weights_only=False)
@@ -346,6 +430,8 @@ def run_cell(
         )
         train_metrics = train_res[0] if isinstance(train_res, tuple) else train_res
 
+        # Peak allocated GPU memory for the whole cell (training + the train-set
+        # re-evaluation below), not training alone. Reported as None on CPU.
         peak_gpu_memory_mb = (
             torch.cuda.max_memory_allocated(device) / 2**20
             if device.type == "cuda"
@@ -370,18 +456,23 @@ def run_cell(
         sec_per_epoch = train_runtime / epochs_ran if epochs_ran > 0 else 0.0
 
         test_m = result["test_metrics"]
+        val_m = result.get("val_metrics", {})
         row.update(
             {
                 "status": "success",
                 "train_r2": train_metrics.get("r2"),
                 "train_mae": train_metrics.get("mae"),
                 "train_rmse": train_metrics.get("rmse"),
+                "val_r2": val_m.get("r2"),
+                "val_mae": val_m.get("mae"),
+                "val_rmse": val_m.get("rmse"),
                 "test_r2": test_m.get("r2"),
                 "test_mae": test_m.get("mae"),
                 "test_rmse": test_m.get("rmse"),
                 "trainable_parameters": trainable_params,
                 "epochs_ran": epochs_ran,
                 "train_runtime_sec": train_runtime,
+                "eval_runtime_sec": result.get("eval_runtime_sec"),
                 "seconds_per_epoch": sec_per_epoch,
                 "peak_gpu_memory_mb": peak_gpu_memory_mb,
             }
@@ -413,11 +504,13 @@ def summarize_grid(df: pd.DataFrame) -> pd.DataFrame:
         "split_kind",
         "cell",
         "approach",
+        "graph_representation",
+        "gnn",
+        "gat_heads",
         "reactant_tokens",
         "attention_on",
         "reactant_pooling",
         "head",
-        "gnn",
     ]
     actual_cols = [c for c in group_cols if c in success.columns]
     for keys, group in success.groupby(actual_cols):
@@ -602,8 +695,9 @@ def build_grid_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=["gine"],
         choices=list(GNN_TYPES),
-        help="graph encoder(s) to evaluate: 'gine' (default), 'gat', 'dmpnn', "
-        "or several. Each encoder is an extra grid axis; selecting several "
+        help="graph encoder(s) to evaluate for --graph_representation: atom "
+        "accepts 'gine' (default), 'gat', 'dmpnn'; bond_line accepts 'gin', "
+        "'gat', 'dmpnn'. Each encoder is an extra grid axis; selecting several "
         "runs the same cells once per encoder so they can be compared in one "
         "CSV.",
     )
@@ -632,6 +726,28 @@ def _select_cells(selected: List[str], cells: List[dict]) -> List[dict]:
     return chosen
 
 
+def _validate_grid_args(parser: argparse.ArgumentParser, args) -> None:
+    """Validate the effective representation / encoder set of a grid run.
+
+    The inherited single-run `--gnn` default is irrelevant to the grid and is
+    deliberately not validated; only the effective `--gnn_types` are.
+    """
+    for gnn in args.gnn_types:
+        try:
+            validate_encoder(args.graph_representation, gnn)
+        except ValueError as exc:
+            parser.error(str(exc))
+    if (
+        args.graph_representation == "bond_line"
+        and "gat" in args.gnn_types
+        and (args.gat_heads < 1 or args.emb_dim % args.gat_heads != 0)
+    ):
+        parser.error(
+            "--gat_heads (%d) must be a positive divisor of --emb_dim (%d)"
+            % (args.gat_heads, args.emb_dim)
+        )
+
+
 def main():
     parser = build_grid_parser()
     args = parser.parse_args()
@@ -658,7 +774,15 @@ def main():
     per_split_csv = os.path.join(args.output_dir, "approach1_per_split.csv")
     summary_csv = os.path.join(args.output_dir, "approach1_summary.csv")
 
-    active_cells = _select_cells(args.cells, _build_cells(tuple(args.gnn_types)))
+    # Validate the effective encoder set for the chosen representation. The
+    # inherited single-run --gnn default is irrelevant to the grid and is not
+    # validated here.
+    _validate_grid_args(parser, args)
+
+    active_cells = _select_cells(
+        args.cells,
+        _build_cells(tuple(args.gnn_types), args.graph_representation),
+    )
 
     temp_dir_obj = None
     try:
@@ -689,22 +813,34 @@ def main():
             dataset_args.y_column = y_col
 
             for cell in active_cells:
+                fingerprint = _cell_fingerprint(args, cell)
                 already_done = any(
                     r.get("dataset") == dataset_name
                     and r.get("split") == split_name
                     and r.get("cell", r.get("label")) == cell["label"]
                     and r.get("status") == "success"
+                    and r.get("config_fingerprint") == fingerprint
                     for r in results
                 )
                 if already_done and not args.rerun_successful:
                     logger.info(
-                        "--- %s / %s / %s: already successful, skipping"
-                        % (dataset_name, split_name, cell["label"])
+                        "--- %s / %s / %s [%s]: already successful, skipping"
+                        % (
+                            dataset_name,
+                            split_name,
+                            cell["label"],
+                            fingerprint,
+                        )
                     )
                     continue
 
                 run_dir = os.path.join(
-                    args.output_dir, "runs", dataset_name, split_name, cell["label"]
+                    args.output_dir,
+                    "runs",
+                    cell["graph_representation"],
+                    dataset_name,
+                    split_name,
+                    cell["label"],
                 )
                 os.makedirs(run_dir, exist_ok=True)
                 row = run_cell(
@@ -717,6 +853,7 @@ def main():
                     run_dir,
                     device,
                     logger,
+                    graph_representation=args.graph_representation,
                 )
 
                 existing_idx = next(
@@ -726,6 +863,7 @@ def main():
                         if r.get("dataset") == dataset_name
                         and r.get("split") == split_name
                         and r.get("cell", r.get("label")) == cell["label"]
+                        and r.get("config_fingerprint") == fingerprint
                     ),
                     None,
                 )

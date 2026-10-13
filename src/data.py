@@ -2,6 +2,11 @@ import torch
 import numpy as np
 from torch_geometric.data import Data
 from typing import Any, Tuple, Dict
+from bond_line import to_bond_line
+
+# Molecular graph representations. "atom" is the original atom/bond graph;
+# "bond_line" is the transformed line graph built by `bond_line.to_bond_line`.
+GRAPH_REPRESENTATIONS = ("atom", "bond_line")
 
 
 class GraphDataset:
@@ -15,6 +20,7 @@ class GraphDataset:
         rmol: Dict = None,
         pmol: Dict = None,
         reaction: Dict = None,
+        graph_representation: str = "atom",
     ) -> None:
         """
         Initialize GraphDataset and load data.
@@ -23,7 +29,22 @@ class GraphDataset:
         ----------
         save_path : str
             Path to the saved .npz data file.
+        graph_representation : str, optional
+            Representation of each molecule graph (default is "atom"):
+            "atom" keeps the source atom/bond graph; "bond_line" transforms
+            every molecule with `bond_line.to_bond_line` on the fly.
+
+        Raises
+        ------
+        ValueError
+            If `graph_representation` is not one of GRAPH_REPRESENTATIONS.
         """
+        if graph_representation not in GRAPH_REPRESENTATIONS:
+            raise ValueError(
+                "graph_representation must be one of %s, got %r"
+                % (list(GRAPH_REPRESENTATIONS), graph_representation)
+            )
+        self.graph_representation = graph_representation
         if save_path:
             rmol_dict = np.load(save_path, allow_pickle=True)["rmol"]
             pmol_dict = np.load(save_path, allow_pickle=True)["pmol"]
@@ -99,6 +120,11 @@ class GraphDataset:
             for j in range(self.pmol_max_cnt)
         ]
 
+        # Source feature widths (155 atom features, 9 bond features), kept for
+        # compatibility checks and for deriving the bond-line width.
+        self.atom_dim = int(self.rmol_node_attr[0].shape[1]) if self.rmol_max_cnt else 0
+        self.bond_dim = int(self.rmol_edge_attr[0].shape[1]) if self.rmol_max_cnt else 0
+
     def __getitem__(self, idx: int) -> Tuple[Any, ...]:
         """
         Get graph data for a specific reaction sample.
@@ -140,6 +166,9 @@ class GraphDataset:
 
             data_r = Data(x=r_node_attr, edge_index=r_edge_index, edge_attr=r_edge_attr)
 
+            if self.graph_representation == "bond_line":
+                data_r = to_bond_line(data_r, is_real=bool(self.r_dummy[j][idx]))
+
             data_r_lst.append(data_r)
 
         data_p_lst = []
@@ -168,6 +197,10 @@ class GraphDataset:
             ).float()
 
             data_p = Data(x=p_node_attr, edge_index=p_edge_index, edge_attr=p_edge_attr)
+
+            if self.graph_representation == "bond_line":
+                data_p = to_bond_line(data_p, is_real=bool(self.p_dummy[j][idx]))
+
             data_p_lst.append(data_p)
 
         label = self.y[idx]

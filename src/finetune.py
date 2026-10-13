@@ -38,7 +38,8 @@ def _load_checkpoint_safely(net, checkpoint, logger):
     """
     saved_config = checkpoint.get("model_config")
     if saved_config is not None:
-        # Checkpoints saved before `reaction_combine`, `reactant_tokens`, `reactant_pooling`, `head`, or `gnn` existed.
+        # Checkpoints saved before these settings existed assumed the atom
+        # representation; missing representation metadata defaults to "atom".
         saved_config = dict(
             {
                 "reaction_combine": "concat",
@@ -47,21 +48,34 @@ def _load_checkpoint_safely(net, checkpoint, logger):
                 "reactant_pooling": "mean",
                 "head": "linear",
                 "gnn": "gine",
+                "graph_representation": "atom",
+                "gat_heads": 4,
+                "bond_line_feature_version": 1,
             },
             **saved_config
         )
-        # Mismatched settings do not always change the weight shapes (e.g. the
-        # number of heads or reactant_tokens), so compare the architectures explicitly.
-        # Head mismatch is allowed for intentional warm-start head replacement.
+        # Some settings do not always change the weight shapes (e.g. the number
+        # of heads or reactant_tokens), so compare the architectures explicitly.
+        # drop_ratio and head may differ (head for intentional warm-start head
+        # replacement). gat_heads only matters for the bond-line GAT, and the
+        # feature-format version only for the bond-line representation.
+        representation = saved_config.get("graph_representation", "atom")
+        skip = {"drop_ratio", "head"}
+        if not (
+            representation == "bond_line" and saved_config.get("gnn") == "gat"
+        ):
+            skip.add("gat_heads")
+        if representation != "bond_line":
+            skip.add("bond_line_feature_version")
         mismatched = {
             k: (saved_config.get(k), v)
             for k, v in net.config.items()
-            if k not in ("drop_ratio", "head") and saved_config.get(k) != v
+            if k not in skip and saved_config.get(k) != v
         }
         if mismatched:
             raise RuntimeError(
-                "Checkpoint was trained with a different architecture "
-                "(setting: (checkpoint, current)): %s" % mismatched
+                "Checkpoint was trained with a different architecture or graph "
+                "representation (setting: (checkpoint, current)): %s" % mismatched
             )
     result = net.load_state_dict(checkpoint["model_state_dict"], strict=False)
     encoder_mismatches = [
@@ -96,6 +110,8 @@ def _build_model(args, node_dim, edge_dim):
         reactant_pooling=getattr(args, "reactant_pooling", "mean"),
         head=getattr(args, "head", "linear"),
         gnn=getattr(args, "gnn", "gine"),
+        graph_representation=getattr(args, "graph_representation", "atom"),
+        gat_heads=getattr(args, "gat_heads", 4),
     )
 
 
@@ -115,7 +131,10 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         set_seed(args.seed)
         torch.cuda.manual_seed_all(args.seed)
         folder = args.Data_folder + args.npz_folder + "/"
-        train_set = GraphDataset(folder + "train.npz")
+        representation = getattr(args, "graph_representation", "atom")
+        train_set = GraphDataset(
+            folder + "train.npz", graph_representation=representation
+        )
         sampler = DistributedSampler(
             train_set, num_replicas=world_size, rank=rank, shuffle=False, drop_last=True
         )
@@ -130,7 +149,9 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         )
         val_loader = test_loader = None
         if rank == 0:
-            val_set = GraphDataset(folder + "valid.npz")
+            val_set = GraphDataset(
+                folder + "valid.npz", graph_representation=representation
+            )
             val_loader = DataLoader(
                 dataset=val_set,
                 batch_size=int(np.min([args.batch_size, len(val_set)])),
@@ -139,7 +160,9 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
                 num_workers=args.num_workers,
             )
             if args.track_test_each_epoch:
-                test_set = GraphDataset(folder + "test.npz")
+                test_set = GraphDataset(
+                    folder + "test.npz", graph_representation=representation
+                )
                 test_loader = DataLoader(
                     dataset=test_set,
                     batch_size=int(np.min([args.batch_size, len(test_set)])),
@@ -221,7 +244,11 @@ def finetune(args, save_embedding: bool = True) -> dict:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    train_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "train.npz")
+    representation = getattr(args, "graph_representation", "atom")
+    folder = args.Data_folder + args.npz_folder + "/"
+    train_set = GraphDataset(
+        folder + "train.npz", graph_representation=representation
+    )
     train_loader = DataLoader(
         dataset=train_set,
         batch_size=int(np.min([args.batch_size, len(train_set)])),
@@ -231,7 +258,9 @@ def finetune(args, save_embedding: bool = True) -> dict:
         drop_last=True,
     )
 
-    test_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "test.npz")
+    test_set = GraphDataset(
+        folder + "test.npz", graph_representation=representation
+    )
     test_loader = DataLoader(
         dataset=test_set,
         batch_size=int(np.min([args.batch_size, len(test_set)])),
@@ -241,7 +270,9 @@ def finetune(args, save_embedding: bool = True) -> dict:
         drop_last=False,
     )
 
-    val_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "valid.npz")
+    val_set = GraphDataset(
+        folder + "valid.npz", graph_representation=representation
+    )
     val_loader = DataLoader(
         dataset=val_set,
         batch_size=int(np.min([args.batch_size, len(val_set)])),
