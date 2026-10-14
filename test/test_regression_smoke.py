@@ -161,7 +161,7 @@ def test_regression_smoke():
     assert net.regressor.out_features == 1
 
     # --- loss is finite ---
-    loss_fn = torch.nn.HuberLoss()
+    loss_fn = torch.nn.MSELoss()
     loss = loss_fn(pred, labels)
     assert torch.isfinite(loss)
 

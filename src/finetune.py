@@ -326,7 +326,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
         net = _build_model(args, node_dim, edge_dim).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
     val_metrics, val_loss = validation(
-        args, net, val_loader, device, torch.nn.HuberLoss()
+        args, net, val_loader, device, torch.nn.MSELoss()
     )
     logger.info(
         "--- selected checkpoint from epoch %d, val_loss %.4f, val_mae %.4f, val_rmse %.4f"

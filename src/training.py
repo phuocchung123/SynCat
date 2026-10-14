@@ -83,7 +83,7 @@ def train(
     rmol_max_cnt = train_loader.dataset.rmol_max_cnt
     pmol_max_cnt = train_loader.dataset.pmol_max_cnt
 
-    loss_fn = torch.nn.HuberLoss()
+    loss_fn = torch.nn.MSELoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.3, patience=10, min_lr=1e-6

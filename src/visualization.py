@@ -22,7 +22,7 @@ SPLIT_STYLES = {
 }
 
 METRIC_LABELS = {
-    "loss": "Huber loss",
+    "loss": "MSE loss",
     "mae": "MAE",
     "rmse": "RMSE",
     "r2": "R²",
