@@ -157,6 +157,7 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 | `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
 | `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
 | `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
+| `--lr_scheduler` | `plateau` | `plateau` reduces the learning rate when the validation loss plateaus (`ReduceLROnPlateau`); `none` keeps `--lr` constant for the whole run |
 | `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
 | `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
 

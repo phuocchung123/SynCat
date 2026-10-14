@@ -34,12 +34,14 @@
 #
 # 72 trainings = 3 cells x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
 # Training runs the full --epochs 500 with early stopping disabled (--patience 0).
+# The learning rate is fixed at 1e-4 for the whole run (--lr_scheduler none): it
+# is never changed by a schedule.
 # Resubmit to resume (successful rows are skipped).
 #
 # Order: BH CV, then BH Test, then Suzuki, so the cheaper BH results arrive early.
 #
-# Outputs: ../logs/grid_approach3_gnn/approach1_per_split.csv
-#          ../logs/grid_approach3_gnn/approach1_summary.csv
+# Outputs: ../logs/grid_approach3_gnn_fixedlr/approach1_per_split.csv
+#          ../logs/grid_approach3_gnn_fixedlr/approach1_summary.csv
 #
 # Submit from the repository root:
 #   sbatch slurm/grid_all.sbatch
@@ -105,9 +107,9 @@ export TQDM_DISABLE=1
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
-    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --gnn_types gine\
-    --output_dir ../logs/grid_approach3_ginonly_cf/ \
-    --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --gnn_types gine gat dmpnn \
+    --output_dir ../logs/grid_approach3_gnn_fixedlr/ \
+    --epochs 500 --patience 0 --batch_size 128 --lr 1e-4 --lr_scheduler none --weight_decay 1e-4 --dropout 0.1 \
     --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
     --seed 42 --num_workers 2
 

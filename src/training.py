@@ -70,9 +70,11 @@ def train(
     When `args.patience` > 0, training stops early once the validation loss has
     not improved for `args.patience` consecutive epochs.
 
-    The learning rate is reduced by `ReduceLROnPlateau` whenever the validation
-    loss stops improving; its patience is deliberately shorter than the early
-    stopping one, so the run gets a smaller learning rate before it is stopped.
+    With `args.lr_scheduler == "plateau"` (default) the learning rate is reduced
+    by `ReduceLROnPlateau` whenever the validation loss stops improving; its
+    patience is deliberately shorter than the early stopping one, so the run
+    gets a smaller learning rate before it is stopped. With `"none"` the
+    learning rate stays constant at `learning_rate` for the whole run.
 
     Under DistributedDataParallel every rank trains on its shard of the training
     set; only rank 0 (which may get `val_loader=None` on the other ranks) logs,
@@ -85,11 +87,17 @@ def train(
 
     loss_fn = torch.nn.HuberLoss()
     optimizer = Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.3, patience=10, min_lr=1e-6
-    )
-    if scheduler_state is not None:
-        scheduler.load_state_dict(scheduler_state)
+    # With --lr_scheduler none the learning rate stays exactly `learning_rate`
+    # for the whole run (no ReduceLROnPlateau).
+    lr_scheduler = getattr(args, "lr_scheduler", "plateau")
+    if lr_scheduler == "plateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.3, patience=10, min_lr=1e-6
+        )
+        if scheduler_state is not None:
+            scheduler.load_state_dict(scheduler_state)
+    else:
+        scheduler = None
     history = init_history()
     patience = getattr(args, "patience", 0)
     epochs_without_improvement = 0
@@ -194,7 +202,8 @@ def train(
         logger.info("\n" + "*" * 100)
 
         # Once per epoch, on the same validation loss the early stopping watches.
-        scheduler.step(val_loss)
+        if scheduler is not None:
+            scheduler.step(val_loss)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -204,7 +213,9 @@ def train(
                     "model_state_dict": plain_net.state_dict(),
                     "model_config": plain_net.config,
                     "val_loss": best_val_loss,
-                    "scheduler_state_dict": scheduler.state_dict(),
+                    "scheduler_state_dict": (
+                        scheduler.state_dict() if scheduler is not None else None
+                    ),
                 },
                 model_path,
             )

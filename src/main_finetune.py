@@ -120,6 +120,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument(
+        "--lr_scheduler",
+        type=str,
+        default="plateau",
+        choices=["plateau", "none"],
+        help="learning-rate schedule: 'plateau' reduces the learning rate when "
+        "the validation loss plateaus (default); 'none' keeps --lr constant for "
+        "the whole run",
+    )
     parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     parser.add_argument("--image_folder", type=str, default="../Image/")
