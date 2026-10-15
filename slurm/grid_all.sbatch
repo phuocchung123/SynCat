@@ -10,16 +10,25 @@
 #SBATCH --output=slurm/logs/syncat-%j.out
 #SBATCH --error=slurm/logs/syncat-%j.err
 
-# Approach-3 encoder comparison: the same cell
-#   approach_3 = comb-reactants-mean-linear
-#   (reactant_tokens=comb, attention_on=reactants, pooling=mean, head=linear)
+# no_att_sum_pool encoder comparison: the cell
+#   ind-none-sum-mlp
+#   (reactant_tokens=ind, attention_on=none, pooling=sum, head=mlp)
 # is trained once per graph encoder, GINE, GAT and DMPNN, so they land in one CSV
 # with a `gnn` column for direct comparison:
-#     comb-reactants-mean-linear         (GINE, the original)
-#     comb-reactants-mean-linear-gat     (GAT)
-#     comb-reactants-mean-linear-dmpnn   (DMPNN)
+#     ind-none-sum-mlp         (GINE)
+#     ind-none-sum-mlp-gat     (GAT)
+#     ind-none-sum-mlp-dmpnn   (DMPNN)
 # The encoder is an extra grid axis (`--gnn_types gine gat dmpnn`); all other
 # grid cells still default to GINE.
+#
+# attention_on is chosen by the CELL LABEL, not by a command-line flag: the grid
+# runner overwrites run_opts.attention_on with the cell's value, so selecting
+# `ind-none-sum-mlp` is what turns attention off. The `--attention_layer` /
+# `--num_heads` options are ignored for a "none" cell (the model builds zero
+# attention layers), so they are omitted here.
+#
+# Note: reactant_pooling=sum only affects the REACTANT side; products are always
+# averaged (`_masked_mean`), see GraphReactionModel.forward.
 #
 # Full ablation grid (see run_approach1_grid.py) for reference:
 #     baseline    ind-reactants-mean-linear
@@ -29,8 +38,9 @@
 #     approach_1  comb-reactants-rn-{linear,mlp}
 #     approach_2  comb-reactants-mean-mlp
 #     approach_3  comb-reactants-mean-linear
+#     (this run)  ind-none-sum-mlp               <- no attention, sum pooling, mlp
 #
-# This run:      approach_3 x {gine, gat, dmpnn}
+# This run:      ind-none-sum-mlp x {gine, gat, dmpnn}
 #
 # 72 trainings = 3 cells x (10 BH FullCV split_70 + 4 BH Test1-4 + 10 Suzuki splits).
 # Training runs the full --epochs 500 with early stopping disabled (--patience 0).
@@ -38,8 +48,8 @@
 #
 # Order: BH CV, then BH Test, then Suzuki, so the cheaper BH results arrive early.
 #
-# Outputs: ../logs/grid_approach3_gnn/approach1_per_split.csv
-#          ../logs/grid_approach3_gnn/approach1_summary.csv
+# Outputs: ../logs/grid_no_att_sum_pool_gnn/approach1_per_split.csv
+#          ../logs/grid_no_att_sum_pool_gnn/approach1_summary.csv
 #
 # Submit from the repository root:
 #   sbatch slurm/grid_all.sbatch
@@ -105,10 +115,10 @@ export TQDM_DISABLE=1
 # --- the actual run ---------------------------------------------------------
 python -u run_approach1_grid.py --datasets all \
     --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 --split_columns split_70 \
-    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells approach_3 --gnn_types gine gat dmpnn \
-    --output_dir ../logs/grid_approach3_gnn_fixedloss/ \
+    --split_ids 0 1 2 3 4 5 6 7 8 9 --cells ind-none-sum-mlp --gnn_types gine gat dmpnn \
+    --output_dir ../logs/grid_no_att_sum_pool_gnn/ \
     --epochs 500 --patience 0 --batch_size 128 --lr 1e-3 --weight_decay 1e-4 --dropout 0.1 \
-    --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 --reaction_combine concat \
+    --emb_dim 384 --layer 2 --reaction_combine concat \
     --seed 42 --num_workers 2
 
 echo "Finished $(date)"
