@@ -105,8 +105,8 @@ COMMON_ARGS=(
   --split_columns split_70
   --split_ids 0 1 2 3 4 5 6 7 8 9
   --cells approach_3
-  --output_dir ../logs/grid_approach3_bond_line/
-  --epochs 500 --patience 0
+  --output_dir ../logs/grid_approach3_bond_line_delete/
+  --epochs 100 --patience 0
   --batch_size 128 --lr 1e-3 --weight_decay 1e-4
   --dropout 0.1 --emb_dim 384 --layer 2
   --attention_layer 2 --num_heads 16
