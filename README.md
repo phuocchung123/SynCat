@@ -159,6 +159,95 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 | `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
 | `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
 
+#### Training recipe flags (step 1)
+
+Opt-in recipe of reaction_yield_nn (Kwon et al. 2022). Every default reproduces
+the recipe used in the report, so existing commands are unchanged.
+
+| Flag | Default | reaction_yield_nn value |
+| --- | --- | --- |
+| `--shuffle_train` | off | on (reshuffle batches every epoch) |
+| `--target_scaling {none,zscore}` | `none` | `zscore` (training mean/std) |
+| `--loss {huber,mse}` | `huber` | `mse` |
+| `--lr_scheduler {plateau,multistep,none}` | `plateau` | `multistep` |
+| `--lr_milestones` | `400 450` | `400 450` |
+| `--lr_gamma` | `0.1` | `0.1` |
+| `--weight_decay` | `1e-4` | `1e-5` |
+| `--merge_valid_into_train` | off | on (train on the full 70%) |
+| `--checkpoint_select {best_val,last}` | `best_val` | `last` |
+| `--mc_dropout_passes` | `0` | `30` |
+| `--clip_predictions` | off | on (clip to the yield range) |
+
+With `--target_scaling zscore` the loss is computed on standardized labels; every
+logged metric, the parity plot and the returned/CSV predictions stay in the
+original target units. `--merge_valid_into_train` has no validation set, so it
+requires `--checkpoint_select last` and `--lr_scheduler multistep` or `none`.
+The headline test metrics use MC dropout and clipping when enabled; the
+deterministic, unclipped metrics are recorded next to them as `test_*_det`.
+With `--checkpoint_select last`, validation is monitoring only, so a plateau
+scheduler is not stepped and the learning rate stays fixed; use `multistep` or
+`none` for a deliberate schedule.
+
+#### Running step 1
+
+Light laptop check (tiny slices, four representative cells, two epochs, no BH
+test set):
+
+```bash
+cd src
+python -W ignore::FutureWarning run_approach1_grid.py --smoke --smoke_profile light \
+    --datasets all --cells report16 --output_dir ../logs/step1_smoke_light/ \
+    --shuffle_train --target_scaling zscore --loss mse \
+    --lr_scheduler multistep --lr_milestones 1 --lr_gamma 0.1 \
+    --merge_valid_into_train --checkpoint_select last \
+    --mc_dropout_passes 3 --clip_predictions
+```
+
+It runs G1, G6, G10 and G12 on one BH CV split and one Suzuki split, and checks
+the plumbing (merged training set, z-scored loss, last checkpoint, MC dropout,
+clipping, `test_*_det` columns). It takes about 2-5 minutes; pass `--epochs 1`
+for the shortest run.
+
+On the cluster, use one profile per job (the script header lists every mode):
+
+```bash
+MODE=pilot sbatch slurm/grid_step1.sbatch          # 8 runs
+MODE=bh_g1_8 sbatch slurm/grid_step1.sbatch        # 112 runs
+MODE=bh_g9_16 sbatch slurm/grid_step1.sbatch       # 112 runs
+MODE=suzuki_g1_8 sbatch slurm/grid_step1.sbatch    # 80 runs
+MODE=suzuki_g9_16 sbatch slurm/grid_step1.sbatch   # 80 runs
+```
+
+Set `DRY_RUN=1` to print the resolved command without using a GPU. Resubmitting
+the same command resumes: successful `(dataset, split, cell)` rows are skipped.
+
+After the jobs finish, merge the four result files and build the figures:
+
+```bash
+cd src
+python merge_grid_results.py ../logs/step1_bh_g1_8/approach1_per_split.csv \
+    ../logs/step1_bh_g9_16/approach1_per_split.csv \
+    ../logs/step1_suzuki_g1_8/approach1_per_split.csv \
+    ../logs/step1_suzuki_g9_16/approach1_per_split.csv \
+    --output_dir ../logs/step1/
+python compare_with_report.py \
+    D:/workspace/syncat_folder/20261009_analyse_syncat_/approach1_per_split.csv \
+    --step1_csv ../logs/step1/step1_per_split.csv --output_dir ../logs/step1/
+python plot_step1_results.py \
+    --step1_csv ../logs/step1/step1_per_split.csv \
+    --report_csv D:/workspace/syncat_folder/20261009_analyse_syncat_/approach1_per_split.csv \
+    --output_dir ../logs/step1/figures/
+```
+
+The figures are leaderboards per dataset (green = better than the report,
+orange = worse), a report-vs-step-1 scatter, a train/test gap chart, a win/loss
+heatmap, and a best-cell-versus-literature chart. Yield-BERT (BH 0.95,
+Suzuki 0.81) and DRFP + gradient boosting (BH 0.95, Suzuki 0.85) appear as
+dashed literature reference lines and as bars in the literature chart; those
+values come from other splits, so treat them as context rather than a
+like-for-like comparison. Pass `--baselines_csv` to replace them with your own
+measurements.
+
 **`--attention_on`**
 
 | Value | Which compounds attend | Note |
