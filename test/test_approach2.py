@@ -20,16 +20,10 @@ if SRC_DIR not in sys.path:
 
 from attention import ReactionSelfAttention  # noqa: E402
 from data import GraphDataset  # noqa: E402
-from finetune import _build_model, _load_checkpoint_safely  # noqa: E402
+from finetune import _load_checkpoint_safely  # noqa: E402
 from gin import GIN  # noqa: E402
 from main_finetune import build_parser  # noqa: E402
-from model import (  # noqa: E402
-    ATTENTION_TARGETS,
-    HEADS,
-    REACTANT_TOKENS,
-    REACTION_COMBINE_DIMS,
-    model,
-)
+from model import REACTION_COMBINE_DIMS, model  # noqa: E402
 from reaction_data import get_graph_data  # noqa: E402
 from utils import collate_reaction_graphs, set_seed  # noqa: E402
 
@@ -132,7 +126,7 @@ def test_add_pair_tokens_single_real_reactant_with_padding():
     assert exp_mask[0, 0].item() is True
     assert exp_mask[0, 1].item() is False
     assert exp_mask[0, 2].item() is False
-    assert (exp_mask[0, 3:] == False).all()  # all pair slots False
+    assert (~exp_mask[0, 3:]).all()  # all pair slots False
 
 
 # ----------------------------------------------------------------------------
@@ -204,7 +198,7 @@ def _build_real_dataset_and_batch(reactions, rmol_max_cnt=2, pmol_max_cnt=1):
     ds = GraphDataset(rmol=rmol, pmol=pmol, reaction=rxn)
     batch = collate_reaction_graphs([ds[i] for i in range(len(reactions))])
     rmols = list(batch[:rmol_max_cnt])
-    pmols = list(batch[rmol_max_cnt : rmol_max_cnt + pmol_max_cnt])
+    pmols = list(batch[rmol_max_cnt:rmol_max_cnt + pmol_max_cnt])
     r_dummy = batch[-4]
     p_dummy = batch[-3]
     labels = batch[-2]

@@ -16,12 +16,9 @@ import copy
 import json
 import logging
 import os
-import shutil
-import sys
 import tempfile
-import time
 import traceback
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -376,7 +373,7 @@ def build_grid_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main():  # noqa: C901 - pre-existing runner orchestration
     parser = build_grid_parser()
     args = parser.parse_args()
 
