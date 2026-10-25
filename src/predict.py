@@ -4,6 +4,7 @@ import torch
 from tqdm import tqdm
 from reaction_data import get_graph_data
 from data import GraphDataset
+from recipe import target_scaler_from_checkpoint
 from utils import collate_reaction_graphs
 from model import model
 from typing import List, Optional, Tuple
@@ -123,4 +124,12 @@ def predict(
                 rmol, pmol, r_dummy, p_dummy, device
             )  # prediction: pred, emb
             prediction_list.append(prediction)
+
+    # Checkpoints trained on z-scored targets store the training mean/std; old
+    # checkpoints have no "target_scaler" key and keep their raw predictions.
+    y_mean, y_std = target_scaler_from_checkpoint(checkpoint)
+    if y_mean != 0.0 or y_std != 1.0:
+        prediction_list = [
+            (pred * y_std + y_mean, emb) for pred, emb in prediction_list
+        ]
     return prediction_list

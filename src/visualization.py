@@ -29,6 +29,13 @@ METRIC_LABELS = {
     "pearson": "Pearson r",
 }
 
+LOSS_LABELS = {"huber": "Huber loss", "mse": "MSE loss"}
+
+
+def set_loss_label(loss_name: str) -> None:
+    """Makes the loss curve label follow the configured loss (huber/mse)."""
+    METRIC_LABELS["loss"] = LOSS_LABELS.get(loss_name, METRIC_LABELS["loss"])
+
 
 def init_history() -> dict:
     """

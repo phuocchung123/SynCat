@@ -912,16 +912,19 @@ def train_split(args, split_id: int, run_dir: str, logger):
                 % (len(preds), len(sample_ids))
             )
 
-        val_metrics, test_metrics = result["val_metrics"], result["test_metrics"]
+        val_metrics = result.get("val_metrics")
+        test_metrics = result["test_metrics"]
         row.update(
             {
                 "status": "success",
                 "best_epoch": result["best_epoch"],
-                "val_loss": result["val_loss"],
-                "val_mae": val_metrics["mae"],
-                "val_rmse": val_metrics["rmse"],
-                "val_r2": val_metrics["r2"],
-                "val_pearson": val_metrics["pearson"],
+                "val_loss": result.get("val_loss"),
+                "val_mae": None if val_metrics is None else val_metrics["mae"],
+                "val_rmse": None if val_metrics is None else val_metrics["rmse"],
+                "val_r2": None if val_metrics is None else val_metrics["r2"],
+                "val_pearson": None
+                if val_metrics is None
+                else val_metrics["pearson"],
                 "test_mae": test_metrics["mae"],
                 "test_rmse": test_metrics["rmse"],
                 "test_r2": test_metrics["r2"],

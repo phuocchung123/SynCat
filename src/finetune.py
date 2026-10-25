@@ -5,13 +5,19 @@ import torch
 import numpy as np
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from data import GraphDataset
+from data import ConcatGraphDataset, GraphDataset
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from model import model
+from recipe import (
+    build_loss_fn,
+    target_scaler_from_checkpoint,
+    target_upper_bound,
+    validate_recipe_args,
+)
 from training import train
-from validation import validation
+from validation import evaluate_test_predictions, validation
 from multi_gpu import init_process_group, resolve_gpu_ids, set_launch_env
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from visualization import plot_parity
@@ -97,6 +103,36 @@ def _build_model(args, node_dim, edge_dim):
     )
 
 
+def _training_dataset(args, folder):
+    """
+    The training dataset: train.npz, plus valid.npz when
+    `--merge_valid_into_train` is set (the full 70% split).
+    """
+    parts = [GraphDataset(folder + "train.npz")]
+    if getattr(args, "merge_valid_into_train", False):
+        parts.append(GraphDataset(folder + "valid.npz"))
+    if len(parts) == 1:
+        return parts[0]
+    return ConcatGraphDataset(parts)
+
+
+def _make_train_loader(dataset, args):
+    """Training loader; batches are reshuffled every epoch with --shuffle_train."""
+    return DataLoader(
+        dataset=dataset,
+        batch_size=int(np.min([args.batch_size, len(dataset)])),
+        shuffle=bool(getattr(args, "shuffle_train", False)),
+        collate_fn=collate_reaction_graphs,
+        num_workers=args.num_workers,
+        drop_last=True,
+    )
+
+
+def _checkpoint_scheduler_type(checkpoint):
+    """Scheduler type of a checkpoint; old checkpoints used the plateau."""
+    return checkpoint.get("scheduler_type", "plateau")
+
+
 def _ddp_train_worker(rank, args, gpus, model_path, resume):
     """
     One DistributedDataParallel training process, pinned to GPU `gpus[rank]`.
@@ -113,9 +149,14 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         set_seed(args.seed)
         torch.cuda.manual_seed_all(args.seed)
         folder = args.Data_folder + args.npz_folder + "/"
-        train_set = GraphDataset(folder + "train.npz")
+        train_set = _training_dataset(args, folder)
         sampler = DistributedSampler(
-            train_set, num_replicas=world_size, rank=rank, shuffle=False, drop_last=True
+            train_set,
+            num_replicas=world_size,
+            rank=rank,
+            shuffle=bool(getattr(args, "shuffle_train", False)),
+            seed=args.seed,
+            drop_last=True,
         )
         # every rank must run the same number of steps, hence drop_last
         train_loader = DataLoader(
@@ -128,14 +169,15 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         )
         val_loader = test_loader = None
         if rank == 0:
-            val_set = GraphDataset(folder + "valid.npz")
-            val_loader = DataLoader(
-                dataset=val_set,
-                batch_size=int(np.min([args.batch_size, len(val_set)])),
-                shuffle=False,
-                collate_fn=collate_reaction_graphs,
-                num_workers=args.num_workers,
-            )
+            if not getattr(args, "merge_valid_into_train", False):
+                val_set = GraphDataset(folder + "valid.npz")
+                val_loader = DataLoader(
+                    dataset=val_set,
+                    batch_size=int(np.min([args.batch_size, len(val_set)])),
+                    shuffle=False,
+                    collate_fn=collate_reaction_graphs,
+                    num_workers=args.num_workers,
+                )
             if args.track_test_each_epoch:
                 test_set = GraphDataset(folder + "test.npz")
                 test_loader = DataLoader(
@@ -150,12 +192,16 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
         edge_dim = train_set.rmol_edge_attr[0].shape[1]
         net = _build_model(args, node_dim, edge_dim).to(device)
         current_epoch, best_val_loss = 0, 1e10
-        scheduler_state = None
+        scheduler_state, scheduler_type = None, None
         if resume:
             checkpoint = torch.load(model_path, weights_only=False, map_location=device)
             _load_checkpoint_safely(net, checkpoint, setup_logging())
-            current_epoch, best_val_loss = checkpoint["epoch"], checkpoint["val_loss"]
+            current_epoch = checkpoint["epoch"]
+            best_val_loss = checkpoint.get("val_loss")
+            if best_val_loss is None:
+                best_val_loss = 1e10
             scheduler_state = checkpoint.get("scheduler_state_dict")
+            scheduler_type = _checkpoint_scheduler_type(checkpoint)
         net = DistributedDataParallel(net, device_ids=[device.index])
         train(
             args,
@@ -171,6 +217,7 @@ def _ddp_train_worker(rank, args, gpus, model_path, resume):
             best_val_loss=best_val_loss,
             scheduler_state=scheduler_state,
             test_loader=test_loader,
+            scheduler_type=scheduler_type,
         )
     finally:
         dist.destroy_process_group()
@@ -203,9 +250,12 @@ def finetune(args, save_embedding: bool = True) -> dict:
         Selected epoch ("best_epoch"), validation loss/metrics of the selected
         checkpoint ("val_loss", "val_metrics"), test metrics ("test_metrics"),
         per-sample test labels/predictions in test-set order ("test_labels",
-        "test_preds"), subset sizes ("n_train", "n_valid", "n_test") and
-        runtimes in seconds ("train_runtime_sec", "eval_runtime_sec").
+        "test_preds"), deterministic test metrics ("test_metrics_det"), subset
+        sizes ("n_train", "n_valid", "n_test") and runtimes in seconds
+        ("train_runtime_sec", "eval_runtime_sec"). ``val_metrics``/``val_loss``
+        are None when the validation set was merged into training.
     """
+    validate_recipe_args(args)
     logger = setup_logging(log_filename=args.monitor_folder + "monitor.log")
     model_path = args.model_path + args.model_name
     gpus = resolve_gpu_ids(args)
@@ -219,17 +269,11 @@ def finetune(args, save_embedding: bool = True) -> dict:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    train_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "train.npz")
-    train_loader = DataLoader(
-        dataset=train_set,
-        batch_size=int(np.min([args.batch_size, len(train_set)])),
-        shuffle=False,
-        collate_fn=collate_reaction_graphs,
-        num_workers=args.num_workers,
-        drop_last=True,
-    )
+    folder = args.Data_folder + args.npz_folder + "/"
+    train_set = _training_dataset(args, folder)
+    train_loader = _make_train_loader(train_set, args)
 
-    test_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "test.npz")
+    test_set = GraphDataset(folder + "test.npz")
     test_loader = DataLoader(
         dataset=test_set,
         batch_size=int(np.min([args.batch_size, len(test_set)])),
@@ -239,27 +283,53 @@ def finetune(args, save_embedding: bool = True) -> dict:
         drop_last=False,
     )
 
-    val_set = GraphDataset(args.Data_folder + args.npz_folder + "/" + "valid.npz")
-    val_loader = DataLoader(
-        dataset=val_set,
-        batch_size=int(np.min([args.batch_size, len(val_set)])),
-        shuffle=False,
-        collate_fn=collate_reaction_graphs,
-        num_workers=args.num_workers,
-        drop_last=False,
-    )
+    val_set = val_loader = None
+    if not getattr(args, "merge_valid_into_train", False):
+        val_set = GraphDataset(folder + "valid.npz")
+        val_loader = DataLoader(
+            dataset=val_set,
+            batch_size=int(np.min([args.batch_size, len(val_set)])),
+            shuffle=False,
+            collate_fn=collate_reaction_graphs,
+            num_workers=args.num_workers,
+            drop_last=False,
+        )
 
     logger.info("-- CONFIGURATIONS")
     logger.info(
-        "--- train/valid/test: %d/%d/%d" % (len(train_set), len(val_set), len(test_set))
+        "--- train/valid/test: %d/%d/%d"
+        % (len(train_set), len(val_set) if val_set is not None else 0, len(test_set))
     )
     logger.info(
         "--- max no. reactants_train, valid, test respectively: %d, %d, %d"
-        % (train_set.rmol_max_cnt, val_set.rmol_max_cnt, test_set.rmol_max_cnt)
+        % (
+            train_set.rmol_max_cnt,
+            val_set.rmol_max_cnt if val_set is not None else train_set.rmol_max_cnt,
+            test_set.rmol_max_cnt,
+        )
     )
     logger.info(
         "--- max no. products_train, valid, test respectively: %d, %d, %d"
-        % (train_set.pmol_max_cnt, val_set.pmol_max_cnt, test_set.pmol_max_cnt)
+        % (
+            train_set.pmol_max_cnt,
+            val_set.pmol_max_cnt if val_set is not None else train_set.pmol_max_cnt,
+            test_set.pmol_max_cnt,
+        )
+    )
+    logger.info(
+        "--- recipe: loss=%s, target_scaling=%s, lr_scheduler=%s, shuffle_train=%s, "
+        "merge_valid_into_train=%s, checkpoint_select=%s, mc_dropout_passes=%d, "
+        "clip_predictions=%s"
+        % (
+            getattr(args, "loss", "huber"),
+            getattr(args, "target_scaling", "none"),
+            getattr(args, "lr_scheduler", "plateau"),
+            bool(getattr(args, "shuffle_train", False)),
+            bool(getattr(args, "merge_valid_into_train", False)),
+            getattr(args, "checkpoint_select", "best_val"),
+            int(getattr(args, "mc_dropout_passes", 0)),
+            bool(getattr(args, "clip_predictions", False)),
+        )
     )
     logger.info("--- model_path: %s" % model_path)
     monitor_test_loader = test_loader if args.track_test_each_epoch else None
@@ -284,14 +354,18 @@ def finetune(args, save_embedding: bool = True) -> dict:
     else:
         net = _build_model(args, node_dim, edge_dim).to(device)
         current_epoch, best_val_loss = 0, 1e10
-        scheduler_state = None
+        scheduler_state, scheduler_type = None, None
         if not resume:
             logger.info("-- TRAINING")
         else:
             checkpoint = torch.load(model_path, weights_only=False, map_location=device)
             _load_checkpoint_safely(net, checkpoint, logger)
-            current_epoch, best_val_loss = checkpoint["epoch"], checkpoint["val_loss"]
+            current_epoch = checkpoint["epoch"]
+            best_val_loss = checkpoint.get("val_loss")
+            if best_val_loss is None:
+                best_val_loss = 1e10
             scheduler_state = checkpoint.get("scheduler_state_dict")
+            scheduler_type = _checkpoint_scheduler_type(checkpoint)
         train(
             args,
             net,
@@ -306,6 +380,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
             best_val_loss=best_val_loss,
             scheduler_state=scheduler_state,
             test_loader=monitor_test_loader,
+            scheduler_type=scheduler_type,
         )
 
     train_runtime = time.time() - train_start
@@ -315,7 +390,7 @@ def finetune(args, save_embedding: bool = True) -> dict:
             "loss never improved, e.g. because it was NaN)" % model_path
         )
 
-    # model selection: reload the best-validation checkpoint
+    # model selection: reload the selected checkpoint
     test_y = test_loader.dataset.y
     checkpoint = torch.load(model_path, weights_only=False, map_location=device)
     if "model_config" in checkpoint:
@@ -323,19 +398,40 @@ def finetune(args, save_embedding: bool = True) -> dict:
     else:  # checkpoint saved before the config was stored
         net = _build_model(args, node_dim, edge_dim).to(device)
     net.load_state_dict(checkpoint["model_state_dict"])
-    val_metrics, val_loss = validation(
-        args, net, val_loader, device, torch.nn.HuberLoss()
-    )
-    logger.info(
-        "--- selected checkpoint from epoch %d, val_loss %.4f, val_mae %.4f, val_rmse %.4f"
-        % (checkpoint["epoch"], val_loss, val_metrics["mae"], val_metrics["rmse"])
-    )
+    y_mean, y_std = target_scaler_from_checkpoint(checkpoint)
+    loss_fn = build_loss_fn(args)
+
+    val_metrics, val_loss = None, None
+    if val_loader is not None:
+        val_metrics, val_loss = validation(
+            args, net, val_loader, device, loss_fn, y_mean, y_std
+        )
+        logger.info(
+            "--- selected checkpoint from epoch %d, val_loss %.4f, val_mae %.4f, "
+            "val_rmse %.4f"
+            % (checkpoint["epoch"], val_loss, val_metrics["mae"], val_metrics["rmse"])
+        )
+    else:
+        logger.info(
+            "--- selected checkpoint from epoch %d (no validation set: "
+            "valid.npz was merged into training)" % checkpoint["epoch"]
+        )
 
     # test: the selected model is evaluated exactly once
     eval_start = time.time()
-    metrics, rsmis, test_labels, test_preds, emb = validation(
-        args, net, test_loader, device
+    y_max = (
+        target_upper_bound(train_loader.dataset.y)
+        if getattr(args, "clip_predictions", False)
+        else None
     )
+    evaluation = evaluate_test_predictions(
+        args, net, test_loader, device, y_mean=y_mean, y_std=y_std, y_max=y_max
+    )
+    metrics = evaluation["metrics"]
+    test_metrics_det = evaluation["det_metrics"]
+    rsmis, test_labels = evaluation["rsmis"], evaluation["labels"]
+    test_preds, test_preds_det = evaluation["preds"], evaluation["det_preds"]
+    emb = evaluation["emb"]
     eval_runtime = time.time() - eval_start
     plot_parity(
         test_labels,
@@ -371,6 +467,31 @@ def finetune(args, save_embedding: bool = True) -> dict:
             )
         )
 
+    if getattr(args, "mc_dropout_passes", 0) > 0 or getattr(
+        args, "clip_predictions", False
+    ):
+        logger.info(
+            "--- test (deterministic, unclipped): MAE %.4f, RMSE %.4f, R2 %s"
+            % (
+                test_metrics_det["mae"],
+                test_metrics_det["rmse"],
+                "n/a"
+                if test_metrics_det["r2"] is None
+                else "%.4f" % test_metrics_det["r2"],
+            )
+        )
+        logger.info(
+            "--- test (headline: %d MC-dropout passes, clip=%s): MAE %.4f, "
+            "RMSE %.4f, R2 %s"
+            % (
+                int(getattr(args, "mc_dropout_passes", 0)),
+                bool(getattr(args, "clip_predictions", False)),
+                metrics["mae"],
+                metrics["rmse"],
+                "n/a" if metrics["r2"] is None else "%.4f" % metrics["r2"],
+            )
+        )
+
     if save_embedding:
         dict_emb = {
             "Name": "Embedding",
@@ -382,13 +503,15 @@ def finetune(args, save_embedding: bool = True) -> dict:
 
     return {
         "best_epoch": int(checkpoint["epoch"]),
-        "val_loss": float(val_loss),
+        "val_loss": None if val_loss is None else float(val_loss),
         "val_metrics": val_metrics,
         "test_metrics": metrics,
+        "test_metrics_det": test_metrics_det,
         "test_labels": test_labels,
         "test_preds": test_preds,
+        "test_preds_det": test_preds_det,
         "n_train": len(train_set),
-        "n_valid": len(val_set),
+        "n_valid": 0 if val_set is None else len(val_set),
         "n_test": len(test_set),
         "train_runtime_sec": train_runtime,
         "eval_runtime_sec": eval_runtime,
