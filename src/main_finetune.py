@@ -10,6 +10,7 @@ from model import (
     REACTANT_TOKENS,
     REACTION_COMBINE_DIMS,
 )
+from recipe import validate_recipe_args
 from utils import configure_warnings_and_logs, set_seed, setup_logging
 
 configure_warnings_and_logs(ignore_warnings=True, disable_rdkit_logs=True)
@@ -109,7 +110,76 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--emb_dim", type=int, default=384)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument(
+        "--lr_scheduler",
+        type=str,
+        default="plateau",
+        choices=["plateau", "multistep", "none"],
+        help="learning-rate schedule: 'plateau' reduces the learning rate when "
+        "the validation loss plateaus (default); 'multistep' multiplies it by "
+        "--lr_gamma at each --lr_milestones epoch; 'none' keeps --lr constant",
+    )
+    parser.add_argument(
+        "--lr_milestones",
+        type=int,
+        nargs="+",
+        default=[400, 450],
+        help="epochs at which --lr_scheduler multistep decays the learning rate",
+    )
+    parser.add_argument(
+        "--lr_gamma", type=float, default=0.1,
+        help="decay factor of --lr_scheduler multistep",
+    )
     parser.add_argument("--weight_decay", type=float, default=1e-4)
+    parser.add_argument(
+        "--shuffle_train",
+        action="store_true",
+        help="reshuffle the training batches every epoch (default: keep the "
+        "npz order)",
+    )
+    parser.add_argument(
+        "--target_scaling",
+        type=str,
+        default="none",
+        choices=["none", "zscore"],
+        help="target preprocessing: 'none' trains on raw yields (default); "
+        "'zscore' standardizes them with the training mean/std (metrics and "
+        "predictions are still reported in the original units)",
+    )
+    parser.add_argument(
+        "--loss",
+        type=str,
+        default="huber",
+        choices=["huber", "mse"],
+        help="regression loss on the (possibly standardized) targets",
+    )
+    parser.add_argument(
+        "--checkpoint_select",
+        type=str,
+        default="best_val",
+        choices=["best_val", "last"],
+        help="checkpoint to evaluate: 'best_val' keeps the epoch with the lowest "
+        "validation loss (default); 'last' overwrites the checkpoint every epoch",
+    )
+    parser.add_argument(
+        "--merge_valid_into_train",
+        action="store_true",
+        help="train on train.npz + valid.npz (the full 70%% split); requires "
+        "--checkpoint_select last and --lr_scheduler multistep or none",
+    )
+    parser.add_argument(
+        "--mc_dropout_passes",
+        type=int,
+        default=0,
+        help="MC-dropout forward passes for the final test evaluation "
+        "(0 = one deterministic pass)",
+    )
+    parser.add_argument(
+        "--clip_predictions",
+        action="store_true",
+        help="clip the final test predictions to [0, 100] for percent targets "
+        "or [0, 1] for fraction targets",
+    )
     parser.add_argument("--monitor_folder", type=str, default="../Data/monitor/")
     parser.add_argument("--image_folder", type=str, default="../Image/")
     parser.add_argument("--Data_folder", type=str, default="../Data/")
@@ -216,6 +286,11 @@ if __name__ == "__main__":
             "--num_heads (%d) must be a positive divisor of --emb_dim (%d)"
             % (args.num_heads, args.emb_dim)
         )
+
+    try:
+        validate_recipe_args(args)
+    except ValueError as error:
+        arg_parser.error(str(error))
 
     if args.prepare_only and args.stage is not None:
         arg_parser.error("--prepare_only cannot be combined with --stage")

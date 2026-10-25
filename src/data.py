@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from torch.utils.data import ConcatDataset
 from torch_geometric.data import Data
 from typing import Any, Tuple, Dict
 
@@ -187,3 +188,44 @@ class GraphDataset:
             Number of reaction samples.
         """
         return self.y.shape[0]
+
+
+class ConcatGraphDataset(ConcatDataset):
+    """
+    Concatenation of `GraphDataset` parts (e.g. train.npz + valid.npz).
+
+    Exposes the attributes the training and evaluation code reads from a plain
+    `GraphDataset`: the reactant/product slot counts, the node/edge feature
+    arrays used to size the model, and the concatenated targets/reactions. The
+    graph arrays themselves are read through the parts by `ConcatDataset`.
+    """
+
+    def __init__(self, datasets) -> None:
+        super().__init__(list(datasets))
+        if not self.datasets:
+            raise ValueError("ConcatGraphDataset needs at least one dataset")
+        first = self.datasets[0]
+        for part in self.datasets[1:]:
+            if (
+                part.rmol_max_cnt != first.rmol_max_cnt
+                or part.pmol_max_cnt != first.pmol_max_cnt
+            ):
+                raise ValueError(
+                    "Cannot concatenate datasets with different molecule slot "
+                    "counts: %s vs %s"
+                    % (
+                        (first.rmol_max_cnt, first.pmol_max_cnt),
+                        (part.rmol_max_cnt, part.pmol_max_cnt),
+                    )
+                )
+        if len({part.rmol_node_attr[0].shape[1] for part in self.datasets}) != 1:
+            raise ValueError("Cannot concatenate datasets with different node features")
+        if len({part.rmol_edge_attr[0].shape[1] for part in self.datasets}) != 1:
+            raise ValueError("Cannot concatenate datasets with different edge features")
+
+        self.rmol_max_cnt = first.rmol_max_cnt
+        self.pmol_max_cnt = first.pmol_max_cnt
+        self.rmol_node_attr = first.rmol_node_attr
+        self.rmol_edge_attr = first.rmol_edge_attr
+        self.y = np.concatenate([np.asarray(part.y) for part in self.datasets])
+        self.rsmi = [smi for part in self.datasets for smi in part.rsmi]
