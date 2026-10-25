@@ -20,6 +20,17 @@ grouped into named approaches:
     approach_3 comb/reactants/mean/linear
     unlabeled  the remaining cells (still run)
 
+`--cells report16` selects the 16 cells of the original report (the mean/rn
+pooling cells; the sum-pooling cells were added later):
+    G1  ind-reactants-mean-linear   G2  ind-reactants-mean-mlp
+    G3  ind-none-mean-linear        G4  ind-none-mean-mlp
+    G5  ind-none-rn-linear          G6  ind-none-rn-mlp
+    G7  ind-reactants-rn-linear     G8  ind-reactants-rn-mlp
+    G9  comb-reactants-mean-linear  G10 comb-reactants-mean-mlp
+    G11 comb-reactants-rn-linear    G12 comb-reactants-rn-mlp
+    G13 comb-none-mean-linear       G14 comb-none-mean-mlp
+    G15 comb-none-rn-linear         G16 comb-none-rn-mlp
+
 Supports both fast smoke testing and full cluster execution with resumption.
 """
 
@@ -39,11 +50,12 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from data import GraphDataset
+from data import ConcatGraphDataset, GraphDataset
 from finetune import _build_model, finetune
 from main_finetune import build_parser
 from model import HEADS, REACTANT_POOLINGS, REACTANT_TOKENS, model
 from multi_gpu import resolve_gpu_ids
+from recipe import target_scaler_from_checkpoint
 from utils import collate_reaction_graphs, set_seed, setup_logging
 from validation import validation
 
@@ -94,11 +106,42 @@ METRICS = [
     "test_r2",
     "test_mae",
     "test_rmse",
+    "test_r2_det",
+    "test_mae_det",
+    "test_rmse_det",
     "trainable_parameters",
     "epochs_ran",
     "train_runtime_sec",
     "seconds_per_epoch",
     "peak_gpu_memory_mb",
+]
+
+# Cells of the original report: sum pooling did not exist yet.
+REPORT16_POOLINGS = ("mean", "rn")
+
+# Four representative report cells used by the light laptop smoke test
+# (G1, G6, G10, G12: baseline, best BH cell, best BH test cell, best Suzuki cell).
+LIGHT_CELLS = (
+    "ind-reactants-mean-linear",
+    "ind-none-rn-mlp",
+    "comb-reactants-mean-mlp",
+    "comb-reactants-rn-mlp",
+)
+
+# Recipe settings copied into every result row (not part of METRICS: they are
+# configuration labels, not per-run measurements).
+RECIPE_COLUMNS = [
+    "epochs",
+    "loss",
+    "target_scaling",
+    "lr_scheduler",
+    "lr_milestones",
+    "weight_decay",
+    "shuffle_train",
+    "merge_valid_into_train",
+    "checkpoint_select",
+    "mc_dropout_passes",
+    "clip_predictions",
 ]
 
 
@@ -212,6 +255,60 @@ def _prepare_smoke_data(
     return splits
 
 
+def _new_row(
+    base_args: argparse.Namespace,
+    dataset_name: str,
+    split_name: str,
+    split_kind: str,
+    cell: dict,
+) -> dict:
+    """Empty result row, including the recipe settings of this run."""
+    return {
+        "dataset": dataset_name,
+        "split": split_name,
+        "split_kind": split_kind,
+        "cell": cell["label"],
+        "approach": cell.get("approach", ""),
+        "reactant_tokens": cell["reactant_tokens"],
+        "attention_on": cell["attention_on"],
+        "reactant_pooling": cell["reactant_pooling"],
+        "head": cell["head"],
+        "seed": base_args.seed,
+        "n_train": None,
+        "epochs": base_args.epochs,
+        "loss": getattr(base_args, "loss", "huber"),
+        "target_scaling": getattr(base_args, "target_scaling", "none"),
+        "lr_scheduler": getattr(base_args, "lr_scheduler", "plateau"),
+        "lr_milestones": " ".join(
+            str(m) for m in getattr(base_args, "lr_milestones", [400, 450])
+        ),
+        "weight_decay": base_args.weight_decay,
+        "shuffle_train": bool(getattr(base_args, "shuffle_train", False)),
+        "merge_valid_into_train": bool(
+            getattr(base_args, "merge_valid_into_train", False)
+        ),
+        "checkpoint_select": getattr(base_args, "checkpoint_select", "best_val"),
+        "mc_dropout_passes": int(getattr(base_args, "mc_dropout_passes", 0)),
+        "clip_predictions": bool(getattr(base_args, "clip_predictions", False)),
+        "train_r2": None,
+        "train_mae": None,
+        "train_rmse": None,
+        "test_r2": None,
+        "test_mae": None,
+        "test_rmse": None,
+        "test_r2_det": None,
+        "test_mae_det": None,
+        "test_rmse_det": None,
+        "trainable_parameters": None,
+        "epochs_ran": None,
+        "train_runtime_sec": None,
+        "seconds_per_epoch": None,
+        "peak_gpu_memory_mb": None,
+        "status": "failed",
+        "error": "",
+    }
+
+
 def run_cell(
     base_args: argparse.Namespace,
     dataset_name: str,
@@ -224,31 +321,7 @@ def run_cell(
     logger: logging.Logger,
 ) -> dict:
     """Runs a single cell of the experiment grid."""
-    row = {
-        "dataset": dataset_name,
-        "split": split_name,
-        "split_kind": split_kind,
-        "cell": cell["label"],
-        "approach": cell.get("approach", ""),
-        "reactant_tokens": cell["reactant_tokens"],
-        "attention_on": cell["attention_on"],
-        "reactant_pooling": cell["reactant_pooling"],
-        "head": cell["head"],
-        "seed": base_args.seed,
-        "train_r2": None,
-        "train_mae": None,
-        "train_rmse": None,
-        "test_r2": None,
-        "test_mae": None,
-        "test_rmse": None,
-        "trainable_parameters": None,
-        "epochs_ran": None,
-        "train_runtime_sec": None,
-        "seconds_per_epoch": None,
-        "peak_gpu_memory_mb": None,
-        "status": "failed",
-        "error": "",
-    }
+    row = _new_row(base_args, dataset_name, split_name, split_kind, cell)
 
     checkpoint_file = os.path.join(run_dir, "model.pt")
     if os.path.exists(checkpoint_file):
@@ -302,11 +375,16 @@ def run_cell(
                 log_filename=os.path.join(base_args.output_dir, "grid.log")
             )
 
+        # Evaluate on the data actually trained on (train + valid when merged).
         train_set = GraphDataset(os.path.join(npz_dir, "train.npz"))
+        if getattr(run_opts, "merge_valid_into_train", False):
+            train_set = ConcatGraphDataset(
+                [train_set, GraphDataset(os.path.join(npz_dir, "valid.npz"))]
+            )
         node_dim = train_set.rmol_node_attr[0].shape[1]
         edge_dim = train_set.rmol_edge_attr[0].shape[1]
 
-        # Reload best checkpoint to evaluate on complete train set
+        # Reload the selected checkpoint to evaluate on the complete train set
         checkpoint = torch.load(checkpoint_file, map_location=device, weights_only=False)
         if "model_config" in checkpoint:
             eval_net = model.from_config(checkpoint["model_config"]).to(device)
@@ -314,6 +392,7 @@ def run_cell(
             eval_net = _build_model(run_opts, node_dim, edge_dim).to(device)
         eval_net.load_state_dict(checkpoint["model_state_dict"])
         eval_net.eval()
+        y_mean, y_std = target_scaler_from_checkpoint(checkpoint)
 
         trainable_params = sum(
             p.numel() for p in eval_net.parameters() if p.requires_grad
@@ -327,7 +406,8 @@ def run_cell(
             num_workers=run_opts.num_workers,
         )
         train_res = validation(
-            run_opts, eval_net, train_loader, device, loss_fn=None
+            run_opts, eval_net, train_loader, device, loss_fn=None,
+            y_mean=y_mean, y_std=y_std,
         )
         train_metrics = train_res[0] if isinstance(train_res, tuple) else train_res
 
@@ -355,15 +435,20 @@ def run_cell(
         sec_per_epoch = train_runtime / epochs_ran if epochs_ran > 0 else 0.0
 
         test_m = result["test_metrics"]
+        test_det = result.get("test_metrics_det", test_m)
         row.update(
             {
                 "status": "success",
+                "n_train": len(train_set),
                 "train_r2": train_metrics.get("r2"),
                 "train_mae": train_metrics.get("mae"),
                 "train_rmse": train_metrics.get("rmse"),
                 "test_r2": test_m.get("r2"),
                 "test_mae": test_m.get("mae"),
                 "test_rmse": test_m.get("rmse"),
+                "test_r2_det": test_det.get("r2"),
+                "test_mae_det": test_det.get("mae"),
+                "test_rmse_det": test_det.get("rmse"),
                 "trainable_parameters": trainable_params,
                 "epochs_ran": epochs_ran,
                 "train_runtime_sec": train_runtime,
@@ -435,6 +520,27 @@ def _resolve_data_folder(data_folder: str) -> str:
     return data_folder
 
 
+def _bh_split_names(args: argparse.Namespace) -> List[str]:
+    """BH split folder names selected by --bh_splits or --cv_ids/--test_ids."""
+    if args.bh_splits is not None:
+        return list(args.bh_splits)
+    names = []
+    for cv_id in args.cv_ids:
+        for column in args.split_columns:
+            suffix = column.replace("split_", "").replace(".", "_")
+            names.append("fullcv%02d_split%s" % (cv_id, suffix))
+    for test_id in args.test_ids:
+        names.append("test%d" % test_id)
+    return names
+
+
+def _suzuki_split_names(args: argparse.Namespace) -> List[str]:
+    """Suzuki split folder names selected by --suzuki_splits or --split_ids."""
+    if args.suzuki_splits is not None:
+        return list(args.suzuki_splits)
+    return ["split_%d" % i for i in args.split_ids]
+
+
 def _resolve_eval_datasets(
     args: argparse.Namespace,
     temp_splits: Optional[Dict[str, str]] = None,
@@ -461,27 +567,13 @@ def _resolve_eval_datasets(
         return eval_datasets
 
     if args.datasets in ("bh", "all"):
-        if args.bh_splits is not None:
-            bh_splits_to_run = args.bh_splits
-        else:
-            bh_splits_to_run = []
-            for cv_id in args.cv_ids:
-                for column in args.split_columns:
-                    suffix = column.replace("split_", "").replace(".", "_")
-                    bh_splits_to_run.append("fullcv%02d_split%s" % (cv_id, suffix))
-            for test_id in args.test_ids:
-                bh_splits_to_run.append("test%d" % test_id)
-        for s in bh_splits_to_run:
+        for s in _bh_split_names(args):
             npz_dir = os.path.join(args.Data_folder, "npz", "bh", s)
             split_kind = "test" if s.startswith("test") else "cv"
             eval_datasets.append(("bh", s, split_kind, npz_dir, "rxn", "Output"))
 
     if args.datasets in ("suzuki", "all"):
-        if args.suzuki_splits is not None:
-            suzuki_splits_to_run = args.suzuki_splits
-        else:
-            suzuki_splits_to_run = ["split_%d" % i for i in args.split_ids]
-        for s in suzuki_splits_to_run:
+        for s in _suzuki_split_names(args):
             npz_dir = os.path.join(args.Data_folder, "processed", "suzuki", "npz", s)
             eval_datasets.append(("suzuki", s, "cv", npz_dir, "rxn", "y"))
 
@@ -531,6 +623,16 @@ def build_grid_parser() -> argparse.ArgumentParser:
         "1 Suzuki split, 2 epochs)",
     )
     parser.add_argument(
+        "--smoke_profile",
+        type=str,
+        default="full",
+        choices=["full", "light"],
+        help="with --smoke: 'full' runs every selected cell on BH CV, BH test1 "
+        "and Suzuki; 'light' keeps four representative cells (G1, G6, G10, "
+        "G12), drops the BH test set, caps MC dropout at 3 passes and respects "
+        "--epochs 1, so it finishes quickly on a laptop",
+    )
+    parser.add_argument(
         "--datasets",
         type=str,
         default="all",
@@ -577,8 +679,9 @@ def build_grid_parser() -> argparse.ArgumentParser:
         type=str,
         nargs="*",
         default=["all"],
-        help="which cells to run: 'all', any cell label "
-        "(e.g. comb-reactants-rn-mlp), or any approach name (e.g. approach_1)",
+        help="which cells to run: 'all', 'report16' (the 16 mean/rn cells of "
+        "the original report), any cell label (e.g. comb-reactants-rn-mlp), or "
+        "any approach name (e.g. approach_1)",
     )
     parser.add_argument(
         "--output_dir",
@@ -595,14 +698,65 @@ def build_grid_parser() -> argparse.ArgumentParser:
 
 
 def _select_cells(selected: List[str]) -> List[dict]:
-    """Resolves --cells (all / labels / approach names) to grid cells."""
+    """Resolves --cells (all / report16 / labels / approach names) to grid cells."""
     if "all" in selected:
         return list(CELLS)
     wanted = set(selected)
-    chosen = [c for c in CELLS if c["label"] in wanted or c["approach"] in wanted]
+    chosen = [
+        c
+        for c in CELLS
+        if c["label"] in wanted
+        or c["approach"] in wanted
+        or ("report16" in wanted and c["reactant_pooling"] in REPORT16_POOLINGS)
+    ]
     if not chosen:
         raise ValueError("no grid cell matches --cells %s" % selected)
     return chosen
+
+
+def _light_smoke_cells(cells: List[dict]) -> List[dict]:
+    """Keeps the light-profile cells, or the first selected cells if none match."""
+    light = [c for c in cells if c["label"] in LIGHT_CELLS]
+    return light or list(cells)[:2]
+
+
+def _configure_smoke(args, active_cells, logger):
+    """Creates tiny smoke data and shrinks the run; returns (temp_dir, splits, cells)."""
+    logger.info("Setting up smoke test configuration...")
+    temp_dir_obj = tempfile.TemporaryDirectory()
+    temp_splits = _prepare_smoke_data(
+        args.Data_folder,
+        "fullcv01_split70",
+        "split_0",
+        temp_dir_obj.name,
+        datasets=args.datasets,
+    )
+    # Override parameters for fast smoke execution. Keep a user-requested
+    # shorter run (--epochs 1) in the light profile.
+    requested_epochs = args.epochs
+    args.epochs = 2
+    args.batch_size = 8
+    args.num_workers = 0
+    args.layer = 1
+    args.emb_dim = 32
+    if args.smoke_profile == "light":
+        args.epochs = min(requested_epochs, 2)
+        active_cells = _light_smoke_cells(active_cells)
+        # 500-epoch milestones would never fire in a two-epoch smoke.
+        args.lr_milestones = [1]
+        if args.mc_dropout_passes > 0:
+            args.mc_dropout_passes = min(args.mc_dropout_passes, 3)
+        logger.info(
+            "--- light smoke profile: %d cells, MC passes %d, no BH test set"
+            % (len(active_cells), args.mc_dropout_passes)
+        )
+    return temp_dir_obj, temp_splits, active_cells
+
+
+def _keep_light_datasets(eval_datasets):
+    """Drops the BH test set from the light smoke run, if something remains."""
+    cv_only = [item for item in eval_datasets if item[2] != "test"]
+    return cv_only or eval_datasets
 
 
 def main():
@@ -637,23 +791,13 @@ def main():
     try:
         temp_splits = None
         if args.smoke:
-            logger.info("Setting up smoke test configuration...")
-            temp_dir_obj = tempfile.TemporaryDirectory()
-            temp_splits = _prepare_smoke_data(
-                args.Data_folder,
-                "fullcv01_split70",
-                "split_0",
-                temp_dir_obj.name,
-                datasets=args.datasets,
+            temp_dir_obj, temp_splits, active_cells = _configure_smoke(
+                args, active_cells, logger
             )
-            # Override parameters for fast smoke execution
-            args.epochs = 2
-            args.batch_size = 8
-            args.num_workers = 0
-            args.layer = 1
-            args.emb_dim = 32
 
         eval_datasets = _resolve_eval_datasets(args, temp_splits)
+        if args.smoke and args.smoke_profile == "light":
+            eval_datasets = _keep_light_datasets(eval_datasets)
         results = _load_existing_results(per_split_csv)
 
         for dataset_name, split_name, split_kind, npz_dir, rxn_col, y_col in eval_datasets:
