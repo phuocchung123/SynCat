@@ -218,6 +218,17 @@ MODE=suzuki_g1_8 sbatch slurm/grid_step1.sbatch    # 80 runs
 MODE=suzuki_g9_16 sbatch slurm/grid_step1.sbatch   # 80 runs
 ```
 
+To run **all 384 runs in one submission** on a 4-GPU node:
+
+```bash
+sbatch slurm/grid_step1_all.sbatch
+```
+
+That job starts four streams in parallel (BH G1–G8, BH G9–G16, Suzuki G1–G8,
+Suzuki G9–G16), one per GPU, and writes the same four output folders used by
+the separate jobs. If your cluster only has 1-GPU nodes, use the four `MODE=...`
+jobs instead.
+
 Set `DRY_RUN=1` to print the resolved command without using a GPU. Resubmitting
 the same command resumes: successful `(dataset, split, cell)` rows are skipped.
 
