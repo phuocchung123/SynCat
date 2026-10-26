@@ -3,43 +3,35 @@
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
-#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --gres=gpu:1
 #SBATCH --time=3-00:00:00
 #SBATCH --requeue
 #SBATCH --open-mode=append
 #SBATCH --output=slurm/logs/syncat-step1-all-%j.out
 #SBATCH --error=slurm/logs/syncat-step1-all-%j.err
 
-# Run the COMPLETE step-1 grid (384 runs) in ONE Slurm job on 4 GPUs.
+# Run the COMPLETE step-1 grid (384 runs) sequentially on ONE GPU, like
+# slurm/grid_all.sbatch.
 #
-# Each GPU runs one independent stream:
-#   GPU 0: BH CV + BH Tests, G1-G8      112 runs
-#   GPU 1: BH CV + BH Tests, G9-G16     112 runs
-#   GPU 2: Suzuki splits 0-9, G1-G8      80 runs
-#   GPU 3: Suzuki splits 0-9, G9-G16     80 runs
-#   total                               384 runs
+#   16 cells x (10 BH CV splits + 4 BH Tests + 10 Suzuki splits) = 384 runs
 #
 # Submit from the repository root:
 #   sbatch slurm/grid_step1_all.sbatch
 #
-# Requirements: a node with 4 GPUs (--gres=gpu:4). If your cluster only has
-# 1-GPU nodes, submit the four MODE=... jobs from slurm/grid_step1.sbatch.
+# Cost: about 100 GPU-hours (about 1.1 s/epoch on BH, 2.7 s/epoch on Suzuki).
+# On one GPU that is roughly 4-5 days. The default wall time is 3 days; Slurm
+# will stop the job at the limit. Resubmit the same command to resume:
+# successful (dataset, split, cell) rows are skipped.
 #
-# Cost: about 100 GPU-hours total, roughly 25-30 h wall time with 4 GPUs in
-# parallel. The default wall time is 3 days, so the streams fit comfortably.
-#
-# Resume: resubmit the same command. Successful (dataset, split, cell) rows in
-# each stream are skipped, so it continues where it stopped.
+# If your cluster allows a longer wall time, submit with:
+#   sbatch --time=5-00:00:00 slurm/grid_step1_all.sbatch
 #
 # Environment overrides (optional):
 #   ENV_NAME=syncat  MODULE_NAME=Miniconda3
-#   EPOCHS=500  MC_PASSES=30  WORKERS=2  BATCH_SIZE=128
-#   OUT_ROOT=../logs  DRY_RUN=1
-#
-# Example with a different output root and environment:
-#   OUT_ROOT=/scratch/me/step1 ENV_NAME=myenv sbatch slurm/grid_step1_all.sbatch
+#   OUT=../logs/grid_step1_all/  EPOCHS=500  MC_PASSES=30
+#   WORKERS=2  BATCH_SIZE=128  DRY_RUN=1
 # ---------------------------------------------------------------------------
 
 set -euo pipefail
@@ -90,90 +82,54 @@ if command -v git >/dev/null 2>&1; then
 fi
 
 # --- settings ---------------------------------------------------------------
-OUT_ROOT="${OUT_ROOT:-../logs}"
+OUT="${OUT:-../logs/grid_step1_all/}"
 EPOCHS="${EPOCHS:-500}"
 MC_PASSES="${MC_PASSES:-30}"
 WORKERS="${WORKERS:-2}"
 BATCH_SIZE="${BATCH_SIZE:-128}"
 
-export OMP_NUM_THREADS=4
-export MKL_NUM_THREADS=4
+export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
+export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
 export PYTHONUNBUFFERED=1
 export TQDM_DISABLE=1
 
-BH_G1_8_CELLS="ind-reactants-mean-linear ind-reactants-mean-mlp ind-none-mean-linear ind-none-mean-mlp ind-none-rn-linear ind-none-rn-mlp ind-reactants-rn-linear ind-reactants-rn-mlp"
-BH_G9_16_CELLS="comb-reactants-mean-linear comb-reactants-mean-mlp comb-reactants-rn-linear comb-reactants-rn-mlp comb-none-mean-linear comb-none-mean-mlp comb-none-rn-linear comb-none-rn-mlp"
+mkdir -p "$OUT"
 
-mkdir -p "$OUT_ROOT"
+# --- the full grid, one GPU, sequential ------------------------------------
+CMD=(python -u -W ignore::FutureWarning run_approach1_grid.py
+    --datasets all
+    --cv_ids 1 2 3 4 5 6 7 8 9 10
+    --test_ids 1 2 3 4
+    --split_columns split_70
+    --split_ids 0 1 2 3 4 5 6 7 8 9
+    --cells report16
+    --output_dir "$OUT"
+    --epochs "$EPOCHS" --patience 0 --batch_size "$BATCH_SIZE"
+    --lr 1e-3 --weight_decay 1e-5 --dropout 0.1
+    --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16
+    --reaction_combine concat --seed 42 --num_workers "$WORKERS"
+    --shuffle_train --target_scaling zscore --loss mse
+    --lr_scheduler multistep --lr_milestones 400 450 --lr_gamma 0.1
+    --merge_valid_into_train --checkpoint_select last
+    --mc_dropout_passes "$MC_PASSES" --clip_predictions
+    --device 0)
 
-# --- one grid stream per GPU ------------------------------------------------
-run_stream() {
-    local gpu="$1"
-    local dataset="$2"
-    local cells="$3"
-    local out="$4"
-    local tag="$5"
-
-    echo "[$tag] GPU $gpu -> $out"
-    mkdir -p "$out"
-    CUDA_VISIBLE_DEVICES="$gpu" python -u -W ignore::FutureWarning \
-        run_approach1_grid.py \
-        --datasets "$dataset" \
-        --cv_ids 1 2 3 4 5 6 7 8 9 10 --test_ids 1 2 3 4 \
-        --split_columns split_70 \
-        --split_ids 0 1 2 3 4 5 6 7 8 9 \
-        --cells $cells --output_dir "$out" \
-        --epochs "$EPOCHS" --patience 0 --batch_size "$BATCH_SIZE" \
-        --lr 1e-3 --weight_decay 1e-5 --dropout 0.1 \
-        --emb_dim 384 --layer 2 --attention_layer 2 --num_heads 16 \
-        --reaction_combine concat --seed 42 --num_workers "$WORKERS" \
-        --shuffle_train --target_scaling zscore --loss mse \
-        --lr_scheduler multistep --lr_milestones 400 450 --lr_gamma 0.1 \
-        --merge_valid_into_train --checkpoint_select last \
-        --mc_dropout_passes "$MC_PASSES" --clip_predictions \
-        --device 0
-}
+echo "OUT=$OUT"
+echo "EPOCHS=$EPOCHS  MC_PASSES=$MC_PASSES  WORKERS=$WORKERS  BATCH_SIZE=$BATCH_SIZE"
+printf 'Command:'
+printf ' %q' "${CMD[@]}"
+printf '\n'
 
 if [ "${DRY_RUN:-0}" = "1" ]; then
-    echo "DRY_RUN=1: would launch four streams:"
-    echo "  GPU 0: bh     G1-G8   -> $OUT_ROOT/step1_bh_g1_8/"
-    echo "  GPU 1: bh     G9-G16  -> $OUT_ROOT/step1_bh_g9_16/"
-    echo "  GPU 2: suzuki G1-G8   -> $OUT_ROOT/step1_suzuki_g1_8/"
-    echo "  GPU 3: suzuki G9-G16  -> $OUT_ROOT/step1_suzuki_g9_16/"
+    echo "DRY_RUN=1: exiting before the GPU check."
     exit 0
 fi
 
-# --- fail loudly if the allocation does not have 4 GPUs ---------------------
+# --- fail loudly if no GPU --------------------------------------------------
 nvidia-smi
-GPU_COUNT="$(python -c 'import torch; print(torch.cuda.device_count())')"
-echo "Visible GPUs: $GPU_COUNT"
-if [ "$GPU_COUNT" -lt 4 ]; then
-    echo "ERROR: this job needs 4 GPUs, but only $GPU_COUNT are visible." >&2
-    echo "       Submit with --gres=gpu:4, or use the four MODE=... jobs." >&2
-    exit 1
-fi
+python -c "import torch; assert torch.cuda.is_available(), 'no CUDA'; print('GPU:', torch.cuda.get_device_name(0))"
 
-# --- launch all four streams in parallel ------------------------------------
-pids=()
-names=()
-run_stream 0 bh "$BH_G1_8_CELLS" "$OUT_ROOT/step1_bh_g1_8/" "bh_g1_8" &
-pids+=("$!"); names+=("bh_g1_8")
-run_stream 1 bh "$BH_G9_16_CELLS" "$OUT_ROOT/step1_bh_g9_16/" "bh_g9_16" &
-pids+=("$!"); names+=("bh_g9_16")
-run_stream 2 suzuki "$BH_G1_8_CELLS" "$OUT_ROOT/step1_suzuki_g1_8/" "suzuki_g1_8" &
-pids+=("$!"); names+=("suzuki_g1_8")
-run_stream 3 suzuki "$BH_G9_16_CELLS" "$OUT_ROOT/step1_suzuki_g9_16/" "suzuki_g9_16" &
-pids+=("$!"); names+=("suzuki_g9_16")
+# --- run --------------------------------------------------------------------
+"${CMD[@]}"
 
-status=0
-for i in "${!pids[@]}"; do
-    if wait "${pids[$i]}"; then
-        echo "[${names[$i]}] finished $(date)"
-    else
-        echo "[${names[$i]}] FAILED $(date)" >&2
-        status=1
-    fi
-done
-
-echo "All streams finished $(date) with status $status"
-exit "$status"
+echo "Finished $(date)"

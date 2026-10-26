@@ -32,7 +32,8 @@
 # 3) Plumbing check on a GPU (tiny slices, 4 cells, 2 epochs, no BH test):
 #       MODE=smoke_light sbatch slurm/grid_step1.sbatch
 #
-# 4) Everything in ONE job on a 4-GPU node:
+# 4) Everything in ONE job on one GPU (sequential, about 4-5 days; resubmit
+#    to resume after the 3-day limit):
 #       sbatch slurm/grid_step1_all.sbatch
 #
 #    Cost from the report's logs (~1.1 s/epoch on BH, ~2.7 s/epoch on Suzuki):
