@@ -588,6 +588,13 @@ def _load_existing_results(per_split_csv: str) -> List[dict]:
     return []
 
 
+def _write_csv_atomic(frame: pd.DataFrame, path: str) -> None:
+    """Writes a CSV through a temp file so a killed job cannot corrupt it."""
+    temp_path = path + ".tmp"
+    frame.to_csv(temp_path, index=False)
+    os.replace(temp_path, path)
+
+
 def _save_results(
     results: List[dict],
     per_split_csv: str,
@@ -597,15 +604,15 @@ def _save_results(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Saves per-split and summary CSV files."""
     df_results = pd.DataFrame(results)
-    df_results.to_csv(per_split_csv, index=False)
+    _write_csv_atomic(df_results, per_split_csv)
     summary_df = summarize_grid(df_results)
-    summary_df.to_csv(summary_csv, index=False)
+    _write_csv_atomic(summary_df, summary_csv)
 
     if is_smoke and output_dir:
         smoke_res_csv = os.path.join(output_dir, "approach1_smoke_results.csv")
         smoke_sum_csv = os.path.join(output_dir, "approach1_smoke_summary.csv")
-        df_results.to_csv(smoke_res_csv, index=False)
-        summary_df.to_csv(smoke_sum_csv, index=False)
+        _write_csv_atomic(df_results, smoke_res_csv)
+        _write_csv_atomic(summary_df, smoke_sum_csv)
 
     return df_results, summary_df
 

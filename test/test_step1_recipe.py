@@ -36,6 +36,7 @@ from run_approach1_grid import (  # noqa: E402
     _light_smoke_cells,
     _new_row,
     _select_cells,
+    _write_csv_atomic,
     summarize_grid,
 )
 from training import train  # noqa: E402
@@ -498,6 +499,15 @@ def test_light_smoke_profile_keeps_four_representative_cells():
     assert len(cells) == 4
     assert {cell["label"] for cell in cells} == set(LIGHT_CELLS)
     assert all(cell["reactant_pooling"] in ("mean", "rn") for cell in cells)
+
+
+def test_progress_csv_is_written_atomically(tmp_path):
+    path = str(tmp_path / "progress.csv")
+    _write_csv_atomic(pd.DataFrame({"cell": ["G1", "G6"]}), path)
+
+    assert os.path.isfile(path)
+    assert not os.path.exists(path + ".tmp")
+    assert pd.read_csv(path)["cell"].tolist() == ["G1", "G6"]
 
 
 def test_grid_rows_and_summary_have_the_step1_columns(tmp_path):
