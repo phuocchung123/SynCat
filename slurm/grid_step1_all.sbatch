@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=syncat-step1-all
 #SBATCH --partition=normal
+#SBATCH --nodelist=labcom05
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -19,6 +20,11 @@
 #
 # Submit from the repository root:
 #   sbatch slurm/grid_step1_all.sbatch
+#
+# The script is pinned to node labcom05 with:
+#   #SBATCH --nodelist=labcom05
+# Override it at submit time (or remove the line) to use another node:
+#   sbatch --nodelist=<other-node> slurm/grid_step1_all.sbatch
 #
 # Cost: about 100 GPU-hours (about 1.1 s/epoch on BH, 2.7 s/epoch on Suzuki).
 # On one GPU that is roughly 4-5 days. The default wall time is 3 days; Slurm
