@@ -21,7 +21,7 @@ if SRC_DIR not in sys.path:
 from attention import ReactionSelfAttention  # noqa: E402
 from data import GraphDataset  # noqa: E402
 from finetune import _load_checkpoint_safely  # noqa: E402
-from gin import GIN  # noqa: E402
+from dmpnn import DMPNN  # noqa: E402
 from main_finetune import build_parser  # noqa: E402
 from model import REACTION_COMBINE_DIMS, model  # noqa: E402
 from reaction_data import get_graph_data  # noqa: E402
@@ -290,10 +290,10 @@ def test_full_model_invariances_and_gradient():
     loss = pred.sum()
     loss.backward()
 
-    # At least one GIN parameter must receive a finite, non-zero gradient
-    gin_grads = [p.grad for p in net.gnn.parameters() if p.grad is not None]
-    assert len(gin_grads) > 0
-    assert any((g != 0).any() and torch.isfinite(g).all() for g in gin_grads)
+    # At least one encoder parameter must receive a finite, non-zero gradient
+    gnn_grads = [p.grad for p in net.gnn.parameters() if p.grad is not None]
+    assert len(gnn_grads) > 0
+    assert any((g != 0).any() and torch.isfinite(g).all() for g in gnn_grads)
 
 
 # ----------------------------------------------------------------------------
@@ -301,9 +301,9 @@ def test_full_model_invariances_and_gradient():
 # ----------------------------------------------------------------------------
 
 
-class OriginalModelBaseline(nn.Module):
+class DMPNNModelBaseline(nn.Module):
     """
-    Compact frozen copy of the original model (commit 3af22da) before Approach 2.
+    Compact frozen copy of the model wiring around the D-MPNN encoder, from before the Approach 2 refactor.
     """
 
     def __init__(
@@ -330,7 +330,7 @@ class OriginalModelBaseline(nn.Module):
             "reaction_combine": str(reaction_combine),
             "attention_on": str(attention_on),
         }
-        self.gnn = GIN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
+        self.gnn = DMPNN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
         self.attention_on = attention_on
         self.attention_layers = nn.ModuleList(
             [
@@ -378,8 +378,8 @@ class OriginalModelBaseline(nn.Module):
         return out, reaction_vectors.tolist()
 
 
-def test_reproduces_original_model_exactly():
-    """Default new model with identical weights produces same outputs as original."""
+def test_reproduces_reference_model_exactly():
+    """Default new model with identical weights produces the same outputs as the reference."""
     set_seed(123)
     reactions = ["CCO.CC(=O)O>>CCOC(=O)C", "CCN.CC(=O)Cl>>CCNC(=O)C"]
     _, rmols, pmols, r_dummy, p_dummy, _, node_dim, edge_dim = (
@@ -387,10 +387,10 @@ def test_reproduces_original_model_exactly():
     )
     device = torch.device("cpu")
 
-    orig = OriginalModelBaseline(node_dim, edge_dim, 1, 16, 0.0).to(device)
+    orig = DMPNNModelBaseline(node_dim, edge_dim, 1, 16, 0.0).to(device)
     new_m = model(node_dim, edge_dim, 1, 16, 0.0).to(device)
 
-    # Load original weights into new model
+    # Load the reference weights into the new model
     new_m.load_state_dict(orig.state_dict(), strict=True)
 
     orig.eval()
@@ -472,7 +472,7 @@ def test_load_checkpoint_safely_compatibility():
     wrong_encoder_ckpt = copy.deepcopy(old_ckpt)
     del wrong_encoder_ckpt["model_config"]  # bypass config check
     state_dict = copy.deepcopy(base_m.state_dict())
-    state_dict["gnn.project_node_feats.0.weight"] = torch.randn(16, 999)
+    state_dict["gnn.project_bond_feats.weight"] = torch.randn(16, 999)
     wrong_encoder_ckpt["model_state_dict"] = state_dict
     with pytest.raises(RuntimeError):
         _load_checkpoint_safely(target_net, wrong_encoder_ckpt, logger)

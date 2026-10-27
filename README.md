@@ -146,7 +146,7 @@ Results land in `--log_dir` (default `../logs/bh/`):
 
 ### Model options (all datasets)
 
-Each reaction becomes one vector in three steps: every compound is encoded by the shared GINE; `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain GINE embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
+Each reaction becomes one vector in three steps: every compound is encoded by the shared D-MPNN; `--attention_on` decides which compounds attend to each other; each side is then averaged into a reactant vector `r` and a product vector `p` (attended value vectors where attention applies, plain D-MPNN embeddings where it does not); and `--reaction_combine` turns `r` and `p` into the reaction vector fed to the regressor.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ Each reaction becomes one vector in three steps: every compound is encoded by th
 | `--reaction_combine` | `concat` | how `r` and `p` form the reaction vector: `concat` `[r, p]`, `sum`, `sub` (`p - r`), `mul`, `concat_sub` `[r, p, p - r]`, `interaction` `[r, p, \|p - r\|, r * p]` |
 | `--attention_layer` | `1` | stacked self-attention layers (intermediate layers use a residual connection) |
 | `--num_heads` | `1` | attention heads; must divide `--emb_dim` |
-| `--layer` / `--emb_dim` | `3` / `384` | GINE layers and embedding size |
+| `--layer` / `--emb_dim` | `3` / `384` | D-MPNN layers and embedding size |
 | `--dropout`, `--lr`, `--weight_decay` | `0.1`, `1e-3`, `1e-4` | optimization |
 | `--patience` | `0` | early-stopping patience on validation loss (0 disables) |
 | `--track_test_each_epoch` | off | also score the test set each epoch, for monitoring only |
@@ -269,7 +269,7 @@ measurements.
 | `products` | everything right of `>>`, reactants untouched | |
 | `both` | each side separately, sharing the same attention weights | a product never sees a reactant |
 | `all` | every compound of the reaction in one shared attention | a reactant can attend to a product; the two sides are told apart only by being averaged separately |
-| `none` | nothing; both sides are plain means of the GINE embeddings | drops ~1.2M parameters — the ablation baseline for "does attention help?" |
+| `none` | nothing; both sides are plain means of the D-MPNN embeddings | drops ~1.2M parameters – the ablation baseline for "does attention help?" |
 
 Reactions in these datasets usually have a single product, and self-attention over one compound reduces to a linear projection of its embedding, so `products` and `both` mostly add capacity rather than interaction between compounds.
 

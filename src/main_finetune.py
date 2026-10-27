@@ -48,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="DataLoader worker processes (0 loads batches in the main process)",
     )
     parser.add_argument(
-        "--layer", type=int, default=3, help="number of GNN (GIN) layers"
+        "--layer", type=int, default=3, help="number of GNN (D-MPNN) layers"
     )
     parser.add_argument(
         "--attention_layer",

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from gin import GIN
+from dmpnn import DMPNN
 from attention import ReactionSelfAttention
 
 # How the reactant vector r and the product vector p are combined into the
@@ -209,7 +209,7 @@ class model(nn.Module):
             "reactant_pooling": str(reactant_pooling),
             "head": str(head),
         }
-        self.gnn = GIN(
+        self.gnn = DMPNN(
             node_in_feats,
             edge_in_feats,
             num_layer,

@@ -43,27 +43,28 @@ EDGE_DIM = 9  # matches preprocess_utils bond_fea1(5) + bond_fea2(2) + bond_fea3
 
 def _synthetic_mol_dict(n_samples: int, rng: np.random.Generator) -> dict:
     n_node = rng.integers(2, 4, size=n_samples)
-    n_edge = n_node  # one bidirectional bond per node, arbitrary but consistent
+    n_edge = 2 * n_node  # both directions of every bond, as in preprocess_utils
 
     node_attr = rng.random((int(n_node.sum()), NODE_DIM)) > 0.5
-    edge_attr = rng.random((int(n_edge.sum()), EDGE_DIM)) > 0.5
 
-    src, dst = [], []
+    src, dst, edge_attr = [], [], []
     for n in n_node:
         idx = np.arange(n)
-        src.append(idx)
-        dst.append(np.roll(idx, 1))
-    src = np.concatenate(src).astype(int)
-    dst = np.concatenate(dst).astype(int)
+        starts = idx
+        ends = np.roll(idx, 1)
+        bond_attr = rng.random((n, EDGE_DIM)) > 0.5
+        src.append(np.hstack([starts, ends]))
+        dst.append(np.hstack([ends, starts]))
+        edge_attr.append(np.vstack([bond_attr, bond_attr]))
 
     return {
         "n_node": n_node.astype(int),
         "n_edge": n_edge.astype(int),
         "dummy": np.ones(n_samples, dtype=bool),
         "node_attr": node_attr.astype(bool),
-        "edge_attr": edge_attr.astype(bool),
-        "src": src,
-        "dst": dst,
+        "edge_attr": np.vstack(edge_attr).astype(bool),
+        "src": np.concatenate(src).astype(int),
+        "dst": np.concatenate(dst).astype(int),
     }
 
 

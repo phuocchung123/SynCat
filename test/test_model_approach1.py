@@ -31,7 +31,7 @@ if TEST_DIR not in sys.path:
     sys.path.insert(0, TEST_DIR)
 
 from attention import ReactionSelfAttention  # noqa: E402
-from gin import GIN  # noqa: E402
+from dmpnn import DMPNN  # noqa: E402
 from model import (  # noqa: E402
     REACTION_COMBINE_DIMS,
     ATTENTION_TARGETS,
@@ -94,8 +94,8 @@ def _build_batch(rmol_max_cnt=3, pmol_max_cnt=1, y_values=(50.0, 75.0)):
 # ----------------------------------------------------------------------------
 
 
-class ReferenceOriginalModel(nn.Module):
-    """Exact reproduction of the original baseline model architecture."""
+class ReferenceDMPNNModel(nn.Module):
+    """Reference implementation of the model wiring around the D-MPNN encoder."""
 
     def __init__(
         self,
@@ -109,8 +109,8 @@ class ReferenceOriginalModel(nn.Module):
         reaction_combine: str = "concat",
         attention_on: str = "reactants",
     ) -> None:
-        super(ReferenceOriginalModel, self).__init__()
-        self.gnn = GIN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
+        super(ReferenceDMPNNModel, self).__init__()
+        self.gnn = DMPNN(node_in_feats, edge_in_feats, num_layer, emb_dim, drop_ratio)
         self.attention_layers = nn.ModuleList(
             [
                 ReactionSelfAttention(emb_dim, num_heads=num_heads, dropout=drop_ratio)
@@ -528,10 +528,10 @@ def test_suzuki_width_single_forward_backward():
 
 @pytest.mark.parametrize("attention_on", ["reactants", "none"])
 def test_backward_compatibility_reference_model(attention_on):
-    """Default new model matches ReferenceOriginalModel bit-for-bit with same weights."""
+    """Default new model matches ReferenceDMPNNModel bit-for-bit with same weights."""
     set_seed(42)
     device = torch.device("cpu")
-    orig = ReferenceOriginalModel(
+    orig = ReferenceDMPNNModel(
         node_in_feats=NODE_DIM,
         edge_in_feats=EDGE_DIM,
         num_layer=1,
